@@ -1,10 +1,11 @@
 import numpy as np
 import tensorflow as tf
+from pudb import set_trace
 
 class ReplayBuffer(object):
     '''Simple replay buffer class which samples tensorflow tensors.'''
     # TODO max_size and c_step from command prmpt
-    def __init__(self, state_dim, action_dim, c_step, max_size=int(200000)):  
+    def __init__(self, state_dim, action_dim, c_step=1, max_size=int(200000)):  
         self.max_size = max_size
         self.ptr = 0
         self.size = 0 
@@ -23,8 +24,8 @@ class ReplayBuffer(object):
         self.next_state[self.ptr] = next_state
         self.reward[self.ptr] = reward
         self.done[self.ptr] = float(done)
-        self.state_seq[self.ptr] = np.array(state_seq)
-        self.action_seq[self.ptr] = np.array(action_seq)
+        self.state_seq[self.ptr] = state_seq
+        self.action_seq[self.ptr] = action_seq
 
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)

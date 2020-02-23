@@ -9,9 +9,9 @@ from collections import deque
 import agent_files.TD3_tf
 from utils.replay_buffers import ReplayBuffer
 from agent_files.Agent import Agent
+import wandb
 
-time = datetime.datetime.now()
-writer = tf.summary.create_file_writer("./runs/data_" + str(time.minute) )
+#wandb.init(project='research', entity='rlpractitioner')
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
@@ -40,8 +40,8 @@ class TransitBuffer(ReplayBuffer):
         # Replay Buffers
         self.sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, args.c_step)
         self.meta_replay_buffer = ReplayBuffer(meta_state_dim, subgoal_dim, args.c_step)
-        self.state_seq = deque(maxlen=args.c_step)
-        self.action_seq = deque(maxlen=args.c_step) 
+        self.state_seq = np.ones(shape=[args.c_step + 1, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
+        self.action_seq = np.ones(shape=[args.c_step + 1, action_dim]) * np.inf 
         # Control flow variables
         self.sum_of_rewards = 0
         self.ep_rewards = 0
@@ -49,6 +49,7 @@ class TransitBuffer(ReplayBuffer):
         self.meta_time = False
         self.needs_reset = False
         self.timestep = -1
+        self.ptr = 0
             
     def add(self, state, action, reward, next_state, done):
         '''Adds the transitions to the appropriate buffers. Goal is saved at
@@ -75,20 +76,22 @@ class TransitBuffer(ReplayBuffer):
             self.save_meta_transition(state, self.goal, done)
             self.sum_of_rewards = 0
         if done:
-            with writer.as_default():
-                tf.summary.scalar("data/intr_reward", self.ep_rewards, self.timestep)
             self.ep_rewards = 0
             self.agent.select_action(next_state)
             next_goal = self.goal
             self.finish_sub_transition(self.goal, reward)
             self.finish_meta_transition(next_state, done)
             self.needs_reset = True
-            return None
+            return self.ep_rewards
+
         self.sum_of_rewards += reward
     
     def collect_seq_state_actions(self, state, action):
-        self.state_seq.append(state)
-        self.action_seq.append(action)
+        if self.ptr == 11:
+            set_trace()
+        self.state_seq[self.ptr] = state
+        self.action_seq[self.ptr] = action
+        self.ptr += 1
 
     def finish_sub_transition(self, next_goal, reward):
         old = self.load_sub_transition()
@@ -131,11 +134,11 @@ class TransitBuffer(ReplayBuffer):
         return self.sub_transition
 
     def add_to_meta(self, state, goal, sum_of_rewards, next_state_c, done_c):
-        tmp_state = self.state_seq.pop()
-        tmp_action = self.action_seq.pop()
-        self._padd_sequence_deques()
-        self.meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self.state_seq,
-                                    self.action_seq)
+        tmp_state = self.state_seq[-1]
+        tmp_action = self.action_seq[-1]
+        #self._padd_sequence_deques()
+        self.meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self.state_seq[:-1],
+                                    self.action_seq[:-1])
         self._reset_sequence_deques(tmp_state, tmp_action)
 
     def _padd_sequence_deques(self):
@@ -148,10 +151,11 @@ class TransitBuffer(ReplayBuffer):
     def _reset_sequence_deques(self, state, action):
         # TODO replace maxlen by the maximum meta step size
         if self.offpolicy and self.timestep >= 0:
-            self.state_seq = deque(maxlen=self.args.c_step)
-            self.state_seq.append(state)
-            self.action_seq = deque(maxlen=self.args.c_step)
-            self.action_seq.append(action)
+            self.state_seq[:] = np.inf
+            self.action_seq[:] = np.inf
+            self.state_seq[0] = state
+            self.action_seq[0] = action
+            self.ptr = 1
             del state
             del action
     
@@ -230,18 +234,14 @@ class HierarchicalAgent(Agent):
     def train(self, time_step):
         '''Train both agents for as many steps as episode had.'''
         sub_actor, sub_critic = self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.args.batch_size, time_step)
-        with writer.as_default():
-            tf.summary.scalar("model/sub_actor", sub_actor, time_step)
-            tf.summary.scalar("model/sub_critic", sub_critic, time_step)
+        meta_actor, meta_critic = None, None
         if time_step % self.c_step == 0:
             meta_actor, meta_critic = self.meta_agent.train(self.transitbuffer.meta_replay_buffer,
                                                             self.args.batch_size, time_step, self.sub_agent.actor)
-            with writer.as_default():
-                tf.summary.scalar("model/meta_actor", meta_actor, time_step)
-                tf.summary.scalar("model/meta_critic", meta_critic, time_step)
+        return sub_actor, sub_critic, meta_actor, meta_critic
 
     def replay_add(self, state, action, reward, next_state, done):
-        self.transitbuffer.add(state, action, reward, next_state, done)
+        return self.transitbuffer.add(state, action, reward, next_state, done)
 
     def evaluation(self, env):
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
@@ -275,8 +275,8 @@ class HierarchicalAgent(Agent):
         self.transitbuffer.init = False
         self.transitbuffer.sum_of_rewards = 0
         self.transitbuffer.needs_reset = False
-        self.transitbuffer.state_seq.clear()
-        self.transitbuffer.action_seq.clear()
+        self.transitbuffer.state_seq[:] = np.inf
+        self.transitbuffer.action_seq[:] = np.inf
     
     def _maybe_mock(self, goal):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
@@ -340,8 +340,7 @@ class HierarchicalAgent(Agent):
     def _check_inner_done(self, state, next_state, goal, goal_type):
         '''Checks if the sub-agent has managed to reach the subgoal and then calls a new subgoal.'''
         inner_done = self._inner_done_cond(state, next_state, goal, goal_type)
-        with writer.as_default():
-            tf.summary.scalar("data/distance_to_goal", inner_done, self.transitbuffer.timestep)
+        wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal, goal_type):
         dim = self.subgoal_dim
@@ -374,7 +373,7 @@ class HierarchicalAgent(Agent):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Differen seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
-        env.reset(evalmode=True, hard_reset=True)
+        env.reset(hard_reset=True)
         env.seed(self.args.seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
@@ -383,7 +382,7 @@ class HierarchicalAgent(Agent):
         for episode_nbr in range(eval_episodes):
             print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
             step = 0
-            state, done = env.reset(evalmode=True, hard_reset=False), False
+            state, done = env.reset(evalmode=False, hard_reset=False), False
             self.reset()
             while not done:
                 action = self.select_action(state)

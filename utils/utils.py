@@ -127,13 +127,13 @@ def get_env_specs(env):
         subgoal_ranges = env.subgoal_ranges
         subgoal_dim = env.subgoal_dim
         target_dim = env.target_dim
-        '''print("Env Specs: ")
+        print("Env Specs: ")
         print(f"state_dim: {state_dim}")
         print(f"action_dim: {action_dim}")
         print(f"max_action: {max_action}")
         print(f"time_limit: {time_limit}")
         print(f"subgoal_dim: {subgoal_dim}")
-        print(f"target_dim: {target_dim}")'''
+        print(f"target_dim: {target_dim}")
         return (state_dim, action_dim, max_action, time_limit), subgoal_dim, subgoal_ranges, target_dim
 
 def setup(parse_string=[]):

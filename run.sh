@@ -3,8 +3,8 @@
 python3 training_loop.py \
 	--policy "TD3" \
 	--env "Vrep" \
-	--eval_freq 20000 \
-	--time_limit 500 \
+	--eval_freq 30000 \
+	--time_limit 300 \
 	--batch_size 128 \
 	--goal_type Absolute\
 	--meta_noise 0.5 \
@@ -18,5 +18,5 @@ python3 training_loop.py \
 	--start_timesteps 1000 \
 	--vrep \
 	--force \
-	--random_target
-
+	--random_target \
+	--sparse_rew 

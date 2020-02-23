@@ -8,10 +8,7 @@ from pudb import set_trace
 import datetime
 from tensorflow.keras.regularizers import l2
 tf.keras.backend.set_floatx('float32')
-
-time = datetime.datetime.now()
-logdir = "./runs/model" + str(time.minute)
-writer = tf.summary.create_file_writer(logdir)
+import wandb
 
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 

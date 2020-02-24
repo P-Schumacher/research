@@ -219,15 +219,6 @@ class HierarchicalAgent(Agent):
 
     def replay_add(self, state, action, reward, next_state, done):
         return self.transitbuffer.add(state, action, reward, next_state, done)
-
-    def evaluation(self, env):
-        '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
-        sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
-        avg_reward, avg_intr_reward, success_rate = self._eval_policy(env, self.args.env, self.args.seed, self.args.time_limit, self.args.visit)
-        self.reset()
-        env.reset()
-        return avg_reward, avg_intr_reward, success_rate
-
         
     def save_model(self, string):
         '''Saves the weights of sub and meta agent to a file.'''
@@ -352,7 +343,6 @@ class HierarchicalAgent(Agent):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Differen seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
-        env.reset(hard_reset=True)
         env.seed(self.args.seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
@@ -361,7 +351,7 @@ class HierarchicalAgent(Agent):
         for episode_nbr in range(eval_episodes):
             print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
             step = 0
-            state, done = env.reset(evalmode=False, hard_reset=False), False
+            state, done = env.reset(evalmode=False), False
             self.reset()
             while not done:
                 action = self.select_action(state)

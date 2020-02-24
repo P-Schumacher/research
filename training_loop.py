@@ -1,21 +1,17 @@
-from matplotlib import pyplot as plt
 import numpy as np
 import gym
-import argparse
-import os
 import sys
-from agent_files.HIRO import HierarchicalAgent
-from utils.logger import Logger
-from utils.utils import create_world, setup,  exponential_decay
 import time
 import math
 import tensorflow as tf
-from pudb import set_trace
-import datetime
 import wandb
+from pudb import set_trace
 
+from agent_files.HIRO import HierarchicalAgent
+from utils.logger import Logger
+from utils.utils import create_world, setup,  exponential_decay
 
-def maybe_verbose(agent, action, args):
+def maybe_verbose_output(agent, action, args):
     if args.render:
         print("action: " + str(action))
         print("time is: " + str(t))
@@ -28,43 +24,41 @@ def maybe_verbose(agent, action, args):
 if __name__ == "__main__":
     # Parse Arguments and create directories
     args = setup(sys.argv[1:])
-    if args.wandb:
+    if args.log:
         wandb.init(project='exp', entity='rlpractitioner', config=args)
-    # create environment and agent
+   
+   # create objects 
     env, agent = create_world(args)
+    logger = Logger()
+    time_step = tf.Variable(0, dtype=tf.int64)
+    
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
-    # Create logger
-    logger = Logger()
-    # Start env
+    
     state, done = env.reset(), False
-    # Use tf Variable here because we want to use it in static graph later
-    time_step = tf.Variable(0, dtype=tf.int64)
-    # Training loop
+   
+   # Training loop
     for t in range(int(args.max_timesteps)):
         if t < args.start_timesteps:
             action = agent.random_action(state) 
         else:
             action = agent.select_noisy_action(state)
-        maybe_verbose(agent, action, args)
+        maybe_verbose_output(agent, action, args)
         next_state, reward, done, _ = env.step(action)
-        # Store data in replay buffer
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         if t > args.start_timesteps:
             agent.train(time_step)
-       
         state = next_state
         logger.inc(reward)
         time_step.assign_add(1)
         
         if done:
-            # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: \
                   {logger.episode_reward}")
             # Reset environment
             state, done = env.reset(), False
             agent.reset()
-            logger.log(args.wandb, intr_rew)
+            logger.log(args.log, intr_rew)
             logger.reset()
         
         # Evaluate episode
@@ -73,7 +67,7 @@ if __name__ == "__main__":
             state, done = env.reset(), False
             agent.reset()
             logger.reset(post_eval=True)
-            if args.wandb:
+            if args.log:
                 wandb.log({'eval/eval_ep_rew': avg_ep_rew, 'eval/eval_intr_rew': avg_intr_rew,
                       'eval/success_rate': success_rate})
             if args.save_model: agent.save_model("./models/"+str(agent.file_name))

@@ -5,6 +5,7 @@ import gym
 import tensorflow as tf
 from pudb import set_trace
 from utils.replay_buffers import ReplayBuffer
+
 class Agent:
     def __init__(self, model, policy_args, args, random_action_fn):
         self.random_action_fn = random_action_fn
@@ -28,15 +29,16 @@ class Agent:
         policy.load("./models/"+str(policy_file))
         
     def evaluation(self, env):
+        '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
+        sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
+        env.reset(hard_reset=True)
         avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self.args.env, self.args.seed, self.args.time_limit, self.args.visit)
         self.reset()
-        env.reset()
         return avg_reward, avg_intr_reward, success_rate
     
     # Runs policy for X episodes and returns average reward
     # A fixed seed is used for the eval environment
     def _eval_policy(self, eval_env, env_name, seed, time_limit, visit, eval_episodes=5):
-        eval_env.reset(evalmode=True, hard_reset=True) 
         eval_env.seed(self.args.seed + 100)
         avg_reward = []
         for _ in range(eval_episodes):

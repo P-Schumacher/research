@@ -57,7 +57,7 @@ def setup_parser(parse_string):
     parser.add_argument("--sub_actr_lr", default=0.0001, type=float)     # Should we randomize table target 
     parser.add_argument("--sub_ctr_lr", default=0.0001, type=float)     # Should we randomize table target 
     parser.add_argument("--flat_agent", action="store_true")        # Should we use a flat agent 
-    parser.add_argument("--wandb", action="store_true")             # Should we use log with wandb 
+    parser.add_argument("--log", action="store_true")             # Should we use log with wandb 
     parser.add_argument("--ri_re", action="store_true")             # Should we sum intrinsic and extrinsic reward
     parser.add_argument("--subgoal_ee_range", default=5., type=float)# Should we use log with wandb 
 

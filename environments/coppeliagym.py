@@ -240,8 +240,7 @@ class CoppeliaEnv(gym.Env):
         #observation = {'obs': observation, 'target':self._ep_target_pos}
         return np.array(np.concatenate([observation, self._ep_target_pos[:-1]]), dtype=np.float32)
    
-    def _reset_target(self, evalmode, random_target=True):
-        # TODO randomize new position on table
+    def _reset_target(self, evalmode, random_target):
         pose = self._target_init_pose
         if random_target and not evalmode:
             pose[:2] = np.random.uniform(low=[-0.08, -0.3], high=[2., 0.95])
@@ -254,7 +253,6 @@ class CoppeliaEnv(gym.Env):
     def _reset(self, evalmode, random_target):
         self._robot.set_position(self._init_pos, gripper_special=False)
         self._ep_target_pos = self._reset_target(evalmode, random_target)
-        self._reset_dynamics()
         self._sim.step()
         self.needs_reset = False
         self.timestep = 0

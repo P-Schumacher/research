@@ -309,7 +309,7 @@ class HierarchicalAgent(Agent):
     def _check_inner_done(self, state, next_state, goal, goal_type):
         '''Checks if the sub-agent has managed to reach the subgoal and then calls a new subgoal.'''
         inner_done = self._inner_done_cond(state, next_state, goal, goal_type)
-        if self.args.wandb:
+        if self.args.log:
             wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal, goal_type):

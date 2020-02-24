@@ -18,10 +18,9 @@ python3 training_loop.py \
 	--start_timesteps 1000 \
 	--vrep \
 	--force \
-	--ee_pos \
 	--random_target \
-	--subgoal_ee_range 1 \
 	--sparse_rew \
 	--log \
-	--ri_re
+	--ee_pos \
+	--ri_re 
 	

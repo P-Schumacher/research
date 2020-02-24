@@ -88,7 +88,8 @@ class TransitBuffer(ReplayBuffer):
     def finish_sub_transition(self, next_goal, reward):
         old = self.load_sub_transition()
         intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state, self.goal_type) * self.sub_rew_scale
-        intr_reward += reward
+        if self.args.ri_re:
+            intr_reward += reward
         self.ep_rewards += intr_reward
         self.add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
 

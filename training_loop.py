@@ -23,10 +23,11 @@ class Logger:
         self.episode_timesteps += 1
         self.episode_reward += reward
 
-    def reset(self):
+    def reset(self, post_eval=False):
         self.episode_timesteps = 0
         self.episode_reward = 0
-        self.episode_num += 1
+        if not post_eval:
+            self.episode_num += 1
     
     def log(self, logging, intr_rew):
         if logging:
@@ -90,8 +91,7 @@ if __name__ == "__main__":
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)
             state, done = env.reset(), False
             agent.reset()
-            episode_timesteps = 0
-            episode_reward = 0
+            logger.reset(post_eval=True)
             if args.wandb:
                 wandb.log({'eval/eval_ep_rew': avg_ep_rew, 'eval/eval_intr_rew': avg_intr_rew,
                       'eval/success_rate': success_rate})

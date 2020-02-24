@@ -31,12 +31,10 @@ if __name__ == "__main__":
     env, agent = create_world(args)
     logger = Logger()
     time_step = tf.Variable(0, dtype=tf.int64)
-    
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
     
     state, done = env.reset(), False
-   
    # Training loop
     for t in range(int(args.max_timesteps)):
         if t < args.start_timesteps:

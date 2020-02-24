@@ -31,6 +31,8 @@ class Agent:
     def evaluation(self, env):
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
+        # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
+        tf.random.set_seed(self.args.seed)
         env.reset(hard_reset=True)
         avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self.args.env, self.args.seed, self.args.time_limit, self.args.visit)
         self.reset()

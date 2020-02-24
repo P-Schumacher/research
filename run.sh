@@ -3,7 +3,7 @@ export CUDA_VISIBLE_DEVICES=-1
 python3 training_loop.py \
 	--policy "TD3" \
 	--env "Vrep" \
-	--eval_freq 30000 \
+	--eval_freq 3000 \
 	--time_limit 300 \
 	--batch_size 128 \
 	--goal_type Absolute\
@@ -17,10 +17,9 @@ python3 training_loop.py \
 	--offpolicy \
 	--start_timesteps 1000 \
 	--vrep \
-	--force \
 	--random_target \
-	--sparse_rew \
 	--log \
+	--sparse_rew \
 	--ee_pos \
 	--ri_re 
 	

@@ -81,6 +81,8 @@ class TransitBuffer(ReplayBuffer):
         self.sum_of_rewards += reward
     
     def collect_seq_state_actions(self, state, action):
+        '''These are collected so that the off policy correction for the meta-agent can
+        be calculated in a more efficient way.'''
         self.state_seq[self.ptr] = state
         self.action_seq[self.ptr] = action
         self.ptr += 1
@@ -98,6 +100,8 @@ class TransitBuffer(ReplayBuffer):
         self.add_to_meta(old.state, old.goal, self.sum_of_rewards * self.meta_rew_scale, next_state, done)
 
     def finish_one_step_episode(self, state, action, reward, next_state, done):
+        '''1 step episodes are handled separately because the adding of states to 
+        the replay buffers is always one step behind the environment timestep.'''
         goal = self.goal
         self.agent.select_action(next_state)
         next_goal = self.goal
@@ -133,6 +137,9 @@ class TransitBuffer(ReplayBuffer):
         self._reset_sequence()
 
     def _reset_sequence(self):
+        '''After the sequence has been added to the meta replaybuffer, we overwrite the arrays with np.inf,
+        those are handled in the offpolicy correction correctly. This enables us to have variable length 
+        state and action sequences.'''
         if self.offpolicy:
             self.state_seq[:] = np.inf
             self.action_seq[:] = np.inf
@@ -261,6 +268,8 @@ class HierarchicalAgent(Agent):
         return mock_joint_goal
     
     def _maybe_move_over_table(self, goal, move=False):
+        '''Adds a constant term to the generated subgoal such that it is forced to be 
+        above the table.'''
         if move:
             print("moved")
             goal = tf.constant([0,0,1,0,0,0], dtype=tf.float32) + goal 
@@ -278,7 +287,7 @@ class HierarchicalAgent(Agent):
         return sub_args, meta_args
     
     def _get_meta_goal(self, state):
-        # TODO correctly give meta goal with meta_time and not training
+        # TODO correctly give meta goal with meta_time and the mock goal
         if self.meta_mock:
             self.goal = self.meta_mock_goal
         self.goal, self.meta_time = self._sample_goal(state, self.args.goal_type)
@@ -288,7 +297,7 @@ class HierarchicalAgent(Agent):
             action = np.zeros([8,], dtype=np.float32)
             action[:7] = self.goal
             return action 
-        # Zero out x,y for sub agent. Then take target away in select_action. Conform with paper.
+        # Zero out x,y for sub agent. Then take target away in select_action. Conform with HIRO paper.
         if self.args.zero_obs:
             state = state.copy()
             state[:self.args.zero_obs] = 0
@@ -341,7 +350,7 @@ class HierarchicalAgent(Agent):
     
     def _eval_policy(self, env, env_name, seed, time_limit, visit, eval_episodes=5):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
-        Differen seeds are used for the eval environments. visit is a boolean that decides if we record visitation
+        Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
         env.seed(self.args.seed + 100)
         avg_ep_reward = []

@@ -13,8 +13,8 @@ from pudb import set_trace
 import datetime
 import wandb
 
+
 timer = datetime.datetime.now()
-writer = tf.summary.create_file_writer("./runs/main" + str(timer.minute))
 
 def maybe_render(agent, action, args):
     if args.render:
@@ -29,7 +29,9 @@ def maybe_render(agent, action, args):
 if __name__ == "__main__":
     # Parse Arguments and create directories
     args = setup(sys.argv[1:])
-    wandb.init(project='research', entity='rlpractitioner', config=args, sync_tensorboard=True)
+    writer = tf.summary.create_file_writer("./runs/main" + str(timer.minute))
+    if args.wandb:
+        wandb.init(project='research', entity='rlpractitioner', config=args, sync_tensorboard=True)
     # create environment and agent
     env, agent = create_world(args)
     # Load previously trained model.
@@ -60,15 +62,15 @@ if __name__ == "__main__":
         episode_reward += reward
         time_step.assign_add(1)
         if t > args.start_timesteps + 1:
-            if losses[2]:
-                with writer.as_default():
-                    tf.summary.scalar("losses/meta_actor", losses[2], t)
-                    tf.summary.scalar("losses/meta_actor", losses[3], t)
-            if intr_rew:
-                tf.summary.scalar("rews/intr_rew", losses[3], t)
-            
-            tf.summary.scalar("losses/sub_actor", losses[0], t)
-            tf.summary.scalar("losses/meta_actor", losses[1], t)
+            with writer.as_default():
+                if losses[2]:
+                        tf.summary.scalar("losses/meta_actor", losses[2], t)
+                        tf.summary.scalar("losses/meta_actor", losses[3], t)
+                if intr_rew:
+                    tf.summary.scalar("rews/intr_rew", intr_rew, t)
+                
+                tf.summary.scalar("losses/sub_actor", losses[0], t)
+                tf.summary.scalar("losses/meta_actor", losses[1], t)
         
         if done:
             # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
@@ -77,7 +79,10 @@ if __name__ == "__main__":
             # Reset environment
             state, done = env.reset(), False
             agent.reset()
-            tf.summary.scalar("rew/ep_rew", episode_reward, t)
+            with writer.as_default():
+                tf.summary.scalar("rew/ep_rew", episode_reward, t)
+            if args.wandb:
+                wandb.log({'ep_rew': episode_reward})
             episode_timesteps = 0
             episode_reward = 0
             episode_num += 1
@@ -89,7 +94,11 @@ if __name__ == "__main__":
             agent.reset()
             episode_timesteps = 0
             episode_reward = 0
-            tf.summary.scalar("eval/eval_ep_rew", avg_ep_rew, t)
-            tf.summary.scalar("eval/eval_intr_rew", avg_intr_rew, t)
-            tf.summary.scalar("eval/success_rate", success_rate, t)
+            with writer.as_default():
+                tf.summary.scalar("eval/eval_ep_rew", avg_ep_rew, t)
+                tf.summary.scalar("eval/eval_intr_rew", avg_intr_rew, t)
+                tf.summary.scalar("eval/success_rate", success_rate, t)
+            if args.wandb:
+                wandb.log({'eval/eval_ep_rew': avg_ep_rew, 'eval/eval_intr_rew': avg_intr_rew,
+                      'eval/success_rate':success_rate})
             if args.save_model: agent.save_model("./models/"+str(agent.file_name))

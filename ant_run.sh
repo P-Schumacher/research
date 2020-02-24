@@ -1,6 +1,6 @@
 #export LD_PRELOAD=libGL.so:libGLEW.so
 #export CUDA_VISIBLE_DEVICES=-1
-python3 my_main.py \
+python3 training_loop.py \
 	--policy "TD3" \
 	--env "AntMaze" \
 	--eval_freq 50000 \
@@ -14,4 +14,5 @@ python3 my_main.py \
     	--c_step 10 \
 	--zero_obs 2  \
 	--offpolicy \
-	--start_timesteps 2500 
+	--start_timesteps 2500 \
+	--wandb

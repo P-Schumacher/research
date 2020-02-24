@@ -155,6 +155,7 @@ class TD3(object):
                                           self.c_step, state_seq, action_seq)
         self.train_step(state, action, next_state, reward, done, time_step)
         self.total_it.assign_add(1)
+        wandb.log({str(self.name)+'/actor_loss':self.actor_loss.numpy(), str(self.name)+'/critic_loss':self.critic_loss.numpy()})
         return self.actor_loss.numpy(), self.critic_loss.numpy()
    
     @tf.function
@@ -202,19 +203,19 @@ class TD3(object):
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self.actor_loss.assign(mean_actor_loss)
-
+'''
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
                           action_seq):
     # TODO Update docstring to real dimensions
-    '''
+   
     Computes the off-policy correction for the meta-agent.
     c = candidate_nbr; t = time; i = vector coordinate (e.g. action 0 of 8 dims) 
     Dim(candidates) = [c i]
     Dim(state_b)     = [t i]
     Dim(action_seq)    = [t i]
     Dim(prop_goals) = [c_step, b_size, g_dim, no_candidates]
-    '''
+  
     b_size = state_b.shape[0] # Batch Size
     g_dim = goal_b[0].shape[0] # Subgoal dimension
     action_dim = action_seq.shape[-1] # action dimension
@@ -281,18 +282,18 @@ def multi_goal_transition(state_seq, candidates, c_step):
     tmp = tf.broadcast_to(tf.expand_dims(state_seq[:,0,:g_dim], axis=1), [b_size, c_step, g_dim]) - state_seq[:, :, :g_dim] 
     prop_goals += tf.broadcast_to(tf.expand_dims(tmp, axis=3), [b_size, c_step, g_dim, no_candidates]) 
     return prop_goals
-
 '''
+
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
                           action_seq):
     # TODO Update docstring to real dimensions
-    Computes the off-policy correction for the meta-agent.
+    '''Computes the off-policy correction for the meta-agent.
     c = candidate_nbr; t = time; i = vector coordinate (e.g. action 0 of 8 dims) 
     Dim(candidates) = [c i]
     Dim(state_b)     = [t i]
     Dim(action_seq)    = [t i]
-    Dim(prop_goals) = [c_step, b_size, g_dim, no_candidates]
+    Dim(prop_goals) = [c_step, b_size, g_dim, no_candidates]'''
     
     b_size = state_b.shape[0] # Batch Size
     g_dim = goal_b[0].shape[0] # Subgoal dimension
@@ -372,4 +373,4 @@ def get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, sta
         best_c = tf.where(logprob > max_logprob, c, best_c)
         max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
     return best_c
-'''
+

@@ -23,15 +23,10 @@ class TransitBuffer(ReplayBuffer):
         assert sub_state_dim == meta_state_dim - target_dim + subgoal_dim
         # Algo objects
         self.args = args
-        self.c_step = args.c_step
         self.agent = agent
         self.goal_type = args.goal_type
-        self.no_candidates = agent.args.no_candidates
         self.offpolicy = args.offpolicy
         # Dimensions 
-        self.sub_state_dim = sub_state_dim
-        self.action_dim = action_dim
-        self.meta_state_dim = meta_state_dim
         self.subgoal_dim = subgoal_dim 
         self.target_dim = target_dim
         # Reward scales 
@@ -40,8 +35,8 @@ class TransitBuffer(ReplayBuffer):
         # Replay Buffers
         self.sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, args.c_step)
         self.meta_replay_buffer = ReplayBuffer(meta_state_dim, subgoal_dim, args.c_step)
-        self.state_seq = np.ones(shape=[args.c_step + 1, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
-        self.action_seq = np.ones(shape=[args.c_step + 1, action_dim]) * np.inf 
+        self.state_seq = np.ones(shape=[args.c_step, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
+        self.action_seq = np.ones(shape=[args.c_step, action_dim]) * np.inf 
         # Control flow variables
         self.sum_of_rewards = 0
         self.ep_rewards = 0
@@ -56,7 +51,6 @@ class TransitBuffer(ReplayBuffer):
         each timestep to be used for the transition of the next timestep. At 
         an episode end, the meta agent recieves a transition of t:t_end, 
         regardless if it has been c steps.'''
-        self.collect_seq_state_actions(state, action)
         self.timestep += 1
         if self.needs_reset:
             raise Exception("You need to reset the agent if a 'done' has occurred in the environment.")
@@ -87,8 +81,6 @@ class TransitBuffer(ReplayBuffer):
         self.sum_of_rewards += reward
     
     def collect_seq_state_actions(self, state, action):
-        if self.ptr == 11:
-            set_trace()
         self.state_seq[self.ptr] = state
         self.action_seq[self.ptr] = action
         self.ptr += 1
@@ -114,6 +106,7 @@ class TransitBuffer(ReplayBuffer):
 
     def add_to_sub(self, state, goal, action, intr_reward, next_state, next_goal, extr_done):
         '''Adds the relevant transition to the sub-agent replay buffer.'''
+        self.collect_seq_state_actions(state, action)
         # Remove target from sub-agent state. Conform with paper code.
         state = state[:-self.target_dim]  
         next_state = next_state[:-self.target_dim]
@@ -134,30 +127,15 @@ class TransitBuffer(ReplayBuffer):
         return self.sub_transition
 
     def add_to_meta(self, state, goal, sum_of_rewards, next_state_c, done_c):
-        tmp_state = self.state_seq[-1]
-        tmp_action = self.action_seq[-1]
-        #self._padd_sequence_deques()
-        self.meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self.state_seq[:-1],
-                                    self.action_seq[:-1])
-        self._reset_sequence_deques(tmp_state, tmp_action)
+        self.meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self.state_seq,
+                                    self.action_seq)
+        self._reset_sequence()
 
-    def _padd_sequence_deques(self):
-        '''We pad the sequences with infinities because variable length sequences
-        cannot be used efficiently in the off-policy correction.'''
-        while len(self.state_seq) < self.c_step:
-            self.state_seq.append(np.ones((self.meta_state_dim,)) * np.inf)
-            self.action_seq.append(tf.ones((self.action_dim,)) * np.inf)
-
-    def _reset_sequence_deques(self, state, action):
-        # TODO replace maxlen by the maximum meta step size
-        if self.offpolicy and self.timestep >= 0:
+    def _reset_sequence(self):
+        if self.offpolicy:
             self.state_seq[:] = np.inf
             self.action_seq[:] = np.inf
-            self.state_seq[0] = state
-            self.action_seq[0] = action
-            self.ptr = 1
-            del state
-            del action
+            self.ptr = 0
     
     def save_meta_transition(self, state, goal, done):
         self.meta_transition = meta_Transition(state, goal, done)
@@ -277,6 +255,7 @@ class HierarchicalAgent(Agent):
         self.transitbuffer.needs_reset = False
         self.transitbuffer.state_seq[:] = np.inf
         self.transitbuffer.action_seq[:] = np.inf
+        self.transitbuffer.ptr = 0
     
     def _maybe_mock(self, goal):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
@@ -340,7 +319,8 @@ class HierarchicalAgent(Agent):
     def _check_inner_done(self, state, next_state, goal, goal_type):
         '''Checks if the sub-agent has managed to reach the subgoal and then calls a new subgoal.'''
         inner_done = self._inner_done_cond(state, next_state, goal, goal_type)
-        wandb.log({'distance_to_goal':inner_done}, commit=False)
+        if self.args.wandb:
+            wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal, goal_type):
         dim = self.subgoal_dim

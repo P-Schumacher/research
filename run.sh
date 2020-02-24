@@ -1,5 +1,5 @@
 #export LD_PRELOAD=libGL.so:libGLEW.so
-#export CUDA_VISIBLE_DEVICES=-1
+export CUDA_VISIBLE_DEVICES=-1
 python3 training_loop.py \
 	--policy "TD3" \
 	--env "Vrep" \
@@ -20,5 +20,6 @@ python3 training_loop.py \
 	--force \
 	--ee_pos \
 	--random_target \
-	--wandb
+	--wandb \
+	--subgoal_ee_range 10
 	

@@ -41,7 +41,7 @@ class CoppeliaEnv(gym.Env):
         self._prepare_shapes(args.render)
         self._prepare_observation_space()
         self._prepare_action_space()
-        self._prepare_subgoal_ranges()
+        self._prepare_subgoal_ranges(args.subgoal_ee_range)
 
     def step(self, action):
         if self.needs_reset:
@@ -157,13 +157,13 @@ class CoppeliaEnv(gym.Env):
         self._sub_mock = args.sub_mock
         self.timestep = 0
 
-    def _prepare_subgoal_ranges(self):
+    def _prepare_subgoal_ranges(self, subgoal_ee_range):
         '''Return the maximal subgoal ranges. In this case:
         [ee_pos, box_pos], which are 2*3 elements. This Method is always
         in flux.'''
         if self._ee_pos:
             # TODO change ee_pos goal range to 1 or smaller or relative goal
-            self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * 5.0
+            self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * subgoal_ee_range
         elif self._ee_j_pos:
             self.subgoal_ranges = np.ones(shape=[7,], dtype=np.float32) * 3.
         else:

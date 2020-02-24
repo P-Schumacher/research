@@ -48,7 +48,7 @@ if __name__ == "__main__":
     # Parse Arguments and create directories
     args = setup(sys.argv[1:])
     if args.wandb:
-        wandb.init(project='research', entity='rlpractitioner', config=args)
+        wandb.init(project='exp', entity='rlpractitioner', config=args)
     # create environment and agent
     env, agent = create_world(args)
     # Load previously trained model.

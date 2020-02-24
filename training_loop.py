@@ -13,10 +13,27 @@ from pudb import set_trace
 import datetime
 import wandb
 
+class Logger:
+    def __init__(self):
+        self.episode_reward = 0
+        self.episode_timesteps = 0
+        self.episode_num = 0
 
-timer = datetime.datetime.now()
+    def inc(self, reward):
+        self.episode_timesteps += 1
+        self.episode_reward += reward
 
-def maybe_render(agent, action, args):
+    def reset(self):
+        self.episode_timesteps = 0
+        self.episode_reward = 0
+        self.episode_num += 1
+    
+    def log(self, logging, intr_rew):
+        if logging:
+            wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew})
+
+
+def maybe_verbose(agent, action, args):
     if args.render:
         print("action: " + str(action))
         print("time is: " + str(t))
@@ -29,63 +46,44 @@ def maybe_render(agent, action, args):
 if __name__ == "__main__":
     # Parse Arguments and create directories
     args = setup(sys.argv[1:])
-    writer = tf.summary.create_file_writer("./runs/main" + str(timer.minute))
     if args.wandb:
-        wandb.init(project='research', entity='rlpractitioner', config=args, sync_tensorboard=True)
+        wandb.init(project='research', entity='rlpractitioner', config=args)
     # create environment and agent
     env, agent = create_world(args)
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
+    # Create logger
+    logger = Logger()
     # Start env
     state, done = env.reset(), False
-    # Reset counters
-    episode_reward = 0
-    episode_timesteps = 0
-    episode_num = 0
     # Use tf Variable here because we want to use it in static graph later
     time_step = tf.Variable(0, dtype=tf.int64)
     # Training loop
     for t in range(int(args.max_timesteps)):
-        episode_timesteps += 1
         if t < args.start_timesteps:
             action = agent.random_action(state) 
         else:
             action = agent.select_noisy_action(state)
-        maybe_render(agent, action, args)
+        maybe_verbose(agent, action, args)
         next_state, reward, done, _ = env.step(action)
         # Store data in replay buffer
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         if t > args.start_timesteps:
-            *losses, = agent.train(time_step)
+            agent.train(time_step)
        
         state = next_state
-        episode_reward += reward
+        logger.inc(reward)
         time_step.assign_add(1)
-        if t > args.start_timesteps + 1:
-            with writer.as_default():
-                if losses[2]:
-                        tf.summary.scalar("losses/meta_actor", losses[2], t)
-                        tf.summary.scalar("losses/meta_actor", losses[3], t)
-                if intr_rew:
-                    tf.summary.scalar("rews/intr_rew", intr_rew, t)
-                
-                tf.summary.scalar("losses/sub_actor", losses[0], t)
-                tf.summary.scalar("losses/meta_actor", losses[1], t)
         
         if done:
             # +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
-            print("Total T: "+str(t+1)+"Episode Num: "+str(episode_num+1) +"Episode T:"
-                  +str(episode_timesteps)+"Reward: " +str(episode_reward))
+            print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: \
+                  {logger.episode_reward}")
             # Reset environment
             state, done = env.reset(), False
             agent.reset()
-            with writer.as_default():
-                tf.summary.scalar("rew/ep_rew", episode_reward, t)
-            if args.wandb:
-                wandb.log({'ep_rew': episode_reward})
-            episode_timesteps = 0
-            episode_reward = 0
-            episode_num += 1
+            logger.log(args.wandb, intr_rew)
+            logger.reset()
         
         # Evaluate episode
         if (t + 1) % args.eval_freq == 0:
@@ -94,11 +92,7 @@ if __name__ == "__main__":
             agent.reset()
             episode_timesteps = 0
             episode_reward = 0
-            with writer.as_default():
-                tf.summary.scalar("eval/eval_ep_rew", avg_ep_rew, t)
-                tf.summary.scalar("eval/eval_intr_rew", avg_intr_rew, t)
-                tf.summary.scalar("eval/success_rate", success_rate, t)
             if args.wandb:
                 wandb.log({'eval/eval_ep_rew': avg_ep_rew, 'eval/eval_intr_rew': avg_intr_rew,
-                      'eval/success_rate':success_rate})
+                      'eval/success_rate': success_rate})
             if args.save_model: agent.save_model("./models/"+str(agent.file_name))

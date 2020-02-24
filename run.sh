@@ -21,5 +21,6 @@ python3 training_loop.py \
 	--ee_pos \
 	--random_target \
 	--wandb \
-	--subgoal_ee_range 10
+	--subgoal_ee_range 1 \
+	--sparse_rew
 	

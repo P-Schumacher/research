@@ -211,12 +211,10 @@ class HierarchicalAgent(Agent):
 
     def train(self, time_step):
         '''Train both agents for as many steps as episode had.'''
-        sub_actor, sub_critic = self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.args.batch_size, time_step)
-        meta_actor, meta_critic = None, None
+        self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.args.batch_size, time_step)
         if time_step % self.c_step == 0:
-            meta_actor, meta_critic = self.meta_agent.train(self.transitbuffer.meta_replay_buffer,
+            self.meta_agent.train(self.transitbuffer.meta_replay_buffer,
                                                             self.args.batch_size, time_step, self.sub_agent.actor)
-        return sub_actor, sub_critic, meta_actor, meta_critic
 
     def replay_add(self, state, action, reward, next_state, done):
         return self.transitbuffer.add(state, action, reward, next_state, done)

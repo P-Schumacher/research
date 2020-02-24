@@ -156,7 +156,6 @@ class TD3(object):
         self.train_step(state, action, next_state, reward, done, time_step)
         self.total_it.assign_add(1)
         wandb.log({str(self.name)+'/actor_loss':self.actor_loss.numpy(), str(self.name)+'/critic_loss':self.critic_loss.numpy()})
-        return self.actor_loss.numpy(), self.critic_loss.numpy()
    
     @tf.function
     def train_step(self, state, action, next_state, reward, done, time_step):

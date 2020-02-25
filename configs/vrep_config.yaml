@@ -1,0 +1,14 @@
+env: Vrep
+vrep: true
+ee_j_pos: true 
+ee_pos: false 
+c_step: 100
+subgoal_ee_range: 5.0
+ri_re: true
+sparse_rew: true
+offpolicy: false
+step_decayer:
+  total_steps: 200000
+  init_step: ${c_step}
+  min_step: 5
+

@@ -1,0 +1,78 @@
+entity: rlpractitioner
+batch_size:
+  128
+c_step:
+  10
+discount:
+  0.99
+
+eval_freq:
+  30000
+expl_noise:
+  0.1
+flat_agent:
+  false
+force:
+  true
+goal_type:
+  Absolute
+load_model:
+  false
+max_timesteps:
+  100000000
+meta_actr_lr:
+  0.0001
+meta_ctr_lr:
+  0.01
+meta_mock:
+  false
+meta_noise:
+  0.5
+meta_rew_scale:
+  0.1
+mock:
+  false
+no_candidates:
+  10
+noise_clip:
+  0.5
+offpolicy:
+  true
+policy:
+  TD3
+policy_freq:
+  2
+policy_noise:
+  0.2
+random_target:
+  true
+render: 
+  false
+ri_re:
+  true
+save_model:
+  false
+seed:
+  2
+start_timesteps:
+  1000
+sub_actr_lr:
+  0.0001
+sub_ctr_lr:
+  0.0001
+sub_mock:
+  false
+sub_noise:
+  50.0
+sub_rew_scale:
+  1
+tau:
+  0.005
+time_limit:
+  300
+visit:
+  false
+zero_obs:
+  0
+log:
+  true

@@ -9,9 +9,9 @@ from pudb import set_trace
 
 from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
-from utils.utils import create_world, setup,  exponential_decay
+from utils.utils import create_world, exponential_decay
 
-def maybe_verbose_output(agent, action, args):
+def maybe_verbose_output(t, agent, env, action, args):
     if args.render:
         print("action: " + str(action))
         print("time is: " + str(t))
@@ -21,27 +21,30 @@ def maybe_verbose_output(agent, action, args):
                 print("GOAL POSITION: " + str(agent.goal))
                 env.set_goal(agent.goal[:3])
 
-if __name__ == "__main__":
-    # Parse Arguments and create directories
-    args = setup(sys.argv[1:])
+
+def main(args):
     if args.log:
         wandb.init(project='exp', entity='rlpractitioner', config=args)
-   
-   # create objects 
+    # create objects 
     env, agent = create_world(args)
     logger = Logger()
     time_step = tf.Variable(0, dtype=tf.int64)
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
-    
+
+    stepper = exponential_decay(**args.step_decayer)
     state, done = env.reset(), False
-   # Training loop
+    # Training loop
     for t in range(int(args.max_timesteps)):
+        c_step = int(next(stepper))
+        agent.goal_every_n = c_step
+        agent.c_step = c_step
+        agent.meta_agent.c_step = c_step
         if t < args.start_timesteps:
             action = agent.random_action(state) 
         else:
             action = agent.select_noisy_action(state)
-        maybe_verbose_output(agent, action, args)
+        maybe_verbose_output(t, agent, env, action, args)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         if t > args.start_timesteps:
@@ -56,7 +59,7 @@ if __name__ == "__main__":
             # Reset environment
             state, done = env.reset(), False
             agent.reset()
-            logger.log(args.log, intr_rew)
+            logger.log(args.log, intr_rew, c_step)
             logger.reset()
         
         # Evaluate episode

@@ -42,6 +42,8 @@ class CoppeliaEnv(gym.Env):
         self._prepare_observation_space()
         self._prepare_action_space()
         self._prepare_subgoal_ranges(args.subgoal_ee_range)
+        if args.ee_pos and args.ee_j_pos:
+            raise Exception(f'Decide on your state space! ee_pos:{args.ee_pos} ee_j_pos:{args.ee_j_pos}')
 
     def step(self, action):
         if self.needs_reset:
@@ -165,7 +167,7 @@ class CoppeliaEnv(gym.Env):
             # TODO change ee_pos goal range to 1 or smaller or relative goal
             self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * subgoal_ee_range
         elif self._ee_j_pos:
-            self.subgoal_ranges = np.ones(shape=[7,], dtype=np.float32) * 3.
+            self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * subgoal_ee_range
         else:
             self.subgoal_ranges = np.ones(shape=[7,], dtype=np.float32) * 3.
         self.target_dim = self._ep_target_pos.shape[0] - 1
@@ -227,10 +229,8 @@ class CoppeliaEnv(gym.Env):
             qvel = self._robot.get_ee_velocity()
             observation = np.concatenate([qpos, qvel[0]])
         elif self._ee_j_pos:
-            qpos = np.array(np.concatenate([self._robot.get_joint_positions(), self._robot.get_ee_position()]),
-                            np.float32)
-            qvel = np.array(np.concatenate([self._robot.get_joint_velocities(), self._robot.get_ee_velocity()[0]]),
-                            np.float32)
+            qpos = np.concatenate([self._robot.get_ee_position(), self._robot.get_joint_positions()])
+            qvel = np.concatenate([self._robot.get_ee_velocity()[0], self._robot.get_joint_velocities()])
             observation = np.array(np.concatenate([qpos, qvel]), dtype=np.float32)
         else:
             qpos = self._robot.get_joint_positions()

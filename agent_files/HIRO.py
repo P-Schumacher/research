@@ -83,9 +83,10 @@ class TransitBuffer(ReplayBuffer):
     def collect_seq_state_actions(self, state, action):
         '''These are collected so that the off policy correction for the meta-agent can
         be calculated in a more efficient way.'''
-        self.state_seq[self.ptr] = state
-        self.action_seq[self.ptr] = action
-        self.ptr += 1
+        if self.args.offpolicy:
+            self.state_seq[self.ptr] = state
+            self.action_seq[self.ptr] = action
+            self.ptr += 1
 
     def finish_sub_transition(self, next_goal, reward):
         old = self.load_sub_transition()

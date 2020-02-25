@@ -11,60 +11,6 @@ from environments.my_env import EnvWithGoal
 from agent_files.Agent import Agent
 from agent_files.HIRO import HierarchicalAgent
 
-def setup_parser(parse_string):
-    # TODO replace by yaml style file cf. Julius' code
-    ''' Parses command prompt arguments and outputs necessary variables.'''
-    print(parse_string)
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--policy", default="TD3")                  # Policy name (TD3, DDPG or OurDDPG)
-    parser.add_argument("--env", default="HalfCheetah-v2")          # OpenAI gym environment name
-    parser.add_argument("--seed", default=0, type=int)              # Sets Gym, PyTorch and Numpy seeds
-    parser.add_argument("--start_timesteps", default=1e4, type=int) # Time steps initial random policy is used
-    parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
-    parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
-    parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise (not used with HIRO agent)
-    parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
-    parser.add_argument("--discount", default=0.99)                 # Discount factor
-    parser.add_argument("--tau", default=0.005)                     # Target network update rate
-    parser.add_argument("--policy_noise", default=0.2, type=float)  # Noise added to target policy during critic update
-    parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
-    parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
-    parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
-    parser.add_argument("--load_model", action="store_true")        # Model load file name, "" doesn't load, "default" uses file_name
-    parser.add_argument("--zero_obs", default=0, type=int)          # Zeros sub state x,y (state[:2]=0)
-    parser.add_argument("--visit", action="store_true")             # Saves state-trajectories of all evaluation episodes
-    parser.add_argument("--time_limit", default=500, type=int)      # Specifies episode limit in the environment itself, not the surrounding script
-    parser.add_argument("--render", action="store_true")            # Would you like to render the environment
-    parser.add_argument("--sub_noise", default=1, type=float)       # Std of Gaussian exploration noise, these replace expl_noise for HIRO 
-    parser.add_argument("--sub_rew_scale", default=1, type=float)   # Reward scaling (Simple reward * a) 
-    parser.add_argument("--meta_rew_scale", default=0.1, type=float)# # Reward scaling (Simple reward * a) 
-    parser.add_argument("--meta_noise", default=1, type=float)      # Std of Gaussian exploration noise, these replace expl_noise for HIRO
-    parser.add_argument("--c_step", default=10, type=int)     # How often is meta agent queried (is equal to when it trains at the moment)
-    parser.add_argument("--goal_type", default="Absolute", type=str)# Are goals "Absolute" or "Direction" based
-    parser.add_argument("--no_candidates", default=10, type=int)    # How many goals are sampled for offpolicy correction.
-    parser.add_argument("--offpolicy", action="store_true")         # OffPolicy at training sampling 
-    parser.add_argument("--vrep", action="store_true")              # Should coppeliasim run 
-    parser.add_argument("--force", action="store_true")             # Force or Target Vel. mode 
-    parser.add_argument("--ee_pos", action="store_true")            # Should we use the ee_pos or the j_pos 
-    parser.add_argument("--mock", action="store_true")              # Should we use a mock goal 
-    parser.add_argument("--sparse_rew", action="store_true")        # Should we use sparse rewards (i.e. -1 or 0)
-    parser.add_argument("--meta_mock", action="store_true")         # Should we use a hand-crafted constant meta_goal
-    parser.add_argument("--sub_mock", action="store_true")          # Should we use PID controllers as perfect pi_lo 
-    parser.add_argument("--random_target", action="store_true")     # Should we randomize table target 
-    parser.add_argument("--ee_j_pos", action="store_true")     # Should we randomize table target 
-    parser.add_argument("--meta_actr_lr", default=0.0001, type=float)     # Should we randomize table target 
-    parser.add_argument("--meta_ctr_lr", default=0.01, type=float)     # Should we randomize table target 
-    parser.add_argument("--sub_actr_lr", default=0.0001, type=float)     # Should we randomize table target 
-    parser.add_argument("--sub_ctr_lr", default=0.0001, type=float)     # Should we randomize table target 
-    parser.add_argument("--flat_agent", action="store_true")        # Should we use a flat agent 
-    parser.add_argument("--log", action="store_true")             # Should we use log with wandb 
-    parser.add_argument("--ri_re", action="store_true")             # Should we sum intrinsic and extrinsic reward
-    parser.add_argument("--subgoal_ee_range", default=5., type=float)# Should we use log with wandb 
-
-    args = parser.parse_args(parse_string)
-    print(args)
-    return args
-
 def get_policy_args(args, env_specs, subgoal_ranges, target_dim):
     '''Creates arguments for the policy class from the global arguments and the environment.'''
     meta_args =  {
@@ -114,8 +60,8 @@ def create_env(args):
     else:
         # *show* necessary because we need to load a different xml file with spheres
         from environments.create_maze_env import create_maze_env
-        env = create_maze_env(args.env_name, show=args.render)
-        return EnvWithGoal(env, args.env_name, args.time_limit, render=args.render, show=args.render, evalmode=args.evalmode)
+        env = create_maze_env(args.env, show=args.render)
+        return EnvWithGoal(env, args.env_name, args.time_limit, render=args.render, evalmode=False)
 
 def get_env_specs(env):
         ''' Get necessary dimensions from environment to instantiate model.'''
@@ -139,12 +85,6 @@ def get_env_specs(env):
         print(f"target_dim: {target_dim}")
         return (state_dim, action_dim, max_action, time_limit), subgoal_dim, subgoal_ranges, target_dim
 
-def setup(parse_string=[]):
-    # Setup the training
-    args = setup_parser(parse_string)
-    create_directories(args)
-    return args
-
 def create_directories(args):
     '''Create directories to save weights and results.'''
     if not os.path.exists("./results"):
@@ -159,6 +99,7 @@ def set_seeds(env, seed):
     np.random.seed(seed)
 
 def create_world(args):
+    create_directories(args)
     env = create_env(args)
     model = get_model_class(args.policy)
     env_specs, subgoal_dim, subgoal_ranges, target_dim = get_env_specs(env)

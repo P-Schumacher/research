@@ -16,6 +16,6 @@ class Logger:
         if not post_eval:
             self.episode_num += 1
     
-    def log(self, logging, intr_rew):
+    def log(self, logging, intr_rew, c_step):
         if logging:
-            wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew})
+            wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew, 'c_step': c_step})

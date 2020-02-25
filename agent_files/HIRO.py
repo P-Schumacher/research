@@ -6,12 +6,11 @@ from matplotlib import pyplot as plt
 import datetime
 from pudb import set_trace
 from collections import deque
-import agent_files.TD3_tf
+import rl_algos.TD3_tf
 from utils.replay_buffers import ReplayBuffer
 from agent_files.Agent import Agent
 import wandb
 
-#wandb.init(project='research', entity='rlpractitioner')
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])

@@ -11,14 +11,15 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 
-def maybe_verbose_output(t, agent, env, action, args):
+def maybe_verbose_output(t, agent, env, action, args, state):
     if args.render:
-        print("action: " + str(action))
-        print("time is: " + str(t))
+        print(f"action: {action}")
+        print(f"time is: {t}")
+        print(f"state is {state}")
         if not args.flat_agent:
-            print("goal: " + str(agent.goal))
+            print(f"goal: {agent.goal}")
             if agent.meta_time and args.render:
-                print("GOAL POSITION: " + str(agent.goal))
+                print(f"GOAL POSITION: {agent.goal}")
                 env.set_goal(agent.goal[:3])
 
 def decay_step(decay, stepper, agent):
@@ -51,7 +52,7 @@ def main(args):
             action = agent.random_action(state) 
         else:
             action = agent.select_noisy_action(state)
-        maybe_verbose_output(t, agent, env, action, args)
+        maybe_verbose_output(t, agent, env, action, args, state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         if t > args.start_timesteps:

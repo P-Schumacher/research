@@ -6,7 +6,6 @@ from matplotlib import pyplot as plt
 import datetime
 from pudb import set_trace
 from collections import deque
-import rl_algos.TD3_tf
 from utils.replay_buffers import ReplayBuffer
 from agent_files.Agent import Agent
 import wandb

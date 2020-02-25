@@ -1,12 +1,17 @@
 env: Vrep
 vrep: true
-ee_j_pos: true 
-ee_pos: false 
 c_step: 10
 subgoal_ee_range: 5.0
 ri_re: false 
 sparse_rew: false 
 offpolicy: true 
+flat_agent: true
+
+
+ee_pos: true
+ee_j_pos: false 
+
+
 
 decay: false
 step_decayer:

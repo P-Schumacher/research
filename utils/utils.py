@@ -6,7 +6,7 @@ import sys
 from copy import deepcopy
 from pudb import set_trace
 from collections import deque
-from agent_files import TD3_tf
+from rl_algos import TD3_tf
 from environments.my_env import EnvWithGoal
 from agent_files.Agent import Agent
 from agent_files.HIRO import HierarchicalAgent

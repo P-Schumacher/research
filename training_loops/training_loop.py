@@ -21,6 +21,15 @@ def maybe_verbose_output(t, agent, env, action, args):
                 print("GOAL POSITION: " + str(agent.goal))
                 env.set_goal(agent.goal[:3])
 
+def decay_step(decay, stepper, agent):
+    c_step = agent.args.c_step
+    if decay:
+        c_step = int(next(stepper))
+        agent.goal_every_n = c_step
+        agent.c_step = c_step
+        agent.meta_agent.c_step = c_step
+    return c_step
+
 
 def main(args):
     if args.log:
@@ -28,18 +37,16 @@ def main(args):
     # create objects 
     env, agent = create_world(args)
     logger = Logger()
+    stepper = exponential_decay(**args.step_decayer)
     time_step = tf.Variable(0, dtype=tf.int64)
+    
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
 
-    stepper = exponential_decay(**args.step_decayer)
-    state, done = env.reset(), False
     # Training loop
+    state, done = env.reset(), False
     for t in range(int(args.max_timesteps)):
-        c_step = int(next(stepper))
-        agent.goal_every_n = c_step
-        agent.c_step = c_step
-        agent.meta_agent.c_step = c_step
+        c_step = decay_step(args.decay, stepper, agent)
         if t < args.start_timesteps:
             action = agent.random_action(state) 
         else:

@@ -1,4 +1,4 @@
-from training_loop import main
+from training_loops.training_loop import main
 from omegaconf import OmegaConf
 import wandb
 from pudb import set_trace

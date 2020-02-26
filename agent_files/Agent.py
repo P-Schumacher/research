@@ -12,7 +12,7 @@ class Agent:
         self.args = args
         self.state_dim = policy_args["state_dim"]
         self.action_dim = policy_args["action_dim"]
-        self.replay_buffer = ReplayBuffer(self.state_dim, self.action_dim)
+        self.replay_buffer = ReplayBuffer(self.state_dim, self.action_dim, args)
         self.file_name = self._create_file_name(self.args.policy, self.args.env, self.args.seed)
         self.policy = model(**policy_args) 
 

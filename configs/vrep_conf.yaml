@@ -1,21 +1,22 @@
 env: Vrep
 vrep: true
-c_step: 10
-subgoal_ee_range: 5.0
-ri_re: false 
+
+offpolicy: false 
+flat_agent: false 
+
 sparse_rew: false 
-offpolicy: true 
-flat_agent: true
+ri_re: true 
+
+subgoal_ee_range: 5.0
+ee_pos: false 
+ee_j_pos: true 
 
 
-ee_pos: true
-ee_j_pos: false 
 
-
-
-decay: false
+c_step: 100
+decay: true 
 step_decayer:
-  total_steps: 200000
+  total_steps: 700000
   init_step: ${c_step}
   min_step: 5
 

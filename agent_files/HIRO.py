@@ -31,10 +31,12 @@ class TransitBuffer(ReplayBuffer):
         self.sub_rew_scale = args.sub_rew_scale
         self.meta_rew_scale = args.meta_rew_scale
         # Replay Buffers
-        self.sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, args.c_step)
-        self.meta_replay_buffer = ReplayBuffer(meta_state_dim, subgoal_dim, args.c_step)
-        self.state_seq = np.ones(shape=[args.c_step, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
-        self.action_seq = np.ones(shape=[args.c_step, action_dim]) * np.inf 
+        self.sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, args)
+        self.meta_replay_buffer = ReplayBuffer(meta_state_dim, subgoal_dim, args)
+        # We dont want to create these arrays for large c_step if we do not correct
+        c_step = [1 if not args.offpolicy else args.c_step][0]
+        self.state_seq = np.ones(shape=[c_step, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
+        self.action_seq = np.ones(shape=[c_step, action_dim]) * np.inf 
         # Control flow variables
         self.sum_of_rewards = 0
         self.ep_rewards = 0

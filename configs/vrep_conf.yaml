@@ -1,3 +1,5 @@
+project: exp
+
 env: Vrep
 vrep: true
 
@@ -5,16 +7,15 @@ offpolicy: false
 flat_agent: false 
 
 sparse_rew: false 
-ri_re: true 
+ri_re: false
 
 subgoal_ee_range: 5.0
 ee_pos: false 
 ee_j_pos: true 
 
 
-
-c_step: 100
-decay: true 
+c_step: 50
+decay: false 
 step_decayer:
   total_steps: 700000
   init_step: ${c_step}

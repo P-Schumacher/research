@@ -9,7 +9,7 @@ api = wandb.Api()
 project = sys.argv[1]
 runs = api.runs('rlpractitioner/'+project)
 
-keys = ['_step', 'eval/eval_ep_rew', 'eval/eval_intr_rew', 'eval/success_rate', 'c_step']
+keys = ['_step', 'eval/eval_ep_rew', 'eval/eval_intr_rew', 'eval/success_rate', 'c_step', 'ep_rew']
 
 name_list = []
 config_list = []
@@ -27,7 +27,11 @@ for key_idx, key in enumerate(keys):
     for run_idx, run in enumerate(runs):
         data = run.history(samples=10000, keys=[key])
         if key == '_step':
-            columns.append(np.array(run.history()['_step']))
+            try:
+                columns.append(np.array(run.history()['_step']))
+            except:
+                raise Exception('*_step* key failed! Maybe one run is very very short (few seconds) and *_step* has \
+                                not been generated?')
         else:
             columns.append(np.array([data[x][0][key] for x in data], dtype=np.float64))
     concat_df = pd.DataFrame.from_records({key: columns})

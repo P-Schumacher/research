@@ -43,18 +43,21 @@ class Agent:
     def _eval_policy(self, eval_env, env_name, seed, time_limit, visit, eval_episodes=5):
         eval_env.seed(self.args.seed + 100)
         avg_reward = []
+        success_rate = 0
         for _ in range(eval_episodes):
             state, done = eval_env.reset(), False
             while not done:
-                action = self.select_action(state)
+                action = slf.select_action(state)
                 state, reward, done, _ = eval_env.step(action)
+                if done and step < env._max_episode_steps:
+                    success_rate += 1
                 avg_reward.append(reward)
         avg = np.sum(avg_reward) / eval_episodes
         
         print("---------------------------------------")
         print("Evaluation over "+str(eval_episodes)+" episodes: "+str(avg))
         print("---------------------------------------")
-        return avg, 0, 0
+        return avg, 0, success_rate 
 
     def select_action(self, state):
         state = np.array(state)

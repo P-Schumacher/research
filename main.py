@@ -2,10 +2,12 @@ from training_loops.training_loop import main
 from omegaconf import OmegaConf
 import wandb
 from pudb import set_trace
+import sys
 
 ant_env = False
 vrep = True
 show = False
+
 
 default_cnf = OmegaConf.load('configs/default_conf.yaml')
 if vrep:
@@ -17,5 +19,5 @@ cnf = OmegaConf.merge(default_cnf, cnf)
 cnf.merge_with_cli()
 OmegaConf.set_struct(cnf, True)
 
-wandb.init(project='research', entity=cnf.entity, config=cnf)
+wandb.init(project=cnf.project, entity=cnf.entity, config=cnf)
 main(cnf)

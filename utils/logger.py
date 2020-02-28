@@ -9,6 +9,7 @@ class Logger:
     def inc(self, reward):
         self.episode_timesteps += 1
         self.episode_reward += reward
+        wandb.log({'step_rew': reward})
 
     def reset(self, post_eval=False):
         self.episode_timesteps = 0

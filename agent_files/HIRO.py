@@ -10,6 +10,11 @@ from utils.replay_buffers import ReplayBuffer
 from agent_files.Agent import Agent
 import wandb
 
+def huber_loss(a, delta):
+    return -tf.reduce_sum(tf.where(tf.abs(a) < delta, 0.5 * tf.square(a), delta * (tf.abs(a) - 0.5 * delta)))
+
+def pseudo_huber(a, delta):
+    return -tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(a / delta), 0.5) - 1 ))
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
@@ -159,6 +164,7 @@ class TransitBuffer(ReplayBuffer):
         dim = self.subgoal_dim
         if goal_type == "Absolute":
             rew = -tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
+            #rew = pseudo_huber(next_state[:dim] - goal, 3.)
         elif goal_type == "Direction":
             rew =  -tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
         else:

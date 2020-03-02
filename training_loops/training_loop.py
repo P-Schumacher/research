@@ -37,9 +37,8 @@ def main(args):
         wandb.init(project='exp', entity='rlpractitioner', config=args)
     # create objects 
     env, agent = create_world(args)
-    logger = Logger()
+    logger = Logger(args.log)
     stepper = exponential_decay(**args.step_decayer)
-    time_step = tf.Variable(0, dtype=tf.int64)
     
     # Load previously trained model.
     if args.load_model: agent.load_model("./models/" + str(agent.file_name))
@@ -56,18 +55,16 @@ def main(args):
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         if t > args.start_timesteps:
-            agent.train(time_step)
+            agent.train(t)
         state = next_state
-        logger.inc(reward)
-        time_step.assign_add(1)
-        
+        logger.inc(t, reward)
         if done:
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: \
                   {logger.episode_reward}")
             # Reset environment
             state, done = env.reset(), False
             agent.reset()
-            logger.log(args.log, intr_rew, c_step)
+            logger.log(t, intr_rew, c_step)
             logger.reset()
         
         # Evaluate episode
@@ -76,7 +73,5 @@ def main(args):
             state, done = env.reset(), False
             agent.reset()
             logger.reset(post_eval=True)
-            if args.log:
-                wandb.log({'eval/eval_ep_rew': avg_ep_rew, 'eval/eval_intr_rew': avg_intr_rew,
-                      'eval/success_rate': success_rate})
+            logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
             if args.save_model: agent.save_model("./models/"+str(agent.file_name))

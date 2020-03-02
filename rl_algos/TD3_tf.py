@@ -7,9 +7,7 @@ from matplotlib import pyplot as plt
 from pudb import set_trace
 import datetime
 from tensorflow.keras.regularizers import l2
-tf.keras.backend.set_floatx('float32')
 import wandb
-
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
@@ -146,19 +144,20 @@ class TD3(object):
             target_W[idx] = tf.math.scalar_mul(tau, W[idx]) + tf.math.scalar_mul((1 - tau), target_W[idx])
             target_model.weights[idx].assign(target_W[idx])
      
-    def train(self, replay_buffer, batch_size, time_step, sub_actor=None):
+    def train(self, replay_buffer, batch_size, t, sub_actor=None):
         # Sample replay buffer 
         state, action, next_state, reward, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         # Perform off-policy correction in meta
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq)
-        self.train_step(state, action, next_state, reward, done, time_step)
+        self.train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
-        wandb.log({str(self.name)+'/actor_loss':self.actor_loss.numpy(), str(self.name)+'/critic_loss':self.critic_loss.numpy()})
+        wandb.log({str(self.name)+'/actor_loss':self.actor_loss.numpy(),
+                   str(self.name)+'/critic_loss':self.critic_loss.numpy()}, step = t)
    
     @tf.function
-    def train_step(self, state, action, next_state, reward, done, time_step):
+    def train_step(self, state, action, next_state, reward, done):
         '''Training function. We assign actor and critic losses to sate objects so that they can be easier plotted
         without interfering with tf.function'''
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes

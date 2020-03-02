@@ -40,24 +40,33 @@ class Agent:
     
     # Runs policy for X episodes and returns average reward
     # A fixed seed is used for the eval environment
-    def _eval_policy(self, eval_env, env_name, seed, time_limit, visit, eval_episodes=5):
-        eval_env.seed(self.args.seed + 100)
-        avg_reward = []
+    def _eval_policy(self, env, env_name, seed, time_limit, visit, eval_episodes=5):
+        '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
+        Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
+        plots.'''
+        env.seed(self.args.seed + 100)
+        avg_ep_reward = []
         success_rate = 0
-        for _ in range(eval_episodes):
-            state, done = eval_env.reset(), False
+        for episode_nbr in range(eval_episodes):
+            print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
+            step = 0
+            state, done = env.reset(evalmode=False), False
+            self.reset()
             while not done:
-                action = slf.select_action(state)
-                state, reward, done, _ = eval_env.step(action)
+                action = self.select_action(state)
+                next_state, reward, done, _ = env.step(action)
+                avg_ep_reward.append(reward)
+                state = next_state
+                step += 1
                 if done and step < env._max_episode_steps:
                     success_rate += 1
-                avg_reward.append(reward)
-        avg = np.sum(avg_reward) / eval_episodes
-        
+
+        avg_ep_reward = np.sum(avg_ep_reward) / eval_episodes
+        success_rate = success_rate / eval_episodes
         print("---------------------------------------")
-        print("Evaluation over "+str(eval_episodes)+" episodes: "+str(avg))
+        print("Evaluation over {eval_episodes} episodes: "+str(avg_ep_reward))
         print("---------------------------------------")
-        return avg, 0, success_rate 
+        return avg_ep_reward, 0, success_rate
 
     def select_action(self, state):
         state = np.array(state)

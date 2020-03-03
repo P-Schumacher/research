@@ -1,0 +1,81 @@
+
+coppeliagym:
+  # Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
+  gripper_range: [0.33, 0.55]
+  sim:
+    scene_file: 'coppelia_scenes/kuka.ttt'
+    headless: True
+    sim_timestep: 0.03
+
+  params:
+    sub_mock: ${agent.sub_mock}
+    render: ${main.render}
+    time_limit: 300
+    # Taken from Kuka14 Tech Sheet
+    max_vel: [320, 320, 176, 176, 110, 40, 40] 
+    max_torque: [85, 85, 100, 75, 130, 135, 135]
+    ee_pos: false
+    ee_j_pos: true
+    force: false
+    random_target: true
+    random_eval_target: true # TODO IMPLEMENT
+    sparse_rew: false
+    action_regularizer: 0. 
+
+  subgoals:
+    ee_goal: 5.
+    j_goal: 3.14
+    ej_goal: [3, 5.] # Subgoal length and range [L,R]
+
+
+buffer:
+  c_step: ${main.c_step}
+  offpolicy: ${main.offpolicy}
+  max_size: 200000
+
+agent:
+  # Params for the Agent. In case of flat agent, the sub-agent params
+  # will be used.
+  sub_mock: false
+  meta_mock: false
+  goal_type: Absolute
+  ri_re: false
+  zero_obs: 0
+  num_eval_episodes: 5
+  sub_rew_scale: 1
+  meta_rew_scale: 0.1
+  sub_noise: 50
+  meta_noise: 1
+  seed: 2
+  c_step: ${main.c_step}
+
+  meta_model:
+    ac_hidden_layers: [300, 300]
+    cr_hidden_layers: [300, 300]
+    name: 'meta'
+    discount: 0.99
+    tau: 0.005
+    policy_noise: 0.2
+    noise_clip: 0.5
+    policy_freq: 2
+    ac_lr: 0.0001
+    cr_lr: 0.01
+    offpolicy: ${main.offpolicy}
+    c_step: ${main.c_step}
+    no_candidates: 10
+
+  sub_model:
+    ac_hidden_layers: [300, 300]
+    cr_hidden_layers: [300, 300]
+    name: 'sub'
+    discount: 0.99
+    tau: 0.005
+    policy_noise: 0.2
+    noise_clip: 0.5
+    policy_freq: 2
+    ac_lr: 0.0001
+    cr_lr: 0.01
+    offpolicy: ${main.offpolicy}
+    c_step: ${main.c_step}
+    no_candidates: 10
+

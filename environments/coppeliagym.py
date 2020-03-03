@@ -20,30 +20,20 @@ SCENE_FILE = join(dirname(abspath(__file__)), 'coppelia_scenes/kuka.ttt')
 print("Scene to be loaded: ")
 print(SCENE_FILE)
 
-# Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
-GRIPPER_RANGE = [0.33, 0.55]  # Measured in simulator
-MAX_TORQUES_KUKA7 = [176, 176, 110, 110, 110, 40, 40]  # Taken from Kuka 7 Tech Sheet [Nm]
-MAX_VELOCITIES_KUKA7 = [98, 98, 100, 130, 140, 180, 180]  # Taken from Kuka 7 Tech Sheet [deg / s]
-MAX_VELOCITIES_KUKA7 = np.array(MAX_VELOCITIES_KUKA7, dtype=np.float32)
-
-MAX_TORQUES_KUKA14 = [320, 320, 176, 176, 110, 40, 40] # Taken from Kuka 14 Tech Sheet [Nm]
-MAX_VELOCITIES_KUKA14 = [85, 85, 100, 75, 130, 135, 135] # Taken from Kuka 14 Tech Sheet [deg / s]
-MAX_VELOCITIES_KUKA14 = np.array(MAX_VELOCITIES_KUKA14, dtype=np.float32)
-
 
 class CoppeliaEnv(gym.Env):
-    def __init__(self, args, init = False, headless=True):
+    def __init__(self, cnf, init=False):
         # Allows us to restart sim in different force_mode without recreating sim threads
         if not init:
-            self._sim = self._start_sim(SCENE_FILE, headless=headless)
-        self._prepare_parameters(args)
-        self._prepare_robot(args.sub_mock)
-        self._prepare_shapes(args.render)
+            self._sim = self._start_sim(**cnf.sim)
+        self._prepare_parameters(**cnf.params)
+        self._prepare_robot(cnf.params.sub_mock, cnf.gripper_range)
+        self._prepare_shapes(cnf.render)
         self._prepare_observation_space()
         self._prepare_action_space()
-        self._prepare_subgoal_ranges(args.subgoal_ee_range)
-        if args.ee_pos and args.ee_j_pos:
-            raise Exception(f'Decide on your state space! ee_pos:{args.ee_pos} ee_j_pos:{args.ee_j_pos}')
+        self._prepare_subgoal_ranges(**cnf.subgoals)
+        if cnf.params.ee_pos and cnf.params.ee_j_pos:
+            raise Exception(f'Decide on your state space! ee_pos:{cnf.params.ee_pos} ee_j_pos:{cnf.params.ee_j_pos}')
 
     def step(self, action):
         if self.needs_reset:
@@ -52,7 +42,7 @@ class CoppeliaEnv(gym.Env):
         self._sim.step()
         observation = self._get_observation()
         done = self._get_done()
-        reward = self._get_rew(done)
+        reward = self._get_rew(done, action)
         info = self._get_info()
         self.timestep += 1
         return observation, reward, done, info
@@ -99,11 +89,12 @@ class CoppeliaEnv(gym.Env):
             raise Exception('Do not set goal if you are not rendering. It will not even be present in the simulator.')
         self._meta_goal.set_position(goal, relative_to=None)
 
-    def _start_sim(self, SCENE_FILE, headless):
+    def _start_sim(self, scene_file, headless, sim_timestep):
         sim = PyRep()
-        sim.launch(SCENE_FILE, headless=headless)
+        scene_file = join(dirname(abspath(__file__)), scene_file)
+        sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.
-        sim.set_simulation_timestep(dt=0.03)
+        sim.set_simulation_timestep(dt=sim_timestep)
         sim.start()
         return sim  
 
@@ -141,37 +132,50 @@ class CoppeliaEnv(gym.Env):
             bound = np.hstack([self._max_vel, 1])
         self.action_space = gym.spaces.Box(low=-bound, high=bound)
     
-    def _prepare_robot(self, sub_mock):
-        self._robot = robot.Robot(self.force_mode, self._max_torque, self._max_vel, GRIPPER_RANGE, sub_mock)
+    def _prepare_robot(self, sub_mock, gripper_range):
+        self._robot = robot.Robot(self.force_mode, self._max_torque, self._max_vel, gripper_range, sub_mock)
         self._init_pos = self._robot.get_joint_positions(gripper_special=False)
 
-    def _prepare_parameters(self, args):
-        self._max_episode_steps = args.time_limit
-        self._max_vel = MAX_VELOCITIES_KUKA14 * (np.pi / 180)  # API uses rad / s
-        self._max_torque = MAX_TORQUES_KUKA14
-        self.force_mode = args.force
-        self.needs_reset = False
-        self._render = args.render
-        self._ee_pos = args.ee_pos
-        self._ee_j_pos = args.ee_j_pos
-        self._sparse_rew = args.sparse_rew
-        self._random_target = args.random_target
-        self._sub_mock = args.sub_mock
+    def _prepare_parameters(self, 
+                           time_limit,
+                           max_vel,
+                           max_torque,
+                           force,
+                           render,
+                           ee_pos,
+                           ee_j_pos,
+                           sparse_rew,
+                           random_target,
+                           random_eval_target,
+                           sub_mock,
+                           action_regularizer):
+        self._max_episode_steps = time_limit
+        self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
+        self._max_torque = np.array(max_torque, np.float64) 
+        self.force_mode = force
+        self._render = render
+        self._ee_pos = ee_pos
+        self._ee_j_pos = ee_j_pos
+        self._sparse_rew = sparse_rew
+        self._random_target = random_target
+        self._random_eval_target = random_eval_target
+        self._sub_mock = sub_mock
+        self._action_regularizer = action_regularizer
         self.timestep = 0
+        self.needs_reset = False
 
-    def _prepare_subgoal_ranges(self, subgoal_ee_range):
+    def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Return the maximal subgoal ranges. In this case:
         [ee_pos, box_pos], which are 2*3 elements. This Method is always
         in flux.'''
         if self._ee_pos:
-            # TODO change ee_pos goal range to 1 or smaller or relative goal
-            self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * subgoal_ee_range
+            self.subgoal_ranges = [ee_goal for x in range(3)]
         elif self._ee_j_pos:
-            self.subgoal_ranges = np.ones(shape=[3,], dtype=np.float32) * subgoal_ee_range
+            self.subgoal_ranges = [ej_goal[1] for x in range(ej_goal[0])]
         else:
-            self.subgoal_ranges = np.ones(shape=[7,], dtype=np.float32) * 3.
+            self.subgoal_ranges = [j_goal for x in range(7)]
         self.target_dim = self._ep_target_pos.shape[0] - 1
-        self.subgoal_dim = self.subgoal_ranges.shape[0]
+        self.subgoal_dim = len(self.subgoal_ranges)
 
     def _apply_action(self, action):
         ''' Assume action.shape to be [N,] where N-1 is the number of joints in the robotic arm, and action[N]
@@ -198,12 +202,12 @@ class CoppeliaEnv(gym.Env):
         # Gripper not in force mode ever.
         self._robot.actuate(action[-1])
 
-    def _get_rew(self, done):
+    def _get_rew(self, done, action):
         if self._sparse_rew:
             if done:
                 return 0
             return -1
-        return - self._get_distance()
+        return - self._get_distance() - self._action_regularizer * tf.norm(action)
     
     def _get_done(self):
         self.needs_reset = True

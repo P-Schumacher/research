@@ -7,14 +7,13 @@ from pudb import set_trace
 from utils.replay_buffers import ReplayBuffer
 
 class Agent:
-    def __init__(self, model, policy_args, args, random_action_fn):
-        self.random_action_fn = random_action_fn
-        self.args = args
-        self.state_dim = policy_args["state_dim"]
-        self.action_dim = policy_args["action_dim"]
-        self.replay_buffer = ReplayBuffer(self.state_dim, self.action_dim, args)
-        self.file_name = self._create_file_name(self.args.policy, self.args.env, self.args.seed)
-        self.policy = model(**policy_args) 
+    def __init__(self, cnf, specs, model):
+        self.cnf = cnf 
+        self.state_dim = specs["state_dim"]
+        self.action_dim = specs["action_dim"]
+        self.replay_buffer = ReplayBuffer(self.state_dim, self.action_dim, **cnf.buffer)
+        self.file_name = self._create_file_name(self.cnf.main.policy, self.cnf.main.env, self.cnf.main.seed)
+        self.policy = model(**specs, **cnf.agent.sub_model) 
 
     def _create_file_name(self, policy, env, seed):
         '''Create file_name from experiment information to save model weights.'''
@@ -32,9 +31,11 @@ class Agent:
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
-        tf.random.set_seed(self.args.seed)
+        tf.random.set_seed(self.cnf.main.seed)
         env.reset(hard_reset=True)
-        avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self.args.env, self.args.seed, self.args.time_limit, self.args.visit)
+        avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self.cnf.main.env, self.cnf.main.seed,
+                                                                       self.cnf.coppeliagym.time_limit,
+                                                                       self.cnf.main.visit, self.agent.num_eval_episodes)
         self.reset()
         return avg_reward, avg_intr_reward, success_rate
     
@@ -44,7 +45,7 @@ class Agent:
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
-        env.seed(self.args.seed + 100)
+        env.seed(self.cnf.main.seed + 100)
         avg_ep_reward = []
         success_rate = 0
         for episode_nbr in range(eval_episodes):
@@ -74,8 +75,9 @@ class Agent:
 
     def select_noisy_action(self, state):
         state = np.array(state)
-        action = self.policy.select_action(state) + self.gaussian_noise(self.args.sub_noise)
+        action = self.policy.select_action(state) + self.gaussian_noise(self.cnf.agent.sub_noise)
         return tf.clip_by_value(action, -self.policy.max_action, self.policy.max_action)      
+    
     def gaussian_noise(self, expl_noise, dimension=1):
         return np.random.normal(0, expl_noise, dimension) 
 
@@ -83,7 +85,7 @@ class Agent:
         return self.random_action_fn()
     
     def train(self, timestep):
-        self.policy.train(self.replay_buffer, self.args.batch_size, timestep)
+        self.policy.train(self.replay_buffer, self.cnf.main.batch_size, timestep)
 
     def replay_add(self, state, action, next_state, reward, done):
         self.replay_buffer.add(state, action, next_state, reward, done, 0, 0)

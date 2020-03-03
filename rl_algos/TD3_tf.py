@@ -84,28 +84,31 @@ class TD3(object):
         max_action,
         subgoal_ranges,
         target_dim,
+        ac_hidden_layers,
+        cr_hidden_layers,
+        name="default",
         discount=0.99,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        name="default",
+        ac_lr = 0.0001,
+        cr_lr = 0.01,
         offpolicy = None,
-        no_candidates = 10,
         c_step = 10,
-        actr_lr = 0.0001,
-        ctr_lr = 0.001
+        no_candidates = 10
     ):
         assert offpolicy != None
         assert name == 'meta' or name == 'sub'
         # Create networks 
+        max_action  = tf.constant(max_action, dtype=tf.float32)
         self.actor = Actor(state_dim, action_dim, max_action)
         self.actor_target = Actor(state_dim, action_dim, max_action)
-        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=actr_lr)
+        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr)
 
         self.critic = Critic(state_dim, action_dim)
         self.critic_target = Critic(state_dim, action_dim)
-        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=ctr_lr)
+        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr)
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  # Huber loss does not punish a noisy large gradient.
         
         self.update_target_models_hard()  # Equal network and target network weights

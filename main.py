@@ -21,5 +21,6 @@ if ant_env:
 # Parameters of second cnf file overwrite those of first
 cnf = OmegaConf.merge(default_cnf, main_cnf, env_cnf)
 cnf.merge_with_cli()
-wandb.init(project=cnf.project, entity=cnf.entity, config=cnf)
+config = {**cnf.main, **cnf.agent, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
+wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)

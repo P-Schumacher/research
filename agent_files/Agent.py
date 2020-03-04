@@ -89,7 +89,7 @@ class Agent:
         self.policy.train(self.replay_buffer, self.cnf.main.batch_size, timestep)
 
     def replay_add(self, state, action, next_state, reward, done):
-        self.replay_buffer.add(state, action, next_state, reward, done, 0, 0)
+        self.replay_buffer.add(state, action, next_state, self.cnf.agent.sub_rew_scale * reward, done, 0, 0)
 
     def save_model(self, string):
         self.policy.actor.save_weights(string + "_policy_actor")

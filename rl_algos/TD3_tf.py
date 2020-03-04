@@ -186,6 +186,7 @@ class TD3(object):
             critic_loss += sum(self.critic.losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
+        gradients = [tf.clip_by_norm(grad, 1.0) for grad in gradients]
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self.critic_loss.assign(critic_loss)
         if self.total_it % self.policy_freq == 0:
@@ -200,6 +201,7 @@ class TD3(object):
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+            gradients = [tf.clip_by_norm(grad, 1.0) for grad in gradients]
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)

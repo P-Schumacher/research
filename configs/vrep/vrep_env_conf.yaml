@@ -2,8 +2,10 @@
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
     headless: true 
     sim_timestep: 0.03
+    render: ${main.render}
 
   params:
     # Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
@@ -16,11 +18,11 @@ coppeliagym:
     max_torque: [85, 85, 100, 75, 130, 135, 135]
     ee_pos: false
     ee_j_pos: true
-    force: true 
+    force: false 
     random_target: true
     random_eval_target: true 
     sparse_rew: false
-    action_regularizer: 1 
+    action_regularizer: 1e-4 
 
   subgoals:
     ee_goal: 5.
@@ -41,11 +43,11 @@ agent:
   goal_type: Absolute
   ri_re: false
   zero_obs: 0
-  num_eval_episodes: 5
-  sub_rew_scale: 1 
+  num_eval_episodes: 10
+  sub_rew_scale: 1
   meta_rew_scale: 0.1
-  sub_noise: 50
-  meta_noise: 1
+  sub_noise: 1
+  meta_noise: 0.1
   seed: ${main.seed}
   c_step: ${main.c_step}
 

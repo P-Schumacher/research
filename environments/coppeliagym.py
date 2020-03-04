@@ -15,11 +15,6 @@ else:
 from pudb import set_trace
 from matplotlib import pyplot as plt
 
-#'/coppelia_scenes/kuka.ttt
-SCENE_FILE = join(dirname(abspath(__file__)), 'coppelia_scenes/kuka.ttt')
-print("Scene to be loaded: ")
-print(SCENE_FILE)
-
 
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
@@ -89,8 +84,9 @@ class CoppeliaEnv(gym.Env):
             raise Exception('Do not set goal if you are not rendering. It will not even be present in the simulator.')
         self._meta_goal.set_position(goal, relative_to=None)
 
-    def _start_sim(self, scene_file, headless, sim_timestep):
+    def _start_sim(self, scene_file, render_scene_file, headless, sim_timestep, render):
         sim = PyRep()
+        scene_file = [scene_file if not render else render_scene_file][0]
         scene_file = join(dirname(abspath(__file__)), scene_file)
         sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.

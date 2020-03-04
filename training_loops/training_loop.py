@@ -60,8 +60,7 @@ def main(cnf):
         logger.inc(t, reward)
 
         if done:
-            print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: \
-                  {logger.episode_reward}")
+            print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             # Reset environment
             state, done = env.reset(), False
             agent.reset()

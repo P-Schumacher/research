@@ -7,11 +7,11 @@ main:
   vrep: true
   log: true
   visit: false
-  render: false
+  render: true 
   save_model: false
   load_model: false
   start_timesteps: 1000
-  max_timesteps: 1000000
+  max_timesteps: 5000000
   offpolicy: false
   flat_agent: true 
   batch_size: 128

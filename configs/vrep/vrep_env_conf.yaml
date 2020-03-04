@@ -1,13 +1,13 @@
 
 coppeliagym:
-  # Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
-  gripper_range: [0.33, 0.55]
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
-    headless: True
+    headless: true 
     sim_timestep: 0.03
 
   params:
+    # Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
+    gripper_range: [0.33, 0.55]
     sub_mock: ${agent.sub_mock}
     render: ${main.render}
     time_limit: 300
@@ -16,11 +16,11 @@ coppeliagym:
     max_torque: [85, 85, 100, 75, 130, 135, 135]
     ee_pos: false
     ee_j_pos: true
-    force: false
+    force: true 
     random_target: true
-    random_eval_target: true # TODO IMPLEMENT
+    random_eval_target: true 
     sparse_rew: false
-    action_regularizer: 0. 
+    action_regularizer: 1 
 
   subgoals:
     ee_goal: 5.
@@ -42,11 +42,11 @@ agent:
   ri_re: false
   zero_obs: 0
   num_eval_episodes: 5
-  sub_rew_scale: 1
+  sub_rew_scale: 1 
   meta_rew_scale: 0.1
   sub_noise: 50
   meta_noise: 1
-  seed: 2
+  seed: ${main.seed}
   c_step: ${main.c_step}
 
   meta_model:
@@ -59,7 +59,7 @@ agent:
     noise_clip: 0.5
     policy_freq: 2
     ac_lr: 0.0001
-    cr_lr: 0.01
+    cr_lr: 0.001
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10
@@ -74,7 +74,7 @@ agent:
     noise_clip: 0.5
     policy_freq: 2
     ac_lr: 0.0001
-    cr_lr: 0.01
+    cr_lr: 0.001
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10

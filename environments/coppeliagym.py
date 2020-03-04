@@ -27,8 +27,8 @@ class CoppeliaEnv(gym.Env):
         if not init:
             self._sim = self._start_sim(**cnf.sim)
         self._prepare_parameters(**cnf.params)
-        self._prepare_robot(cnf.params.sub_mock, cnf.gripper_range)
-        self._prepare_shapes(cnf.render)
+        self._prepare_robot(self._sub_mock, self._gripper_range)
+        self._prepare_shapes(self._render)
         self._prepare_observation_space()
         self._prepare_action_space()
         self._prepare_subgoal_ranges(**cnf.subgoals)
@@ -57,9 +57,9 @@ class CoppeliaEnv(gym.Env):
             print("HARD reset")
             self._sim.stop()
             self._sim.start()
-            self._prepare_robot(self._sub_mock)
+            self._prepare_robot(self._sub_mock, self._gripper_range)
             self._prepare_shapes(self._render)
-        return self._reset(evalmode, random_target=self._random_target)
+        return self._reset(evalmode)
 
     def render(self, mode='human'):
         '''gym render function. To render the simulator during simulation, call render(mode='human') once.
@@ -105,10 +105,9 @@ class CoppeliaEnv(gym.Env):
 
     def _prepare_shapes(self, render):
         self._target = Shape('target')
-        self._target.set_position(self._target.get_position() + [0, 0.5, 0])
         self._table = Shape('customizableTable')
-        self._target_init_pose = self._target.get_pose()
         self._ep_target_pos = self._target.get_position()
+        self._target_init_pose = self._target.get_pose()
         self._gym_cam = None
         self._target.set_renderable(True)
         self._target.set_dynamic(False)
@@ -148,7 +147,8 @@ class CoppeliaEnv(gym.Env):
                            random_target,
                            random_eval_target,
                            sub_mock,
-                           action_regularizer):
+                           action_regularizer,
+                           gripper_range):
         self._max_episode_steps = time_limit
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(max_torque, np.float64) 
@@ -160,6 +160,7 @@ class CoppeliaEnv(gym.Env):
         self._random_target = random_target
         self._random_eval_target = random_eval_target
         self._sub_mock = sub_mock
+        self._gripper_range = gripper_range
         self._action_regularizer = action_regularizer
         self.timestep = 0
         self.needs_reset = False
@@ -244,32 +245,34 @@ class CoppeliaEnv(gym.Env):
         #observation = {'obs': observation, 'target':self._ep_target_pos}
         return np.array(np.concatenate([observation, self._ep_target_pos[:-1]]), dtype=np.float32)
    
-    def _reset_target(self, evalmode, random_target):
+    def _reset_target(self, evalmode):
         pose = self._target_init_pose
-        if random_target and not evalmode:
-            pose[:2] = np.random.uniform(low=[-0.08, -0.3], high=[2., 0.95])
-        self._target.set_pose(pose)
+        if self._random_target and not evalmode or evalmode and self._random_eval_target:
+            x, y = self._sample_in_circular_reach()
+            pose[:2] = [x, y]
+            self._target.set_pose(pose)
         return self._target.get_position()
 
     def _get_info(self):
         return ''
     
-    def _reset(self, evalmode, random_target):
+    def _reset(self, evalmode):
         self._robot.set_position(self._init_pos, gripper_special=False)
-        self._ep_target_pos = self._reset_target(evalmode, random_target)
+        self._ep_target_pos = self._reset_target(evalmode)
         self._sim.step()
         self.needs_reset = False
         self.timestep = 0
         return self._get_observation()
-
-    def _reset_dynamics(self):
-        '''Need to reset dynamics because unstable models (like the Darmstadt Sake Gripper) will
-        become more and more unstable after repeated position resets.'''
-        self._robot.bot[0].reset_dynamic_object()
-        self._robot.bot[1].reset_dynamic_object()
-        self._target.reset_dynamic_object()
-        if self._render:
-            self._meta_goal.reset_dynamic_object()
+    
+    def _sample_in_circular_reach(self):
+        '''Uses polar coordinates to sample in a circular region around the arm. Radius was measured
+        by letting the arm flail around for some time and then drawing a line from the two recorded points
+        that were furthest apart.'''
+        r = np.random.uniform(0.2, 1.867/2)
+        theta = np.random.uniform(0, np.pi)
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+        return x + 0.622, y - 0.605 
 
 if __name__ == '__main__':
 

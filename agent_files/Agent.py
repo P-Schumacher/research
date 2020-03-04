@@ -32,10 +32,11 @@ class Agent:
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
         tf.random.set_seed(self.cnf.main.seed)
+        env.reset()
         env.reset(hard_reset=True)
         avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self.cnf.main.env, self.cnf.main.seed,
                                                                        self.cnf.coppeliagym.time_limit,
-                                                                       self.cnf.main.visit, self.agent.num_eval_episodes)
+                                                                       self.cnf.main.visit, self.cnf.agent.num_eval_episodes)
         self.reset()
         return avg_reward, avg_intr_reward, success_rate
     
@@ -51,7 +52,7 @@ class Agent:
         for episode_nbr in range(eval_episodes):
             print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
             step = 0
-            state, done = env.reset(evalmode=False), False
+            state, done = env.reset(evalmode=True), False
             self.reset()
             while not done:
                 action = self.select_action(state)

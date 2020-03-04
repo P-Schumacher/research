@@ -352,7 +352,7 @@ class HierarchicalAgent(Agent):
         for episode_nbr in range(eval_episodes):
             print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
             step = 0
-            state, done = env.reset(evalmode=False), False
+            state, done = env.reset(evalmode=True), False
             self.reset()
             while not done:
                 action = self.select_action(state)

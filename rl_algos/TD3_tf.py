@@ -11,10 +11,9 @@ import wandb
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
-reg_coeff = 0.0000  # Set to 0.0001 if you want to try. Paper uses 0. TODO Add to config file
 
 class Actor(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, max_action):
+    def __init__(self, state_dim, action_dim, max_action, reg_coeff):
         super(Actor, self).__init__()
 
         self.l1 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu)
@@ -35,7 +34,7 @@ class Actor(tf.keras.Model):
 
 
 class Critic(tf.keras.Model):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, reg_coeff):
         super(Critic, self).__init__()
         # Q1 architecture 
         self.l1 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu,
@@ -82,6 +81,9 @@ class TD3(object):
         target_dim,
         ac_hidden_layers,
         cr_hidden_layers,
+        clip_cr,
+        clip_ac,
+        reg_coeff,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -98,12 +100,12 @@ class TD3(object):
         assert name == 'meta' or name == 'sub'
         # Create networks 
         max_action  = tf.constant(max_action, dtype=tf.float32)
-        self.actor = Actor(state_dim, action_dim, max_action)
-        self.actor_target = Actor(state_dim, action_dim, max_action)
+        self.actor = Actor(state_dim, action_dim, max_action, reg_coeff)
+        self.actor_target = Actor(state_dim, action_dim, max_action, reg_coeff)
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr)
 
-        self.critic = Critic(state_dim, action_dim)
-        self.critic_target = Critic(state_dim, action_dim)
+        self.critic = Critic(state_dim, action_dim, reg_coeff)
+        self.critic_target = Critic(state_dim, action_dim, reg_coeff)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr)
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  # Huber loss does not punish a noisy large gradient.
         
@@ -121,6 +123,8 @@ class TD3(object):
         self.no_candidates = no_candidates 
         self.subgoal_ranges = subgoal_ranges
         self.target_dim = target_dim
+        self.clip_cr = clip_cr
+        self.clip_ac = clip_ac
         # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
         self.total_it = tf.Variable(0, dtype=tf.int64)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)

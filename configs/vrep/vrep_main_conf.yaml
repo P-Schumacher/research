@@ -10,7 +10,7 @@ main:
   render: false 
   save_model: false
   load_model: false
-  start_timesteps: 1000
+  start_timesteps: 0
   max_timesteps: 5000000
   offpolicy: false
   flat_agent: true 
@@ -18,6 +18,9 @@ main:
   model: TD3
   eval_freq: 50000
   seed: 2
+  train_every: 300
+  gradient_steps: 300
+
   
   c_step: 10
   decay: false 

@@ -55,10 +55,6 @@ class Critic(tf.keras.Model):
 
     @tf.function
     def call(self, state_action):
-        #TODO Cast here as tensor
-        # You cannot build a layer with build() if the call() has more than 1 input_argument (except self)
-        # you could either call the model once on a test_tensor to initialize it,
-        # or you have to change to 1 input argument and you can keep the build()
         assert state_action.dtype == tf.float32
         q1 = self.l1(state_action) # activation fcts are build-in the layer constructor
         q1 = self.l2(q1) 
@@ -129,6 +125,10 @@ class TD3(object):
         self.total_it = tf.Variable(0, dtype=tf.int64)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)
         self.critic_loss = tf.Variable(0, dtype=tf.float32)
+        self.ac_gr_mean = tf.Variable(0, dtype=tf.float32)
+        self.cr_gr_mean = tf.Variable(0, dtype=tf.float32)
+        self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
+        self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state.reshape(1, -1))
@@ -148,16 +148,14 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, sub_actor=None):
-        # Sample replay buffer 
         state, action, next_state, reward, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        # Perform off-policy correction in meta
+        
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq)
         self.train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
-        wandb.log({str(self.name)+'/actor_loss':self.actor_loss.numpy(),
-                   str(self.name)+'/critic_loss':self.critic_loss.numpy()}, step = t)
+        return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_mean.numpy(), self.cr_gr_mean.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
    
     @tf.function
     def train_step(self, state, action, next_state, reward, done):
@@ -186,7 +184,9 @@ class TD3(object):
             critic_loss += sum(self.critic.losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
-        gradients = [tf.clip_by_norm(grad, 1.0) for grad in gradients]
+        gradients = [tf.clip_by_norm(grad, 0.5) for grad in gradients]
+        self.cr_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
+        self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self.critic_loss.assign(critic_loss)
         if self.total_it % self.policy_freq == 0:
@@ -201,13 +201,15 @@ class TD3(object):
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            gradients = [tf.clip_by_norm(grad, 1.0) for grad in gradients]
+            gradients = [tf.clip_by_norm(grad, 0.5) for grad in gradients]
+            self.ac_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
+            self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self.actor_loss.assign(mean_actor_loss)
 
-#@tf.function
+@tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
                           action_seq):
     # TODO Update docstring to real dimensions

@@ -204,7 +204,7 @@ class CoppeliaEnv(gym.Env):
             if done:
                 return 0
             return -1
-        return - self._get_distance() - self._action_regularizer * tf.norm(action)
+        return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
     
     def _get_done(self):
         self.needs_reset = True

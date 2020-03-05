@@ -53,7 +53,7 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
-        if t > cnf.start_timesteps:
+        if t > cnf.start_timesteps and not t % cnf.train_every:
             agent.train(t)
         state = next_state
         posis[t] = state[:3]

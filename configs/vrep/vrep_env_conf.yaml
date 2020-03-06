@@ -22,7 +22,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true 
     sparse_rew: false
-    action_regularizer: 0 
+    action_regularizer: 1e-4 
 
   subgoals:
     ee_goal: 5.
@@ -82,7 +82,7 @@ agent:
     noise_clip: 0.5
     policy_freq: 2
     ac_lr: 0.0001
-    cr_lr: 0.0001
+    cr_lr: 0.001
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10

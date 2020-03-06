@@ -204,7 +204,7 @@ class CoppeliaEnv(gym.Env):
             if done:
                 return 0
             return -1
-        return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
+        return - self._get_huber() - self._action_regularizer * tf.square(tf.norm(action))
     
     def _get_done(self):
         self.needs_reset = True
@@ -221,6 +221,12 @@ class CoppeliaEnv(gym.Env):
         grip_pos = np.array(self._robot.get_ee_position())
         target_pos = self._ep_target_pos
         return np.linalg.norm(grip_pos - target_pos)
+
+    def _get_huber(self, delta=1.):
+        grip_pos = np.array(self._robot.get_ee_position())
+        target_pos = self._ep_target_pos
+        dist = tf.constant(grip_pos - target_pos, dtype=tf.float32)
+        return tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 ))
 
     def _get_observation(self):
         ''' Compute observation. This method is always in flux before we decide on a state

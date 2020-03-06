@@ -92,12 +92,13 @@ class Agent:
             *metrics, = self.policy.train(self.replay_buffer, self.cnf.main.batch_size, timestep)
             m_avg += metrics 
         m_avg /= self.cnf.main.gradient_steps
-        wandb.log({f'sub/actor_loss': m_avg[0],
-                   f'sub/critic_loss': m_avg[1],
-                   f'sub/critic_gradmean': m_avg[2],
-                   f'sub/actor_gradmean': m_avg[3], 
-                   f'sub/actor_gradstd': m_avg[4],
-                   f'sub/critic_gradstd': m_avg[5]}, step = timestep)
+        if self.cnf.main.log:
+            wandb.log({f'sub/actor_loss': m_avg[0],
+                       f'sub/critic_loss': m_avg[1],
+                       f'sub/critic_gradmean': m_avg[2],
+                       f'sub/actor_gradmean': m_avg[3], 
+                       f'sub/actor_gradstd': m_avg[4],
+                       f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
     def replay_add(self, state, action, next_state, reward, done):
         self.replay_buffer.add(state, action, next_state, self.cnf.agent.sub_rew_scale * reward, done, 0, 0)

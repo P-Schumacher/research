@@ -5,7 +5,7 @@ entity: rlpractitioner
 main:
   env: Vrep
   vrep: true
-  log: true
+  log: true 
   visit: false
   render: false 
   save_model: false
@@ -17,7 +17,7 @@ main:
   batch_size: 128
   model: TD3
   eval_freq: 50000
-  seed: 2
+  seed: 8
   train_every: 300
   gradient_steps: 300
 

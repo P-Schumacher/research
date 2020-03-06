@@ -215,12 +215,27 @@ class HierarchicalAgent(Agent):
             self.goal = tf.clip_by_value(self.goal, -self.subgoal_ranges, self.subgoal_ranges)
         return tf.clip_by_value(action, -self.sub_agent.max_action, self.sub_agent.max_action)
     
+        wandb.log({f'sub/actor_loss': m_avg[0],
+                   f'sub/critic_loss': m_avg[1],
+                   f'sub/critic_gradmean': m_avg[2],
+                   f'sub/actor_gradmean': m_avg[3], 
+                   f'sub/actor_gradstd': m_avg[4],
+                   f'sub/critic_gradstd': m_avg[5]}, step = timestep)
     def train(self, time_step):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.cnf.main.batch_size, time_step)
-        if not time_step % self.c_step:
-            self.meta_agent.train(self.meta_replay_buffer,
-                                                            self.cnf.main.batch_size, time_step, self.sub_agent.actor)
+        sub_avg = np.zeros([6,], dtype=np.float32)
+        for i in range(self.cnf.main.gradient_steps):
+            *metrics, = self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.cnf.main.batch_size, time_step)
+            sub_avg += metrics
+        sub_avg /= self.cnf.main.gradient_steps
+        # TODO FIX THIS
+        if self.meta_train_counter == self.c_step:
+            meta_avg = np.zeros([6,], dtype=np.float32)
+            for i in range(self.cnf.main.gradient_steps):
+                *metrics, = self.meta_agent.train(self.meta_replay_buffer, self.cnf.main.batch_size, time_step,
+                                                  self.sub_agent.actor)
+                meta_avg += metrics
+            meta_avg /= self.cnf.main.gradient_steps
 
     def replay_add(self, state, action, reward, next_state, done):
         return self.transitbuffer.add(state, action, reward, next_state, done)

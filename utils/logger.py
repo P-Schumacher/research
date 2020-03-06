@@ -21,7 +21,8 @@ class Logger:
         :return: None'''
         self.episode_timesteps += 1
         self.episode_reward += reward
-        wandb.log({'step_rew': reward}, step = t)
+        if self.logging:
+            wandb.log({'step_rew': reward}, step = t)
 
     def reset(self, post_eval=False):
         '''Resets the logging values.

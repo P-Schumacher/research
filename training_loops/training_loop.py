@@ -33,6 +33,7 @@ def decay_step(decay, stepper, agent):
 
 
 def main(cnf):
+    ret = []
     env, agent = create_world(cnf)
     cnf = cnf.main
     if cnf.log:
@@ -73,3 +74,7 @@ def main(cnf):
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
             if cnf.save_model: agent.save_model("./models/"+str(agent.file_name))
+            ret.append(success_rate)
+    set_trace()
+    return np.mean(ret)
+

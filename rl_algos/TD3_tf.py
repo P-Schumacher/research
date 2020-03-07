@@ -13,7 +13,7 @@ initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
 
 class Actor(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, max_action, reg_coeff, ac_layers):
+    def __init__(self, state_dim, action_dim, max_action, ac_layers, reg_coeff):
         super(Actor, self).__init__()
 
         self.l1 = kl.Dense(ac_layers[0], activation='relu', kernel_initializer=initialize_relu)
@@ -34,7 +34,7 @@ class Actor(tf.keras.Model):
 
 
 class Critic(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, reg_coeff):
+    def __init__(self, state_dim, action_dim, cr_layers, reg_coeff):
         super(Critic, self).__init__()
         # Q1 architecture 
         self.l1 = kl.Dense(cr_layers[0], activation='relu', kernel_initializer=initialize_relu,
@@ -102,11 +102,11 @@ class TD3(object):
         # Create networks 
         max_action  = tf.constant(max_action, dtype=tf.float32)
         self.actor = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
-        self.actor_target = Actor(state_dim, action_dim, max_action, reg_coeff)
+        self.actor_target = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr)
 
         self.critic = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
-        self.critic_target = Critic(state_dim, action_dim, reg_coeff)
+        self.critic_target = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr)
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  # Huber loss does not punish a noisy large gradient.
         

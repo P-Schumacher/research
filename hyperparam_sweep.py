@@ -22,14 +22,14 @@ if vrep:
 
 if ant_env:
     cnf = OmegaConf.load('configs/ant_conf.yaml')
-
 # Parameters of second cnf file overwrite those of first
 cnf = OmegaConf.merge(default_cnf, main_cnf, env_cnf)
 cnf.merge_with_cli()
-cnf.main.max_timesteps = 700
-cnf.main.log = 0
-cnf.main.eval_freq = 500
-np.random.seed(rank)
+
+cnf.main.max_timesteps = 200000
+cnf.main.log = 1
+cnf.main.eval_freq = 20000
+cnf.project = 'param_sweep'
 
 #___________RANGES______________________
 
@@ -41,12 +41,12 @@ reg_coeff_cr= np.random.uniform(0, 1e-2)
 clip_ac = np.random.uniform(0.1, 10)
 clip_cr = np.random.uniform(0.1, 10)
 # env 
-#force = np.random.choice(np.array([0,1], dtype=np.int32))
-force = 0
+force = np.random.choice(np.array([0,1], dtype=np.int32))
+#force = 0
 action_regularizer = np.random.uniform(0, 1e-3)
 # main
-#gradient_steps = np.random.choice([1, 300])
-gradient_steps = 300 
+gradient_steps = np.random.choice([1, 300])
+#gradient_steps = 300 
 start_timesteps = int(np.random.uniform(0, 10000))
 # agent
 if force:
@@ -65,13 +65,18 @@ cnf.agent.sub_model.reg_coeff_cr = reg_coeff_cr
 cnf.agent.sub_model.clip_ac = clip_ac
 cnf.agent.sub_model.clip_cr = clip_cr
 # env
-cnf.coppeliagym.params.force = force
+cnf.coppeliagym.params.force = int(force)
 cnf.coppeliagym.params.action_regularizer = action_regularizer
 # main
-cnf.main.gradient_steps = gradient_steps
-cnf.main.train_every = gradient_steps
+cnf.main.gradient_steps = int(gradient_steps)
+cnf.main.train_every = int(gradient_steps)
 cnf.main.start_timesteps = start_timesteps
 #buffer
 cnf.buffer.max_size = int(max_size)
+
+config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
+if cnf.main.log:
+    wandb.init(project=cnf.project, entity=cnf.entity, config=config)
+
 
 print(main(cnf))

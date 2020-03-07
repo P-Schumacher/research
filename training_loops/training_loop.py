@@ -38,12 +38,10 @@ def main(cnf):
     if cnf.log:
         wandb.init(project='exp', entity='rlpractitioner', config=cnf)
     # create objects 
-    logger = Logger(cnf.log)
+    logger = Logger(cnf.log, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)
-    
     # Load previously trained model.
     if cnf.load_model: agent.load_model("./models/" + str(agent.file_name))
-    posis = np.zeros([cnf.max_timesteps, 3], dtype=np.float32)
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
@@ -55,16 +53,18 @@ def main(cnf):
         if t > cnf.start_timesteps and not t % cnf.train_every:
             agent.train(t)
         state = next_state
-        posis[t] = state[:3]
         logger.inc(t, reward)
 
         if done:
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             # Reset environment
-            state, done = env.reset(), False
             agent.reset()
-            logger.log(t, intr_rew, c_step)
+            hard_reset = logger.log(t, intr_rew, c_step)
             logger.reset()
+            # Need to periodically restart physics engine because Darmstadt gripper model is unstable
+            if hard_reset:
+                env.reset()
+            state, done = env.reset(hard_reset=hard_reset), False
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)
@@ -73,4 +73,3 @@ def main(cnf):
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
             if cnf.save_model: agent.save_model("./models/"+str(agent.file_name))
-    np.save('posis', posis)

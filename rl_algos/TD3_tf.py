@@ -13,11 +13,11 @@ initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
 
 class Actor(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, max_action, reg_coeff):
+    def __init__(self, state_dim, action_dim, max_action, reg_coeff, ac_layers):
         super(Actor, self).__init__()
 
-        self.l1 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu)
-        self.l2 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu)
+        self.l1 = kl.Dense(ac_layers[0], activation='relu', kernel_initializer=initialize_relu)
+        self.l2 = kl.Dense(ac_layers[1], activation='relu', kernel_initializer=initialize_relu)
         self.l3 = kl.Dense(action_dim, activation='tanh', kernel_initializer=initialize_tanh)
         
         self.max_action = max_action
@@ -37,9 +37,9 @@ class Critic(tf.keras.Model):
     def __init__(self, state_dim, action_dim, reg_coeff):
         super(Critic, self).__init__()
         # Q1 architecture 
-        self.l1 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu,
+        self.l1 = kl.Dense(cr_layers[0], activation='relu', kernel_initializer=initialize_relu,
                            kernel_regularizer=l2(reg_coeff))
-        self.l2 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu,
+        self.l2 = kl.Dense(cr_layers[1], activation='relu', kernel_initializer=initialize_relu,
                            kernel_regularizer=l2(reg_coeff))
         self.l3 = kl.Dense(1, 
                            kernel_regularizer=l2(reg_coeff))
@@ -83,7 +83,8 @@ class TD3(object):
         cr_hidden_layers,
         clip_cr,
         clip_ac,
-        reg_coeff,
+        reg_coeff_ac,
+        reg_coeff_cr,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -100,11 +101,11 @@ class TD3(object):
         assert name == 'meta' or name == 'sub'
         # Create networks 
         max_action  = tf.constant(max_action, dtype=tf.float32)
-        self.actor = Actor(state_dim, action_dim, max_action, reg_coeff)
+        self.actor = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_target = Actor(state_dim, action_dim, max_action, reg_coeff)
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr)
 
-        self.critic = Critic(state_dim, action_dim, reg_coeff)
+        self.critic = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_target = Critic(state_dim, action_dim, reg_coeff)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr)
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  # Huber loss does not punish a noisy large gradient.

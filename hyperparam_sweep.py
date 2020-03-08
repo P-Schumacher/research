@@ -7,6 +7,7 @@ import os
 from utils.utils import set_seeds
 from mpi4py import MPI
 import numpy as np
+import time
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 
@@ -26,57 +27,39 @@ if ant_env:
 cnf = OmegaConf.merge(default_cnf, main_cnf, env_cnf)
 cnf.merge_with_cli()
 
-cnf.main.max_timesteps = 200000
-cnf.main.log = 1
+cnf.main.max_timesteps = 400000
+cnf.main.log = 0
 cnf.main.eval_freq = 20000
 cnf.project = 'param_sweep'
 
-#___________RANGES______________________
 
 # sub 
-ac_lr = np.random.uniform(0.01, 0.0001)
-cr_lr = np.random.uniform(0.01, 0.0001)
-reg_coeff_ac = np.random.uniform(0, 1e-2)
-reg_coeff_cr= np.random.uniform(0, 1e-2)
-clip_ac = np.random.uniform(0.1, 10)
-clip_cr = np.random.uniform(0.1, 10)
+cnf.agent.sub_model.ac_lr = np.random.uniform(0.001, 0.0001)
+cnf.agent.sub_model.cr_lr = np.random.uniform(0.001, 0.0001)
+cnf.agent.sub_model.reg_coeff_ac = np.random.uniform(0, 1e-4)
+cnf.agent.sub_model.reg_coeff_cr= np.random.uniform(0, 1e-4)
+cnf.agent.sub_model.clip_ac = np.random.uniform(0.1, 5)
+cnf.agent.sub_model.clip_cr = np.random.uniform(0.1, 5)
 # env 
-force = np.random.choice(np.array([0,1], dtype=np.int32))
-#force = 0
-action_regularizer = np.random.uniform(0, 1e-3)
+cnf.coppeliagym.params.force = int(np.random.choice(np.array([0,1], dtype=np.int32)))
+cnf.coppeliagym.params.action_regularizer = np.random.uniform(0, 1e-3)
 # main
-gradient_steps = np.random.choice([1, 300])
-#gradient_steps = 300 
-start_timesteps = int(np.random.uniform(0, 10000))
+cnf.main.gradient_steps = int( np.random.choice([300]))
+cnf.main.train_every = cnf.main.gradient_steps
+cnf.main.start_timesteps = int(np.random.uniform(1000, 10000))
 # agent
-if force:
-    sub_noise = np.random.uniform(0, 200)
+if cnf.coppeliagym.params.force:
+    cnf.agent.sub_noise = np.random.uniform(0, 200)
 else:
-    sub_noise = np.random.uniform(0, 3)
-sub_rew_scale = np.random.uniform(0.1, 10)
+    cnf.agent.sub_noise = np.random.uniform(0, 3)
+cnf.agent.sub_rew_scale = np.random.uniform(0.1, 7)
 # buffer
-max_size = np.random.uniform(20000, 1000000)
-#______________ VALUES ____________________
-# sub
-cnf.agent.sub_model.ac_lr = ac_lr
-cnf.agent.sub_model.cr_lr = cr_lr
-cnf.agent.sub_model.reg_coeff_ac = reg_coeff_ac
-cnf.agent.sub_model.reg_coeff_cr = reg_coeff_cr
-cnf.agent.sub_model.clip_ac = clip_ac
-cnf.agent.sub_model.clip_cr = clip_cr
-# env
-cnf.coppeliagym.params.force = int(force)
-cnf.coppeliagym.params.action_regularizer = action_regularizer
-# main
-cnf.main.gradient_steps = int(gradient_steps)
-cnf.main.train_every = int(gradient_steps)
-cnf.main.start_timesteps = start_timesteps
-#buffer
-cnf.buffer.max_size = int(max_size)
+cnf.buffer.max_size = int(np.random.uniform(20000, 1000000))
 
-config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
+config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model, **cnf.coppeliagym.params}
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 
-
-print(main(cnf))
+ret = main(cnf)
+f = open(f'./param_scores/output_{int(time.time() % 60)}_{rank}.txt', 'w')
+f.write(f'The score is: {ret}, params are: {cnf.pretty()}')

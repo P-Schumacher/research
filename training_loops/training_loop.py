@@ -36,8 +36,6 @@ def main(cnf):
     ret = []
     env, agent = create_world(cnf)
     cnf = cnf.main
-    if cnf.log:
-        wandb.init(project='exp', entity='rlpractitioner', config=cnf)
     # create objects 
     logger = Logger(cnf.log, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)

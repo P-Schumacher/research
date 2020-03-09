@@ -189,7 +189,8 @@ class TD3(object):
             critic_loss += sum(self.critic.losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
-        gradients = [tf.clip_by_norm(grad, self.clip_cr) for grad in gradients]
+        #gradients = [tf.clip_by_norm(grad, self.clip_cr) for grad in gradients]
+        gradients = tf.clip_by_global_norm([grad for grad in gradients], self.clip_cr)
         self.cr_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
         self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
@@ -206,7 +207,8 @@ class TD3(object):
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            gradients = [tf.clip_by_norm(grad, self.clip_ac) for grad in gradients]
+            #gradients = [tf.clip_by_norm(grad, self.clip_ac) for grad in gradients]
+            gradients = tf.clip_by_global_norm([grad for grad in gradients], self.clip_ac)
             self.ac_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

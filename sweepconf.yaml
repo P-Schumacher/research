@@ -45,18 +45,13 @@ parameters:
     max: 10000
     distribution: int_uniform
 
-  sub_noise:
-    min: 0
-    max: 2
-    distribution: uniform
-
   sub_rew_scale:
     min: 0.1
     max: 10
     distribution: uniform
 
   max_size:
-    min: 0.1
-    max: 10
+    min: 200000
+    max: 1000000
     distribution: int_uniform
     

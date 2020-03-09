@@ -26,7 +26,7 @@ cnf.main.max_timesteps = 400000
 cnf.main.log = 1
 cnf.main.eval_freq = 20000
 cnf.project = 'param_sweep'
-
+cnf.coppeliagym.params.force = 0
 config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model, **cnf.coppeliagym.params}
 
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)

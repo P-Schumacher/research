@@ -1,4 +1,4 @@
-for i in {1 .. 6}; do {
-    wandb agent gtryifzj &
+for i in {1 .. 5}; do {
+	wandb agent rlpractitioner/exp/qlh1r8gk &
 } done
 

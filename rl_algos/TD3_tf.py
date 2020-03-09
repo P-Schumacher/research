@@ -190,7 +190,10 @@ class TD3(object):
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         #gradients = [tf.clip_by_norm(grad, self.clip_cr) for grad in gradients]
-        gradients = tf.clip_by_global_norm([grad for grad in gradients], self.clip_cr)
+        # The tf.clip_by_global_norm fct changes the structure of the gradients... So I implemented it myself
+        # Global norm clipping is the *correct* way of gradient clipping
+        norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
+        gradients = [tf.scalar_mul(self.clip_cr / norm, g) for g in gradients]
         self.cr_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
         self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
@@ -208,7 +211,8 @@ class TD3(object):
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             #gradients = [tf.clip_by_norm(grad, self.clip_ac) for grad in gradients]
-            gradients = tf.clip_by_global_norm([grad for grad in gradients], self.clip_ac)
+            norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
+            gradients = [tf.scalar_mul(self.clip_ac / norm, g) for g in gradients]
             self.ac_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

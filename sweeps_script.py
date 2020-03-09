@@ -5,7 +5,8 @@ import wandb
 from pudb import set_trace
 import numpy as np
 import argparse
-
+import os
+os.environ['CUDA_VISIBLE_DEVICES']='-1'
 ant_env = False
 vrep = True
 
@@ -22,10 +23,10 @@ if ant_env:
 cnf = OmegaConf.merge(default_cnf, main_cnf, env_cnf)
 cnf.merge_with_cli()
 
-cnf.main.max_timesteps = 400000
+cnf.main.max_timesteps = 100000
 cnf.main.log = 1
 cnf.main.eval_freq = 20000
-cnf.project = 'param_sweep'
+cnf.project = 'clip_sweep'
 cnf.coppeliagym.params.force = 0
 config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model, **cnf.coppeliagym.params}
 

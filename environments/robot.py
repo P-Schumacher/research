@@ -26,7 +26,8 @@ class Robot:
         self._num_joints = np.sum([x._num_joints for x in self.bot])   
         self.arm_joints = self.bot[0]._num_joints
 
-    def set_position(self, pos, gripper_special):
+    def set_position(self, pos, gripper_special=False):
+        ''' Set the arm position directly without considering physics.'''
         if gripper_special:
             self.bot[0].set_joint_positions(pos)
         else:

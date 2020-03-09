@@ -259,8 +259,12 @@ class CoppeliaEnv(gym.Env):
         return ''
     
     def _reset(self, evalmode):
-        self._robot.set_position(self._init_pos, gripper_special=False)
-        set_trace()
+        # Reset target vels BEFORE positions. As arm and gripper are reset independently in *set_position()*
+        # there is an additional simulation timestep between them. If the velocities are not reset properly, the
+        # reset position of the robot will drift. This drift is small for the arm but can cause the gripper to
+        # explode and destabilize the simulation.
+        self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
+        self._robot.set_position(self._init_pos)
         self._ep_target_pos = self._reset_target(evalmode)
         self._sim.step()
         self.needs_reset = False

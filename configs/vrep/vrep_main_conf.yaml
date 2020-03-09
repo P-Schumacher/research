@@ -9,7 +9,7 @@ main:
   visit: false
   render: true
   save_model: false 
-  load_model: true 
+  load_model: false 
   start_timesteps: 5000
   max_timesteps: 1500000
   time_limit: ${coppeliagym.params.time_limit}

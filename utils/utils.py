@@ -80,7 +80,7 @@ def create_world(cnf):
     if not cnf.main.flat_agent:
         agent = HierarchicalAgent(cnf, specs, model_cls, env.subgoal_dim)
     else: 
-        agent = Agent(cnf, specs, model_cls)
+        agent = Agent(cnf.agent, cnf.buffer, cnf.main, specs, model_cls)
     set_seeds(env, cnf.main.seed)
     return env, agent 
 

@@ -260,6 +260,7 @@ class CoppeliaEnv(gym.Env):
     
     def _reset(self, evalmode):
         self._robot.set_position(self._init_pos, gripper_special=False)
+        set_trace()
         self._ep_target_pos = self._reset_target(evalmode)
         self._sim.step()
         self.needs_reset = False

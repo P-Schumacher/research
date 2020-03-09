@@ -26,14 +26,14 @@ class Robot:
         self._num_joints = np.sum([x._num_joints for x in self.bot])   
         self.arm_joints = self.bot[0]._num_joints
 
-    def set_position(self, pos, gripper_special=True):
+    def set_position(self, pos, gripper_special):
         if gripper_special:
             self.bot[0].set_joint_positions(pos)
         else:
             self.bot[0].set_joint_positions(pos[:-2])
             self.bot[1].set_joint_positions(pos[-2:])
 
-    def set_joint_target_positions(self, target, gripper_special=True):
+    def set_joint_target_positions(self, target, gripper_special):
         self.bot[0].set_joint_target_positions(target[:self._num_joints])
 
     def get_joint_positions(self, gripper_special=True):
@@ -48,7 +48,7 @@ class Robot:
         else:
             return np.hstack([x.get_joint_velocities() for x in self.bot])
 
-    def get_joint_forces(self, gripper_special=True):
+    def get_joint_forces(self, gripper_special):
         '''Returns the forces as measured by the joints. Not to mistake
         with set_joint_forces() which limits the maximum amount of force a particular 
         joint can exert to reach the set target_velocity/position etc.'''

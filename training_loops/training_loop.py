@@ -23,7 +23,7 @@ def maybe_verbose_output(t, agent, env, action, cnf, state):
                 env.set_goal(agent.goal[:3])
 
 def decay_step(decay, stepper, agent):
-    c_step = agent.cnf.c_step
+    c_step = 1
     if decay:
         c_step = int(next(stepper))
         agent.goal_every_n = c_step
@@ -40,7 +40,7 @@ def main(cnf):
     logger = Logger(cnf.log, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)
     # Load previously trained model.
-    if cnf.load_model: agent.load_model("./models/" + str(agent.file_name))
+    if cnf.load_model: agent.load_model(f'./models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):

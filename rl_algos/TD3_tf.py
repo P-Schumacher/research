@@ -130,8 +130,8 @@ class TD3(object):
         self.total_it = tf.Variable(0, dtype=tf.int64)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)
         self.critic_loss = tf.Variable(0, dtype=tf.float32)
-        self.ac_gr_mean = tf.Variable(0, dtype=tf.float32)
-        self.cr_gr_mean = tf.Variable(0, dtype=tf.float32)
+        self.ac_gr_norm = tf.Variable(0, dtype=tf.float32)
+        self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
         self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
 
@@ -154,13 +154,12 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, sub_actor=None):
         state, action, next_state, reward, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq)
         self.train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
-        return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_mean.numpy(), self.cr_gr_mean.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+        return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
    
     @tf.function
     def train_step(self, state, action, next_state, reward, done):
@@ -189,12 +188,11 @@ class TD3(object):
             critic_loss += sum(self.critic.losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
-        #gradients = [tf.clip_by_norm(grad, self.clip_cr) for grad in gradients]
         # The tf.clip_by_global_norm fct changes the structure of the gradients... So I implemented it myself
         # Global norm clipping is the *correct* way of gradient clipping
         norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
         gradients = [tf.scalar_mul(self.clip_cr / norm, g) for g in gradients]
-        self.cr_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
+        self.cr_gr_norm.assign(norm)
         self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self.critic_loss.assign(critic_loss)
@@ -210,10 +208,9 @@ class TD3(object):
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            #gradients = [tf.clip_by_norm(grad, self.clip_ac) for grad in gradients]
             norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
             gradients = [tf.scalar_mul(self.clip_ac / norm, g) for g in gradients]
-            self.ac_gr_mean.assign(tf.reduce_mean([tf.reduce_mean(x) for x in gradients]))
+            self.ac_gr_norm.assign(norm)
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
@@ -243,7 +240,6 @@ def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_
     # Take all the possible candidates and propagate them through time using h = st + gt - st+1 cf. HIRO Paper
     prop_goals = multi_goal_transition(state_seq, candidates, c_step)
     # Zero out xy for sub agent, AFTER goals have been calculated from it.
-    set_trace()
     state_seq = tf.reshape(state_seq, [b_size * c_step, state_seq.shape[-1]])
     state_seq *= tf.concat([tf.zeros([state_seq.shape[0], 2]), tf.ones([state_seq.shape[0], state_seq.shape[1] - 2])], axis=1)
     best_c = get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 

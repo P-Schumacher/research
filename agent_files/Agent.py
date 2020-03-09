@@ -13,7 +13,6 @@ class Agent:
         self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], **buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.policy, main_cnf.env, main_cnf.seed)
         self._policy = model(**specs, **agent_cnf.sub_model) 
-
     
     def load_model(self, policy, file_name, load_model):
         policy_file = file_name if load_model == "default" else load_model
@@ -23,13 +22,12 @@ class Agent:
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
-        tf.random.set_seed(self.cnf.main.seed)
+        tf.random.set_seed(self._seed)
         env.reset()
         avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self._seed,
                                                                        self._visit)
         self.reset()
         return avg_reward, avg_intr_reward, success_rate
-    
 
     def select_action(self, state):
         state = np.array(state)
@@ -37,14 +35,8 @@ class Agent:
 
     def select_noisy_action(self, state):
         state = np.array(state)
-        action = self._policy.select_action(state) + self.gaussian_noise(self._sub_noise)
+        action = self._policy.select_action(state) + self._gaussian_noise(self._sub_noise)
         return tf.clip_by_value(action, -self._policy.max_action, self._policy.max_action)      
-    
-    def gaussian_noise(self, expl_noise, dimension=1):
-        return np.random.normal(0, expl_noise, dimension) 
-
-    def random_action(self, state):
-        return self.random_action_fn()
     
     def train(self, timestep):
         m_avg = np.zeros([6, ], dtype=np.float32)
@@ -55,8 +47,8 @@ class Agent:
         if self._log:
             wandb.log({f'sub/actor_loss': m_avg[0],
                        f'sub/critic_loss': m_avg[1],
-                       f'sub/critic_gradmean': m_avg[2],
-                       f'sub/actor_gradmean': m_avg[3], 
+                       f'sub/critic_gradnorm': m_avg[2],
+                       f'sub/actor_gradnorm': m_avg[3], 
                        f'sub/actor_gradstd': m_avg[4],
                        f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
@@ -82,7 +74,10 @@ class Agent:
         self._visit = main_cnf.visit
         self._log = main_cnf.log
         self._gradient_steps = main_cnf.gradient_steps
-        self._batch_size = main_cnf._batch_size
+        self._batch_size = main_cnf.batch_size
+
+    def _gaussian_noise(self, expl_noise, dimension=1):
+        return np.random.normal(0, expl_noise, dimension) 
 
     def _create_file_name(self, policy, env, seed):
         '''Create file_name from experiment information to save model weights.'''
@@ -102,7 +97,7 @@ class Agent:
         avg_ep_reward = []
         success_rate = 0
         for episode_nbr in range(self._num_eval_episodes):
-            print(f"eval number: {episode_nbr} of {eval_episodes}")
+            print(f"eval number: {episode_nbr} of {self._num_eval_episodes}")
             step = 0
             state, done = env.reset(evalmode=True), False
             self.reset()
@@ -115,8 +110,8 @@ class Agent:
                 if done and step < env._max_episode_steps:
                     success_rate += 1
 
-        avg_ep_reward = np.sum(avg_ep_reward) / eval_episodes
-        success_rate = success_rate / eval_episodes
+        avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
+        success_rate = success_rate / self._num_eval_episodes
         print("---------------------------------------")
         print("Evaluation over {eval_episodes} episodes: "+str(avg_ep_reward))
         print("---------------------------------------")

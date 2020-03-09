@@ -5,9 +5,9 @@ entity: rlpractitioner
 main:
   env: Vrep
   vrep: true
-  log: false 
+  log: true
   visit: false
-  render: true
+  render: false 
   save_model: false 
   load_model: false 
   start_timesteps: 5000

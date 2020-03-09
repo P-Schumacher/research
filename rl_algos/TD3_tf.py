@@ -157,14 +157,18 @@ class TD3(object):
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq)
-        self.train_step(state, action, next_state, reward, done)
+        self._train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
    
     @tf.function
-    def train_step(self, state, action, next_state, reward, done):
-        '''Training function. We assign actor and critic losses to sate objects so that they can be easier plotted
-        without interfering with tf.function'''
+    def _train_step(self, state, action, next_state, reward, done):
+        '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
+        without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
+        a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
+        This is done as tf.function decorated functions are converted to static graphs and cannot handle variable return objects.
+        :param : These should be explained by any Reinforcement Learning book.
+        :return: None'''
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
         noise = tf.random.normal(action.shape, stddev=self.policy_noise)
         # this clip keeps the noisy action close to the original action
@@ -185,13 +189,11 @@ class TD3(object):
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             assert len(self.critic.losses) == 6
+            # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
-        # The tf.clip_by_global_norm fct changes the structure of the gradients... So I implemented it myself
-        # Global norm clipping is the *correct* way of gradient clipping
-        norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
-        gradients = [tf.scalar_mul(self.clip_cr / norm, g) for g in gradients]
+        gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.cr_gr_norm.assign(norm)
         self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
@@ -208,8 +210,7 @@ class TD3(object):
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(g)) for g in gradients]))
-            gradients = [tf.scalar_mul(self.clip_ac / norm, g) for g in gradients]
+            gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
             self.ac_gr_norm.assign(norm)
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
@@ -236,16 +237,16 @@ def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_
     state_b = state_b[:, :-target_dim]
     next_state_b = next_state_b[:, :-target_dim]
     # Get the sampled candidates
-    candidates =  get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b)
+    candidates =  _get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b)
     # Take all the possible candidates and propagate them through time using h = st + gt - st+1 cf. HIRO Paper
-    prop_goals = multi_goal_transition(state_seq, candidates, c_step)
+    prop_goals = _multi_goal_transition(state_seq, candidates, c_step)
     # Zero out xy for sub agent, AFTER goals have been calculated from it.
     state_seq = tf.reshape(state_seq, [b_size * c_step, state_seq.shape[-1]])
     state_seq *= tf.concat([tf.zeros([state_seq.shape[0], 2]), tf.ones([state_seq.shape[0], state_seq.shape[1] - 2])], axis=1)
-    best_c = get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
-    return get_corrected_goal(b_size, candidates, best_c) 
+    best_c = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
+    return _get_corrected_goal(b_size, candidates, best_c) 
 
-def multi_goal_transition(state_seq, candidates, c_step):
+def _multi_goal_transition(state_seq, candidates, c_step):
     # Realize that the multi timestep goal transition can be vectorized to a single calculation.
     b_size = candidates.shape[0]
     g_dim = candidates.shape[1]
@@ -257,7 +258,7 @@ def multi_goal_transition(state_seq, candidates, c_step):
     prop_goals += tf.broadcast_to(tf.expand_dims(tmp, axis=3), [b_size, c_step, g_dim, no_candidates]) 
     return prop_goals 
 
-def get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b):
+def _get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b):
     # Original Goal
     orig_goal = tf.expand_dims(goal_b[:, :g_dim], axis=2)
     # Goal between the states s_t+1 - s_t
@@ -272,14 +273,13 @@ def get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, n
     candidates = tf.clip_by_value(candidates, -clip_tensor, clip_tensor)
     return candidates
 
-def get_corrected_goal(b_size, candidates, best_c): 
+def _get_corrected_goal(b_size, candidates, best_c): 
     corrected_goals = tf.TensorArray(dtype=tf.float32, size=b_size)
-    # TODO Does this need a loop?
     for b in tf.range(b_size):
         corrected_goals = corrected_goals.write(b, candidates[b, :, best_c[b]])
     return corrected_goals.stack() 
 
-def get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi):
+def _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi):
     # Compute the logpropabilities for different subgoal candidates
     max_logprob = tf.constant(-1e9, shape=[b_size,])
     best_c = tf.zeros([b_size,], dtype=tf.int32) # In Graph mode, elements need to be defined BEFORE the loop
@@ -287,10 +287,8 @@ def get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, sta
     for c in tf.range(no_candidates):
         goals = prop_goals[:, :, :, c]  # Pick one candidate 
         # Change dimension of goals so that it can be computed in one batch in the network [b_size * c_step, g_dim]
-        # TODO reshape prop_goals before the loop
         goals = tf.reshape(goals, [b_size * c_step, g_dim])
         state_action = tf.concat([state_seq, goals], axis=1)
-        # TODO can we gather scatter this such that we dont compute infinities?
         pred_action =  pi(state_action)
         diff = action_seq - pred_action
         # Have padded the sequences where len(seq)<c_step to the max(c_step) with np.inf
@@ -306,4 +304,18 @@ def get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, sta
         best_c = tf.where(logprob > max_logprob, c, best_c)
         max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
     return best_c
+
+def clip_by_global_norm(t_list, clip_norm):
+    '''Clips the tensors in the list of tensors *t_list* globally by their norm. This preserves the 
+    relative weights of gradients if used on gradients. The inbuilt clip_norm argument of 
+    keras optimizers does NOT do this. Global norm clipping is the correct way of implementing
+    gradient clipping. The function *tf.clip_by_global_norm()* changes the structure of the passed tensor
+    sometimes. This is why I decided not to use it.
+    :param t_list: List of tensors to be clipped.
+    :param clip_norm: Norm over which the tensors should be clipped.
+    :return : List of clipped tensors. '''
+    norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
+    if norm > clip_norm:
+        t_list = [tf.scalar_mul(clip_norm / norm, t) for t in t_list]
+    return t_list, norm
 

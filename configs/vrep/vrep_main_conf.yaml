@@ -5,7 +5,7 @@ entity: rlpractitioner
 main:
   env: Vrep
   vrep: true
-  log: false 
+  log: true
   visit: false
   render: false
   save_model: false 

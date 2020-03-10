@@ -4,7 +4,7 @@ import wandb
 from pudb import set_trace
 import sys
 import os
-
+os.environ['CUDA_VISIBLE_DEVICES']='-1'
 ant_env = False
 vrep = True
 
@@ -24,4 +24,4 @@ cnf.merge_with_cli()
 config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
-main(cnf)
+main(cnf.main)

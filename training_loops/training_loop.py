@@ -34,7 +34,6 @@ def decay_step(decay, stepper, agent):
 
 def main(cnf):
     env, agent = create_world(cnf)
-    cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)

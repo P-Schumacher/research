@@ -4,7 +4,7 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka.ttt'
     render_scene_file: 'coppelia_scenes/kuka_render.ttt'
     headless: true 
-    sim_timestep: 0.05
+    sim_timestep: 0.03
     render: ${main.render}
 
   params:

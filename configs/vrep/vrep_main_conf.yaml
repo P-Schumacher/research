@@ -7,10 +7,10 @@ main:
   vrep: true
   log: false 
   visit: false
-  render: true
+  render: false
   save_model: false 
-  load_model: false 
-  start_timesteps: 5000
+  load_model: false
+  start_timesteps: 0
   max_timesteps: 1500000
   time_limit: ${coppeliagym.params.time_limit}
   offpolicy: false

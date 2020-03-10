@@ -275,8 +275,8 @@ class CoppeliaEnv(gym.Env):
         '''Uses polar coordinates to sample in a circular region around the arm. Radius was measured
         by letting the arm flail around for some time and then drawing a line from the two recorded points
         that were furthest apart.'''
-        r = np.random.uniform(0.2, 1.867/2)
-        theta = np.random.uniform(0, np.pi)
+        r = np.random.uniform(0.3, 1.867/2 - 0.1)
+        theta = np.random.uniform(-np.pi, np.pi)
         x = r * np.cos(theta)
         y = r * np.sin(theta)
         return x + 0.622, y - 0.605 

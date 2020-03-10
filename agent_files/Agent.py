@@ -82,7 +82,7 @@ class Agent:
         self._visit = main_cnf.visit
         self._log = main_cnf.log
         self._gradient_steps = main_cnf.gradient_steps
-        self._batch_size = main_cnf._batch_size
+        self._batch_size = main_cnf.batch_size
 
     def _create_file_name(self, policy, env, seed):
         '''Create file_name from experiment information to save model weights.'''

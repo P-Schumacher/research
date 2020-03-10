@@ -33,17 +33,20 @@ config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sub_model_ac_lr', default=0.001, type=float)
-parser.add_argument('--sub_model_cr_lr', default=0.0001, type=float)
-parser.add_argument('--sub_model_reg_coeff_ac', default=0.0, type=float)
-parser.add_argument('--sub_model_reg_coeff_cr', default=0.0, type=float)
-parser.add_argument('--sub_model_clip_ac', default=10000.0, type=float)
-parser.add_argument('--sub_model_clip_cr', default=10000.0, type=float)
-parser.add_argument('--action_regularizer', default=0.0, type=float)
-parser.add_argument('--start_timesteps', default=1000.0, type=int)
-parser.add_argument('--sub_noise', default=0.5, type=float)
-parser.add_argument('--sub_rew_scale', default=1., type=float)
-parser.add_argument('--max_size', default=200000, type=int)
+parser.add_argument('--sub_model_ac_lr', type=float)
+parser.add_argument('--sub_model_cr_lr', type=float)
+parser.add_argument('--sub_model_reg_coeff_ac', type=float)
+parser.add_argument('--sub_model_reg_coeff_cr', type=float)
+parser.add_argument('--sub_model_clip_ac', type=float)
+parser.add_argument('--sub_model_clip_cr', type=float)
+parser.add_argument('--sub_model_policy_freq', type=int)
+parser.add_argument('--sub_model_policy_noise', type=float)
+parser.add_argument('--sub_model_noise_clip', type=float)
+parser.add_argument('--action_regularizer', type=float)
+parser.add_argument('--start_timesteps', type=int)
+parser.add_argument('--sub_noise', type=float)
+parser.add_argument('--sub_rew_scale', type=float)
+parser.add_argument('--max_size', type=int)
 
 args = parser.parse_args(sys.argv[1:])
 cnf.agent.sub_model.ac_lr = args.sub_model_ac_lr
@@ -52,6 +55,9 @@ cnf.agent.sub_model.reg_coeff_ac = args.sub_model_reg_coeff_ac
 cnf.agent.sub_model.reg_coeff_cr = args.sub_model_reg_coeff_cr
 cnf.agent.sub_model.clip_ac = args.sub_model_clip_ac
 cnf.agent.sub_model.clip_cr = args.sub_model_clip_cr
+cnf.agent.sub_model.policy_noise = args.sub_model_policy_noise
+cnf.agent.sub_model.policy_freq = args.sub_model_policy_freq 
+cnf.agent.sub_model.noise_clip = args.sub_model_noise_clip
 cnf.coppeliagym.params.action_regularizer = args.action_regularizer
 cnf.main.start_timesteps = args.start_timesteps
 cnf.agent.sub_noise = args.sub_noise

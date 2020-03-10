@@ -33,20 +33,22 @@ config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sub_model_ac_lr', type=float)
-parser.add_argument('--sub_model_cr_lr', type=float)
-parser.add_argument('--sub_model_reg_coeff_ac', type=float)
-parser.add_argument('--sub_model_reg_coeff_cr', type=float)
-parser.add_argument('--sub_model_clip_ac', type=float)
-parser.add_argument('--sub_model_clip_cr', type=float)
-parser.add_argument('--sub_model_policy_freq', type=int)
-parser.add_argument('--sub_model_policy_noise', type=float)
-parser.add_argument('--sub_model_noise_clip', type=float)
-parser.add_argument('--action_regularizer', type=float)
-parser.add_argument('--start_timesteps', type=int)
-parser.add_argument('--sub_noise', type=float)
-parser.add_argument('--sub_rew_scale', type=float)
-parser.add_argument('--max_size', type=int)
+parser.add_argument('--sub_model_ac_lr', default=cnf.agent.sub_model.ac_lr, type=float)
+parser.add_argument('--sub_model_cr_lr', default=cnf.agent.sub_model.ac_lr, type=float)
+parser.add_argument('--sub_model_reg_coeff_ac', default=cnf.agent.sub_model.reg_coeff_ac, type=float)
+parser.add_argument('--sub_model_reg_coeff_cr', default=cnf.agent.sub_model.reg_coeff_cr, type=float)
+parser.add_argument('--sub_model_clip_ac', default=cnf.agent.sub_model.clip_ac, type=float)
+parser.add_argument('--sub_model_clip_cr', default=cnf.agent.sub_model.clip_cr, type=float)
+parser.add_argument('--sub_model_policy_freq', default=cnf.agent.sub_model.policy_freq, type=int)
+parser.add_argument('--sub_model_policy_noise', default=cnf.agent.sub_model.policy_noise, type=float)
+parser.add_argument('--sub_model_noise_clip', default=cnf.agent.sub_model.noise_clip, type=float)
+parser.add_argument('--sub_model_tau', default=cnf.agent.sub_model.tau, type=float)
+parser.add_argument('--sub_model_discount', default=cnf.agent.sub_model.discount, type=float)
+parser.add_argument('--action_regularizer', default=cnf.coppeliagym.params.action_regularizer, type=float)
+parser.add_argument('--start_timesteps', default=cnf.main.start_timesteps, type=int)
+parser.add_argument('--sub_noise', default=cnf.agent.sub_noise, type=float)
+parser.add_argument('--sub_rew_scale', default=cnf.agent.sub_rew_scale, type=float)
+parser.add_argument('--max_size', default=cnf.buffer.max_size, type=int)
 
 args = parser.parse_args(sys.argv[1:])
 cnf.agent.sub_model.ac_lr = args.sub_model_ac_lr
@@ -58,6 +60,8 @@ cnf.agent.sub_model.clip_cr = args.sub_model_clip_cr
 cnf.agent.sub_model.policy_noise = args.sub_model_policy_noise
 cnf.agent.sub_model.policy_freq = args.sub_model_policy_freq 
 cnf.agent.sub_model.noise_clip = args.sub_model_noise_clip
+cnf.agent.sub_model.tau= args.sub_model_tau
+cnf.agent.sub_model.discount = args.sub_model_discount
 cnf.coppeliagym.params.action_regularizer = args.action_regularizer
 cnf.main.start_timesteps = args.start_timesteps
 cnf.agent.sub_noise = args.sub_noise

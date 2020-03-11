@@ -144,7 +144,8 @@ class CoppeliaEnv(gym.Env):
                            random_eval_target,
                            sub_mock,
                            action_regularizer,
-                           gripper_range):
+                           gripper_range,
+                           distance_function):
         self._max_episode_steps = time_limit
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(max_torque, np.float64) 
@@ -158,6 +159,7 @@ class CoppeliaEnv(gym.Env):
         self._sub_mock = sub_mock
         self._gripper_range = gripper_range
         self._action_regularizer = action_regularizer
+        self._distance_fn = self._get_distance_fn(distance_function)
         self.timestep = 0
         self.needs_reset = False
 
@@ -203,7 +205,7 @@ class CoppeliaEnv(gym.Env):
         if self._sparse_rew:
             if done:
                 return 0
-            return -1
+            return -1 - self._action_regularizer * tf.square(tf.norm(action))
         return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
     
     def _get_done(self):
@@ -215,16 +217,26 @@ class CoppeliaEnv(gym.Env):
         else:
             self.needs_reset = False
         return self.needs_reset
-
+    
     def _get_distance(self):
-        '''Returns L2 distance between arm tip and target.'''
         grip_pos = np.array(self._robot.get_ee_position())
         target_pos = self._ep_target_pos
+        return self._distance_fn(grip_pos, target_pos)
+    
+    def _get_distance_fn(self, func_string):
+        if func_string == 'euclid':
+            return self._euclid_distance
+        elif func_string == 'huber':
+            return self._huber_distance
+        else:
+            raise Exception('Non valid distance measure specified. Allowed are: *euclid* and *huber*')
+
+    def _euclid_distance(self, grip_pos, target_pos):
+        '''Returns L2 distance between arm tip and target.'''
         return np.linalg.norm(grip_pos - target_pos)
 
-    def _get_huber(self, delta=1.):
-        grip_pos = np.array(self._robot.get_ee_position())
-        target_pos = self._ep_target_pos
+    def _huber_distance(self, grip_pos, target_pos, delta=1.):
+        'Returns distance between arm tip and target using the Huber distance function.'
         dist = tf.constant(grip_pos - target_pos, dtype=tf.float32)
         return tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 ))
 

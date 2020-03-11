@@ -20,7 +20,7 @@ if ant_env:
     cnf = OmegaConf.load('configs/ant_conf.yaml')
 
 # Parameters of second cnf file overwrite those of first
-cnf = OmegaConf.merge(main_cnf, env_cnf)
+cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf)
 if name:
     cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()

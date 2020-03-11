@@ -72,5 +72,5 @@ def main(cnf):
             agent.reset()
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
-            if cnf.save_model: agent.save_model(f'./models/{agent._file_name}')
+            if cnf.save_model: agent.save_model(f'./experiments/models/{agent._file_name}')
 

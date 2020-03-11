@@ -1,0 +1,32 @@
+
+project: exp
+entity: rlpractitioner
+
+main:
+  env: Vrep
+  vrep: true
+  log: true
+  visit: false
+  render: false
+  save_model: false
+  load_model: false
+  start_timesteps: 0
+  max_timesteps: 1500000
+  time_limit: ${coppeliagym.params.time_limit}
+  offpolicy: false
+  flat_agent: true 
+  batch_size: 128
+  model: TD3
+  eval_freq: 20000
+  seed: 9
+  train_every: 300
+  gradient_steps: 300
+
+  
+  c_step: 10
+  decay: false 
+  step_decayer:
+    total_steps: 700000
+    init_step: ${main.c_step}
+    min_step: 5
+

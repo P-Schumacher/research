@@ -104,13 +104,14 @@ class TD3(object):
         self.actor = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_target = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr)
-
         self.critic = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_target = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr)
-        self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  # Huber loss does not punish a noisy large gradient.
-        
-        self.update_target_models_hard()  # Equal network and target network weights
+        # Huber loss does not punish a noisy large gradient.
+        self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
+        # Equal initial network and target network weights
+        self.update_target_models_hard()  
+
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
@@ -159,6 +160,8 @@ class TD3(object):
                                           self.c_step, state_seq, action_seq)
         self._train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
+        wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
+        wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
    
     @tf.function
@@ -313,9 +316,11 @@ def clip_by_global_norm(t_list, clip_norm):
     sometimes. This is why I decided not to use it.
     :param t_list: List of tensors to be clipped.
     :param clip_norm: Norm over which the tensors should be clipped.
-    :return : List of clipped tensors. '''
+    :return t_list: List of clipped tensors. 
+    :return norm: New norm after clipping.'''
     norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
     if norm > clip_norm:
         t_list = [tf.scalar_mul(clip_norm / norm, t) for t in t_list]
+        norm = clip_norm
     return t_list, norm
 

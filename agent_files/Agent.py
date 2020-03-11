@@ -11,13 +11,8 @@ class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_params(agent_cnf, main_cnf)
         self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], **buffer_cnf)
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.seed)
-        set_trace()
+        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.seed, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
-    
-    def load_model(self, policy, file_name, load_model):
-        policy_file = file_name if load_model == "default" else load_model
-        policy.load(f'./models/{policy_file}')
         
     def evaluation(self, env):
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
@@ -80,9 +75,9 @@ class Agent:
     def _gaussian_noise(self, expl_noise, dimension=1):
         return np.random.normal(0, expl_noise, dimension) 
 
-    def _create_file_name(self, policy, env, seed):
+    def _create_file_name(self, policy, env, seed, descriptor):
         '''Create file_name from experiment information to save model weights.'''
-        file_name = f'{policy}_{env}_{seed}'
+        file_name = f'{policy}_{env}_{seed}_{descriptor}'
         print("---------------------------------------")
         print(f"Policy: {policy}, Env: {env} Seed: {seed}")
         print("---------------------------------------")

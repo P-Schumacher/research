@@ -1,0 +1,32 @@
+
+coppeliagym:
+  sim:
+    scene_file: 'coppelia_scenes/kuka.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
+    headless: true 
+    sim_timestep: 0.03
+    render: ${main.render}
+
+  params:
+    # Output of gripper.actuate() and gripper.get_amount() need to be scaled to 0 - 1
+    gripper_range: [0.33, 0.55]
+    sub_mock: ${agent.sub_mock}
+    render: ${main.render}
+    time_limit: 300
+    # Taken from Kuka14 Tech Sheet
+    max_vel: [320, 320, 176, 176, 110, 40, 40] 
+    max_torque: [85, 85, 100, 75, 130, 135, 135]
+    ee_pos: false
+    ee_j_pos: true
+    force: false 
+    random_target: true 
+    random_eval_target: true
+    sparse_rew: false
+    action_regularizer: 0.00007
+
+  subgoals:
+    ee_goal: 5.
+    j_goal: 3.14
+    ej_goal: [3, 5.] # Subgoal length and range [L,R]
+
+

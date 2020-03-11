@@ -44,8 +44,6 @@ def main(cnf):
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent)
-        state[:3] = 0
-        state[10:12] = 0
         action = agent.select_noisy_action(state)
         maybe_verbose_output(t, agent, env, action, cnf, state)
         next_state, reward, done, _ = env.step(action)
@@ -61,6 +59,7 @@ def main(cnf):
             agent.reset()
             hard_reset = logger.log(t, intr_rew, c_step)
             logger.reset()
+            hard_reset = False
             if hard_reset:
                 # Need to periodically restart physics engine because Darmstadt gripper model is unstable.
                 # Hard reset takes current arm position as initial position. This is why we first do a normal reset.
@@ -73,5 +72,5 @@ def main(cnf):
             agent.reset()
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
-            if cnf.save_model: agent.save_model(f'./models/action_regul_{agent._file_name}')
+            if cnf.save_model: agent.save_model(f'./models/{agent._file_name}')
 

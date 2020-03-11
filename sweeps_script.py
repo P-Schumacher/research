@@ -11,16 +11,16 @@ ant_env = False
 vrep = True
 
 
-default_cnf = OmegaConf.load('configs/default_conf.yaml')
 
 if vrep:
-    main_cnf = OmegaConf.load('configs/vrep/vrep_main_conf.yaml')
-    env_cnf = OmegaConf.load('configs/vrep/vrep_env_conf.yaml')
+    main_cnf = OmegaConf.load('configs/vrep_default/vrep_main_conf.yaml')
+    env_cnf = OmegaConf.load('configs/vrep_default/vrep_env_conf.yaml')
+    agent_cnf = OmegaConf.load('configs/vrep_default/vrep_agent_conf.yaml')
 
 if ant_env:
     cnf = OmegaConf.load('configs/ant_conf.yaml')
 # Parameters of second cnf file overwrite those of first
-cnf = OmegaConf.merge(default_cnf, main_cnf, env_cnf)
+cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf)
 cnf.merge_with_cli()
 
 cnf.main.max_timesteps = 100000

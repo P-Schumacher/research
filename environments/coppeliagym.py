@@ -68,7 +68,7 @@ class CoppeliaEnv(gym.Env):
             self._gym_cam.set_pose(cam_placeholder.get_pose())
             self._gym_cam.set_render_mode(RenderMode.OPENGL3_WINDOWED)
             if mode == "rgb_array":
-                self._gym_cam.set_render(RenderMode.OPENGL3)
+                self._gym_cam.set_render_mode(RenderMode.OPENGL3)
         if mode == "rgb_array":
             return self._gym_cam.capture_rgb()
 

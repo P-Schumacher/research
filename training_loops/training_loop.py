@@ -44,6 +44,8 @@ def main(cnf):
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent)
+        state[:3] = 0
+        state[10:12] = 0
         action = agent.select_noisy_action(state)
         maybe_verbose_output(t, agent, env, action, cnf, state)
         next_state, reward, done, _ = env.step(action)
@@ -71,5 +73,5 @@ def main(cnf):
             agent.reset()
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
-            if cnf.save_model: agent.save_model("./models/"+str(agent.file_name))
+            if cnf.save_model: agent.save_model(f'./models/action_regul_{agent._file_name}')
 

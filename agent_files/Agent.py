@@ -11,7 +11,8 @@ class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_params(agent_cnf, main_cnf)
         self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], **buffer_cnf)
-        self._file_name = self._create_file_name(main_cnf.policy, main_cnf.env, main_cnf.seed)
+        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.seed)
+        set_trace()
         self._policy = model(**specs, **agent_cnf.sub_model) 
     
     def load_model(self, policy, file_name, load_model):

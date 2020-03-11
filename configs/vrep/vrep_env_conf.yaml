@@ -78,11 +78,11 @@ agent:
     reg_coeff_ac: 0.00005
     reg_coeff_cr: 0.0001
     name: 'sub'
-    discount: 0.99
-    tau: 0.005
-    policy_noise: 0.2
-    noise_clip: 0.5
-    policy_freq: 2
+    discount: 0.977
+    tau: 0.00533
+    policy_noise: 0.1705
+    noise_clip: 0.63
+    policy_freq: 4
     ac_lr: 0.00053
     cr_lr: 0.00086
     offpolicy: ${main.offpolicy}

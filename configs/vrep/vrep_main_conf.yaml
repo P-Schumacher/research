@@ -5,19 +5,19 @@ entity: rlpractitioner
 main:
   env: Vrep
   vrep: true
-  log: true
+  log: false
   visit: false
   render: false
-  save_model: false 
+  save_model: true
   load_model: false
-  start_timesteps: 0
+  start_timesteps: 5000
   max_timesteps: 1500000
   time_limit: ${coppeliagym.params.time_limit}
   offpolicy: false
   flat_agent: true 
   batch_size: 128
   model: TD3
-  eval_freq: 20000 
+  eval_freq: 20000
   seed: 9
   train_every: 300
   gradient_steps: 300

@@ -1,6 +1,8 @@
 main:
-  save_model: true
-  load_model: false
+  render: true
+  log: false
+  save_model: false
+  load_model: true
   descriptor: 'nothing'
 
 agent:

@@ -1,15 +1,17 @@
 main:
+  render: true
+  log: false
   save_model: false
-  load_model: false
-  descriptor: 'clip'
+  load_model: true
+  descriptor: 'action001'
 
 agent:
   sub_model:
-    clip_ac: 0.99
-    clip_cr: 0.0001
+    clip_ac: 100000.
+    clip_cr: 100000.
     reg_coeff_ac: 0.0
     reg_coeff_cr: 0.0
 
 coppeliagym:
   params:
-    action_regularizer: 0.00000
+    action_regularizer: 0.001

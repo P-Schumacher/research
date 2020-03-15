@@ -163,10 +163,12 @@ class CoppeliaEnv(gym.Env):
         self.timestep = 0
         self.needs_reset = False
 
-    def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
+    def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal, custom_goal):
         '''Return the maximal subgoal ranges. In this case:
         [ee_pos, box_pos], which are 2*3 elements. This Method is always
         in flux.'''
+        if custom_goal:
+            self.subgoal_ranges = custom_goal 
         if self._ee_pos:
             self.subgoal_ranges = [ee_goal for x in range(3)]
         elif self._ee_j_pos:

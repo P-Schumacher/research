@@ -14,7 +14,7 @@ coppeliagym:
     render: ${main.render}
     time_limit: 300
     # Taken from Kuka14 Tech Sheet
-    max_vel: [320, 320, 176, 176, 110, 40, 40] 
+    max_vel: [320, 320, 176, 176, 110, 40, 40] # In deg/s. In the sim, they convert to rad/s
     max_torque: [85, 85, 100, 75, 130, 135, 135]
     ee_pos: false
     ee_j_pos: true
@@ -29,5 +29,7 @@ coppeliagym:
     ee_goal: 5.
     j_goal: 3.14
     ej_goal: [3, 5.] # Subgoal length and range [L,R]
+    custom_goal: [5., 5., 5.]
+
 
 

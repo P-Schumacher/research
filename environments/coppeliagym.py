@@ -205,7 +205,7 @@ class CoppeliaEnv(gym.Env):
         if self._sparse_rew:
             if done:
                 return 0
-            return -1 - self._action_regularizer * tf.square(tf.norm(action))
+            return -1 
         return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
     
     def _get_done(self):
@@ -295,7 +295,7 @@ class CoppeliaEnv(gym.Env):
 
 if __name__ == '__main__':
 
-    env = CoppeliaEnv(headless=True, force_mode=False, render=True, ee_pos=True, time_limit=300, sparse_rew=False)
+    env = CoppeliaEnv(headless=False, force_mode=False, render=True, ee_pos=True, time_limit=300, sparse_rew=False)
     num_episodes = 0
     x = []
     y = []

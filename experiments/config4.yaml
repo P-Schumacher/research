@@ -1,14 +1,14 @@
 main:
   save_model: false
   load_model: false
-  descriptor: 'l2reg'
+  descriptor: 'clip'
 
 agent:
   sub_model:
-    clip_ac: 100000.
-    clip_cr: 100000.
-    reg_coeff_ac: 0.00005
-    reg_coeff_cr: 0.0001
+    clip_ac: 0.54
+    clip_cr: 0.99
+    reg_coeff_ac: 0.0
+    reg_coeff_cr: 0.0
 
 coppeliagym:
   params:

@@ -15,7 +15,6 @@ def maybe_verbose_output(t, agent, env, action, cnf, state):
     if cnf.render:
         print(f"action: {action}")
         print(f"time is: {t}")
-        print(f"state is {state}")
         if not cnf.flat_agent:
             print(f"goal: {agent.goal}")
             if agent.meta_time and cnf.render:
@@ -39,7 +38,7 @@ def main(cnf):
     logger = Logger(cnf.log, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)
     # Load previously trained model.
-    if cnf.load_model: agent.load_model(f'./models/{agent._file_name}')
+    if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):

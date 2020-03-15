@@ -10,93 +10,62 @@ from utils.replay_buffers import ReplayBuffer
 from agent_files.Agent import Agent
 import wandb
 
-def huber_loss(a, delta):
-    return -tf.reduce_sum(tf.where(tf.abs(a) < delta, 0.5 * tf.square(a), delta * (tf.abs(a) - 0.5 * delta)))
-
-def pseudo_huber(a, delta):
-    return -tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(a / delta), 0.5) - 1 ))
-
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
 
 class TransitBuffer(ReplayBuffer):
     '''This class can be used like a normal ReplayBuffer of a non Hierarchical agent. It stores generated goals internally and autonomously creates
     the correct sub- and meta-agent transitions. Just don't sample directly from it.'''
-    def __init__(self, agent, sub_env_spec, meta_env_spec, subgoal_dim, cnf):
-        sub_state_dim = sub_env_spec['state_dim']
-        meta_state_dim = meta_env_spec['state_dim']
-        action_dim = sub_env_spec['action_dim']
-        target_dim = sub_env_spec['target_dim']
-        assert sub_state_dim == meta_state_dim - target_dim + subgoal_dim
-        # Algo objects
-        self.cnf = cnf
-        self.agent = agent
-        self.goal_type = cnf.agent.goal_type
-        self.offpolicy = cnf.agent.offpolicy
-        # Dimensions 
-        self.subgoal_dim = subgoal_dim 
-        self.target_dim = target_dim
-        # Reward scales 
-        self.sub_rew_scale = cnf.agent.sub_rew_scale
-        self.meta_rew_scale = cnf.agent.meta_rew_scale
-        # Replay Buffers
-        self.sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, **cnf.buffer)
-        self.meta_replay_buffer = ReplayBuffer(meta_state_dim, subgoal_dim, **cnf.buffer)
-        # We dont want to create these arrays for large c_step if we do not correct
-        c_step = [1 if not cnf.main.offpolicy else cnf.main.c_step][0]
-        self.state_seq = np.ones(shape=[c_step, sub_state_dim - subgoal_dim + target_dim]) * np.inf 
-        self.action_seq = np.ones(shape=[c_step, action_dim]) * np.inf 
-        # Control flow variables
-        self.sum_of_rewards = 0
-        self.ep_rewards = 0
-        self.init = False  # The buffer.add() does not create a transition in s0 as we need s1
-        self.meta_time = False
-        self.needs_reset = False
-        self.timestep = -1
-        self.ptr = 0
+    def __init__(self, agent, sub_env_spec, meta_env_spec, subgoal_dim, target_dim, main_cnf, agent_cnf, buffer_cnf):
+        self._prepare_parameters(main_cnf, agent_cnf, target_dim, subgoal_dim)
+        self._prepare_buffers(buffer_cnf, sub_env_spec['state_dim'], meta_env_spec['state_dim'],
+                              sub_env_spec['action_dim'])
+        self._prepare_control_variables()
+        self._prepare_offpolicy_datastructures(sub_env_spec)
+        self._agent = agent
             
     def add(self, state, action, reward, next_state, done):
         '''Adds the transitions to the appropriate buffers. Goal is saved at
         each timestep to be used for the transition of the next timestep. At 
         an episode end, the meta agent recieves a transition of t:t_end, 
         regardless if it has been c steps.'''
-        self.timestep += 1
-        if self.needs_reset:
+        self._timestep += 1
+        if self._needs_reset:
             raise Exception("You need to reset the agent if a 'done' has occurred in the environment.")
-        if not self.init:  # Variables are saved in the first call, transitions constructed in later calls.
+        if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
             if done:
                 self._finish_one_step_episode(state, action, reward, next_state, done)
-                self.needs_reset = True
+                self._needs_reset = True
             self._save_sub_transition(state, action, reward, next_state, done, self.goal)
             self._save_meta_transition(state, self.goal, done)
-            self.sum_of_rewards += reward
-            self.init = True
+            self._sum_of_rewards += reward
+            self._init = True
             return None
         self._finish_sub_transition(self.goal, reward)
         self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-        if self.meta_time:
+        if self._meta_time:
             self._finish_meta_transition(state, done)
             self._save_meta_transition(state, self.goal, done)
-            self.sum_of_rewards = 0
+            self._sum_of_rewards = 0
         if done:
-            self.ep_rewards = 0
-            self.agent.select_action(next_state)
+            self._ep_rewards = 0
+            self._agent.select_action(next_state)
             next_goal = self.goal
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(next_state, done)
-            self.needs_reset = True
-            return self.ep_rewards
+            self._needs_reset = True
+            return self._ep_rewards
 
-        self.sum_of_rewards += reward
+        self._sum_of_rewards += reward
     
     def compute_intr_reward(self, goal, state, next_state):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
         the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
         also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
-        dim = self.subgoal_dim
-        if self.goal_type == "Absolute":
+        dim = self._subgoal_dim
+        if self._goal_type == "Absolute":
             rew = -tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
-        elif self.goal_type == "Direction":
+        elif self._goal_type == "Direction":
             rew =  -tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
         else:
             raise Exception("Goal type has to be Absolute or Direction")
@@ -105,47 +74,48 @@ class TransitBuffer(ReplayBuffer):
     def _collect_seq_state_actions(self, state, action):
         '''These are collected so that the off policy correction for the meta-agent can
         be calculated in a more efficient way.'''
-        if self.cnf.main.offpolicy:
-            self.state_seq[self.ptr] = state
-            self.action_seq[self.ptr] = action
-            self.ptr += 1
+        if self._offpolicy:
+            self._state_seq[self._ptr] = state
+            self._action_seq[self._ptr] = action
+            self._ptr += 1
 
     def _finish_sub_transition(self, next_goal, reward):
         old = self._load_sub_transition()
-        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state) * self.sub_rew_scale
-        if self.cnf.main.ri_re:
+        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state) * self._sub_rew_scale
+        if self._ri_re:
             intr_reward += reward
-        self.ep_rewards += intr_reward
+        self._ep_rewards += intr_reward
         self._add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
 
     def _finish_meta_transition(self, next_state, done):
         old = self._load_meta_transition()
-        self._add_to_meta(old.state, old.goal, self.sum_of_rewards * self.meta_rew_scale, next_state, done)
+        self._add_to_meta(old.state, old.goal, self._sum_of_rewards * self._meta_rew_scale, next_state, done)
 
     def _finish_one_step_episode(self, state, action, reward, next_state, done):
         '''1 step episodes are handled separately because the adding of states to 
         the replay buffers is always one step behind the environment timestep.'''
         goal = self.goal
-        self.agent.select_action(next_state)
+        self._agent.select_action(next_state)
         next_goal = self.goal
         intr_reward = self.compute_intr_reward(goal, state, next_state)
         self._add_to_sub(state, goal, action, intr_reward, next_state, next_goal, done)
-        self._add_to_meta(state, goal, reward * self.meta_rew_scale, next_state, done)
+        self._add_to_meta(state, goal, reward * self._meta_rew_scale, next_state, done)
 
     def _add_to_sub(self, state, goal, action, intr_reward, next_state, next_goal, extr_done):
         '''Adds the relevant transition to the sub-agent replay buffer.'''
-        self._collect_seq_state_actions(state, action)
+        if self._offpolicy:
+            self._collect_seq_state_actions(state, action)
         # Remove target from sub-agent state. Conform with paper code.
-        state = state[:-self.target_dim]  
-        next_state = next_state[:-self.target_dim]
+        state = state[:-self._target_dim]  
+        next_state = next_state[:-self._target_dim]
         cat_state = np.concatenate([state, goal])
         cat_next_state = np.concatenate([next_state, next_goal])
         # Zero out x and y for sub-agent. Conform with paper code.
         # Makes only sense with ee_pos or torso_pos, not joints
-        if self.cnf.main.zero_obs:
-            cat_state[:self.cnf.main.zero_obs] = 0
-            cat_next_state[:self.cnf.main.zero_obs] = 0
-        self.sub_replay_buffer.add(cat_state, action, intr_reward,
+        if self._zero_obs:
+            cat_state[:self._zero_obs] = 0
+            cat_next_state[:self._zero_obs] = 0
+        self._sub_replay_buffer.add(cat_state, action, intr_reward,
                                    cat_next_state, extr_done, 0, 0)
         
     def _save_sub_transition(self, state, action, reward, next_state, done, goal):
@@ -155,18 +125,18 @@ class TransitBuffer(ReplayBuffer):
         return self.sub_transition
 
     def _add_to_meta(self, state, goal, sum_of_rewards, next_state_c, done_c):
-        self.meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self.state_seq,
-                                    self.action_seq)
+        self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self._state_seq,
+                                    self._action_seq)
         self._reset_sequence()
 
     def _reset_sequence(self):
         '''After the sequence has been added to the meta replaybuffer, we overwrite the arrays with np.inf,
         those are handled in the offpolicy correction correctly. This enables us to have variable length 
         state and action sequences.'''
-        if self.offpolicy:
-            self.state_seq[:] = np.inf
-            self.action_seq[:] = np.inf
-            self.ptr = 0
+        if self._offpolicy:
+            self._state_seq[:] = np.inf
+            self._action_seq[:] = np.inf
+            self._ptr = 0
     
     def _save_meta_transition(self, state, goal, done):
         self.meta_transition = meta_Transition(state, goal, done)
@@ -174,29 +144,52 @@ class TransitBuffer(ReplayBuffer):
     def _load_meta_transition(self):
         return self.meta_transition
 
+    def _prepare_offpolicy_datastructures(self, sub_env_spec):
+        # We dont want to create these arrays for large c_step if we do not correct
+        c_step = [1 if not self._offpolicy else self._c_step][0]
+        self._state_seq = np.ones(shape=[c_step, sub_env_spec['state_dim'] - self._subgoal_dim + self._target_dim]) * np.inf 
+        self._action_seq = np.ones(shape=[c_step, sub_env_spec['action_dim']]) * np.inf 
+
+    def _prepare_control_variables(self):
+        self._sum_of_rewards = 0
+        self._ep_rewards = 0
+        self._init = False  # The buffer.add() does not create a transition in s0 as we need s1
+        self._meta_time = False
+        self._needs_reset = False
+        self._timestep = -1
+        self._ptr = 0
+
+    def _prepare_buffers(self, buffer_cnf, sub_state_dim, meta_state_dim, action_dim):
+        assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
+        self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, **buffer_cnf)
+        self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, **buffer_cnf)
+
+    def _prepare_parameters(self, main_cnf, agent_cnf, target_dim, subgoal_dim):
+        self._offpolicy = main_cnf.offpolicy
+        self._c_step = main_cnf.c_step
+        self._zero_obs = agent_cnf.zero_obs
+        self._goal_type = agent_cnf.goal_type
+        self._sub_rew_scale = agent_cnf.sub_rew_scale
+        self._meta_rew_scale = agent_cnf.meta_rew_scale
+        self._ri_re = agent_cnf.ri_re
+        self._target_dim = target_dim
+        self._subgoal_dim = subgoal_dim
+
 
 class HierarchicalAgent(Agent):
-    def __init__(self, cnf, env_spec, model_cls, subgoal_dim):
-        # Args parameters
-        self.cnf = cnf 
-        self.meta_mock = self.cnf.agent.meta_mock
-        self.sub_mock = self.cnf.agent.sub_mock
-        self.c_step = self.cnf.main.c_step          
-        # Explicit parameters
-        self.subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
-        self.subgoal_dim = subgoal_dim
-        self.target_dim = env_spec['target_dim']
-        self.action_dim = env_spec['action_dim']
-        self.file_name = self._create_file_name(cnf.main.model, cnf.main.env, cnf.main.seed)
+    def __init__(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
+        self._prepare_parameters(agent_cnf, main_cnf, env_spec, subgoal_dim)
+        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
+        
         meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
-        # Models and buffer
-        self.sub_agent = model_cls(**sub_env_spec, **cnf.agent.sub_model)
-        self.meta_agent = model_cls(**meta_env_spec, **cnf.agent.meta_model)
-        self.transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, cnf)
+        self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
+                                           buffer_cnf)
+        self._sub_agent = model_cls(**sub_env_spec, **agent_cnf.sub_model)
+        self._meta_agent = model_cls(**meta_env_spec, **agent_cnf.meta_model)
         # Logic variables
         # Set this to its maximum, such that we query the meta agent in the first iteration
-        self.goal_counter = self.c_step 
-        self.evals = 0  
+        self._goal_counter = self._c_step 
+        self._evals = 0  
         
     def select_action(self, state):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
@@ -208,49 +201,49 @@ class HierarchicalAgent(Agent):
     def select_noisy_action(self, state):
         '''Selects an action from sub- and meta-agent and adds gaussian noise to it. Then clips actions appropriately to the sub.max_action
         or the META_RANGES'''
-        # TODO scale noise to action size
-        action = self.select_action(state) + self.gaussian_noise(self.cnf.agent.sub_noise, self.action_dim)
+        action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
-            self.goal = self.goal + self.gaussian_noise(self.cnf.agent.meta_noise, self.subgoal_dim)
-            self.goal = tf.clip_by_value(self.goal, -self.subgoal_ranges, self.subgoal_ranges)
-        return tf.clip_by_value(action, -self.sub_agent.max_action, self.sub_agent.max_action)
+            self.goal = self.goal + self._gaussian_noise(self._meta_noise, self._subgoal_dim)
+            self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
+        return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
+    def train(self, time_step):
+        '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
+        sub_avg = np.zeros([6,], dtype=np.float32)
+        for i in range(self._gradient_steps):
+            *metrics, = self._sub_agent.train(self.transitbuffer.sub_replay_buffer, self._batch_size, time_step)
+            sub_avg += metrics
+        sub_avg /= self._gradient_steps
+        # TODO FIX THIS
+        if self.meta_train_counter == self.c_step:
+            meta_avg = np.zeros([6,], dtype=np.float32)
+            for i in range(self._gradient_steps):
+                *metrics, = self.meta_agent.train(self._meta_replay_buffer, self._batch_size, time_step,
+                                                  self._sub_agent.actor)
+                meta_avg += metrics
+            meta_avg /= self._gradient_steps
+
         wandb.log({f'sub/actor_loss': m_avg[0],
                    f'sub/critic_loss': m_avg[1],
                    f'sub/critic_gradmean': m_avg[2],
                    f'sub/actor_gradmean': m_avg[3], 
                    f'sub/actor_gradstd': m_avg[4],
                    f'sub/critic_gradstd': m_avg[5]}, step = timestep)
-    def train(self, time_step):
-        '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        sub_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(self.cnf.main.gradient_steps):
-            *metrics, = self.sub_agent.train(self.transitbuffer.sub_replay_buffer, self.cnf.main.batch_size, time_step)
-            sub_avg += metrics
-        sub_avg /= self.cnf.main.gradient_steps
-        # TODO FIX THIS
-        if self.meta_train_counter == self.c_step:
-            meta_avg = np.zeros([6,], dtype=np.float32)
-            for i in range(self.cnf.main.gradient_steps):
-                *metrics, = self.meta_agent.train(self.meta_replay_buffer, self.cnf.main.batch_size, time_step,
-                                                  self.sub_agent.actor)
-                meta_avg += metrics
-            meta_avg /= self.cnf.main.gradient_steps
 
     def replay_add(self, state, action, reward, next_state, done):
-        return self.transitbuffer.add(state, action, reward, next_state, done)
+        return self._transitbuffer.add(state, action, reward, next_state, done)
         
     def save_model(self, string):
         '''Saves the weights of sub and meta agent to a file.'''
-        self.sub_agent.actor.save_weights(string + "_sub_actor")
-        self.sub_agent.critic.save_weights(string + "_sub_critic")
+        self._sub_agent.actor.save_weights(string + "_sub_actor")
+        self._sub_agent.critic.save_weights(string + "_sub_critic")
         self.meta_agent.actor.save_weights(string + "_meta_actor")
         self.meta_agent.critic.save_weights(string + "_meta_critic")
 
     def load_model(self, string):
         '''Loads the weights of sub and meta agent from a file.'''
-        self.sub_agent.actor.load_weights(string + "_sub_actor")
-        self.sub_agent.critic.load_weights(string + "_sub_critic")
+        self._sub_agent.actor.load_weights(string + "_sub_actor")
+        self._sub_agent.critic.load_weights(string + "_sub_critic")
         self.meta_agent.actor.load_weights(string + "_meta_actor")
         self.meta_agent.critic.load_weights(string + "_meta_critic")
 
@@ -259,17 +252,35 @@ class HierarchicalAgent(Agent):
         episode and we don't get the last goal from the previous episode. It also
         prevents lingering old transition components from being used. This also resets
         the sum of rewards for the meta agent.'''
-        self.goal_counter = self.c_step
-        self.transitbuffer.init = False
-        self.transitbuffer.sum_of_rewards = 0
-        self.transitbuffer.needs_reset = False
-        self.transitbuffer.state_seq[:] = np.inf
-        self.transitbuffer.action_seq[:] = np.inf
-        self.transitbuffer.ptr = 0
-    
+        self.goal_counter = self._c_step
+        self._transitbuffer._init = False
+        self._transitbuffer._sum_of_rewards = 0
+        self._transitbuffer._needs_reset = False
+        self._transitbuffer._state_seq[:] = np.inf
+        self._transitbuffer._action_seq[:] = np.inf
+        self._transitbuffer._ptr = 0
+
+    def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
+        self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
+        self._target_dim = env_spec['target_dim']
+        self._action_dim = env_spec['action_dim']
+        self._subgoal_dim = subgoal_dim
+
+        self._batch_size = main_cnf.batch_size
+        self._c_step = main_cnf.c_step
+        self._seed = main_cnf.seed
+        self._log = main_cnf.log
+
+        self._meta_mock = agent_cnf.meta_mock
+        self._sub_mock = agent_cnf.sub_mock
+        self._meta_noise = agent_cnf.meta_noise
+        self._sub_noise = agent_cnf.sub_noise
+        self._zero_obs = agent_cnf.zero_obs
+        self._goal_type = agent_cnf.goal_type
+
     def _maybe_mock(self, goal):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
-        if not self.cnf.agent.meta_mock:
+        if not self._meta_mock:
             return goal
         mock_goal = np.array([0.625, -0.01, 0.58], np.float32)
         return mock_goal
@@ -288,37 +299,37 @@ class HierarchicalAgent(Agent):
         original state space and the action space of the meta agent.'''
         meta_env_spec = env_spec.copy()
         sub_env_spec = env_spec.copy()
-        meta_env_spec['action_dim'] = len(self.subgoal_ranges)
-        meta_env_spec['max_action'] = self.subgoal_ranges
-        sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self.target_dim + meta_env_spec['action_dim']
+        meta_env_spec['action_dim'] = len(self._subgoal_ranges)
+        meta_env_spec['max_action'] = self._subgoal_ranges
+        sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state):
         # TODO correctly give meta goal with meta_time and the mock goal
-        if self.meta_mock:
-            self.goal = self.meta_mock_goal
+        if self._meta_mock:
+            self.goal = self._meta_mock_goal
         self.goal, self.meta_time = self._sample_goal(state)
 
 
     def _get_sub_action(self, state):
-        if self.sub_mock:
+        if self._sub_mock:
             action = np.zeros([8,], dtype=np.float32)
             action[:7] = self.goal
             return action 
         # Zero out x,y for sub agent. Then take target away in select_action. Conform with HIRO paper.
-        if self.cnf.agent.zero_obs:
+        if self._zero_obs:
             state = state.copy()
-            state[:self.cnf.agent.zero_obs] = 0
-        return  self.sub_agent.select_action(np.concatenate([state[:-self.target_dim], self.goal]))
+            state[:self._zero_obs] = 0
+        return  self._sub_agent.select_action(np.concatenate([state[:-self._target_dim], self.goal]))
     
     def _goal_transition_fn(self, goal, previous_state, state):
         '''When using directional goals, we have to transition the goal at every 
         timestep to keep it at the same absolute position for n timesteps. In absolute 
         mode, this is just the identity.'''
-        if self.cnf.agent.goal_type == "Absolute":
+        if self._goal_type == "Absolute":
             return goal
-        elif self.cnf.agent.goal_type == "Direction":
-            dim = self.subgoal_dim
+        elif self._goal_type == "Direction":
+            dim = self._subgoal_dim
             return previous_state[:dim] + goal - state[:dim]
         else:
             raise Exception("Enter a valid type for the goal, Absolute or Direction.")
@@ -326,12 +337,12 @@ class HierarchicalAgent(Agent):
     def _check_inner_done(self, state, next_state, goal):
         '''Checks if the sub-agent has managed to reach the subgoal and then calls a new subgoal.'''
         inner_done = self._inner_done_cond(state, next_state, goal)
-        if self.cnf.main.log:
+        if self._log:
             wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal):
-        dim = self.subgoal_dim
-        if self.cnf.agent.goal_type == 'Absolute':
+        dim = self._subgoal_dim
+        if self._goal_type == 'Absolute':
             diff = next_state[:dim] - goal[:dim]
         else:
             diff = state[:dim] + goal - next_state[:dim]
@@ -340,32 +351,32 @@ class HierarchicalAgent(Agent):
     def _sample_goal(self, state):
         '''Either output the existing goal or query the meta agent for a new goal, depending on the timestep. The 
         goal and the meta_time boolean are saved to the transitbuffer for later use by the add-fct.'''
-        self.goal_counter += 1
-        if self.goal_counter < self.c_step:
+        self._goal_counter += 1
+        if self._goal_counter < self._c_step:
             meta_time = False
-            goal = self._goal_transition_fn(self.goal, self.prev_state, state)
-            self.prev_state = state
+            goal = self._goal_transition_fn(self.goal, self._prev_state, state)
+            self._prev_state = state
         else:
-            self.goal_counter = 0
-            self.prev_state = state
+            self._goal_counter = 0
+            self._prev_state = state
             meta_time = True
-            goal = self.meta_agent.select_action(state)
+            goal = self._meta_agent.select_action(state)
             goal = self._maybe_move_over_table(goal)
             goal = self._maybe_mock(goal)
-        self._check_inner_done(self.prev_state, state, goal)
+        self._check_inner_done(self._prev_state, state, goal)
         return goal, meta_time
     
     def _eval_policy(self, env, env_name, seed, time_limit, visit, eval_episodes=5):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
-        env.seed(self.cnf.main.seed + 100)
+        env.seed(self.main_cnf.seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
         success_rate = 0
         visitation = np.zeros((time_limit, env.observation_space.shape[0]))
         for episode_nbr in range(eval_episodes):
-            print("eval number:"+str(episode_nbr)+" of "+str(eval_episodes))
+            print(f'eval number: {episode_nbr} of {eval_episodes}')
             step = 0
             state, done = env.reset(evalmode=True), False
             self.reset()
@@ -373,7 +384,7 @@ class HierarchicalAgent(Agent):
                 action = self.select_action(state)
                 next_state, reward, done, _ = env.step(action)
                 avg_ep_reward.append(reward)
-                avg_intr_reward.append(self.transitbuffer.compute_intr_reward(self.goal, state, next_state))
+                avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state))
                 state = next_state
                 if visit:
                     visitation[step, :] = state
@@ -381,33 +392,33 @@ class HierarchicalAgent(Agent):
                 if done and step < env._max_episode_steps:
                     success_rate += 1
             if visit:
-                np.save("./results/visitation/visitation_"+str(self.evals)+"_"+str(episode_nbr)+"_"+str(self.file_name), visitation)
+                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / eval_episodes
         success_rate = success_rate / eval_episodes
         print("---------------------------------------")
-        print("Evaluation over {eval_episodes} episodes: "+str(avg_ep_reward))
+        print(f'Evaluation over {eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
-        self.evals += 1
+        self._evals += 1
         return avg_ep_reward, avg_intr_reward, success_rate
 
     @property
     def goal(self):
-        return self.transitbuffer.goal
+        return self._transitbuffer.goal
 
     @goal.setter
     def goal(self, goal):
-        self.transitbuffer.goal = goal
+        self._transitbuffer.goal = goal
 
     @property
     def meta_time(self):
-        return self.transitbuffer.meta_time
+        return self._transitbuffer.meta_time
 
     @meta_time.setter
     def meta_time(self, meta_time):
-        self.transitbuffer.meta_time = meta_time
+        self._transitbuffer.meta_time = meta_time
 
     @property
     def meta_replay_buffer(self):
-        return self.transitbuffer.meta_replay_buffer
+        return self._transitbuffer._meta_replay_buffer

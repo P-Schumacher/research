@@ -76,11 +76,11 @@ def create_world(cnf):
     create_directories(cnf)
     env = create_env(cnf)
     model_cls = get_model_class(cnf.main.model)
-    specs = get_env_specs(env)
+    env_spec = get_env_specs(env)
     if not cnf.main.flat_agent:
-        agent = HierarchicalAgent(cnf, specs, model_cls, env.subgoal_dim)
+        agent = HierarchicalAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim)
     else: 
-        agent = Agent(cnf.agent, cnf.buffer, cnf.main, specs, model_cls)
+        agent = Agent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls)
     set_seeds(env, cnf.main.seed)
     return env, agent 
 

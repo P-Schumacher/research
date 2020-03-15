@@ -1,7 +1,9 @@
 main:
+  log: false
+  render: true
   save_model: false
   load_model: false
-  descriptor: 'action00007andl2'
+  descriptor: 'action001'
 
 agent:
   sub_model:
@@ -12,4 +14,4 @@ agent:
 
 coppeliagym:
   params:
-    action_regularizer: 0.00007
+    action_regularizer: 0.001

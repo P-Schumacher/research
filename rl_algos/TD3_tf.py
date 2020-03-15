@@ -20,7 +20,7 @@ class Actor(tf.keras.Model):
         self.l2 = kl.Dense(ac_layers[1], activation='relu', kernel_initializer=initialize_relu)
         self.l3 = kl.Dense(action_dim, activation='tanh', kernel_initializer=initialize_tanh)
         
-        self.max_action = max_action
+        self._max_action = max_action
         # Remember building your model before you can copy it
         # else the weights wont be there. Could also call the model once in the beginning to build it implicitly 
         self.build(input_shape=(None, state_dim))
@@ -30,7 +30,7 @@ class Actor(tf.keras.Model):
         assert state.dtype == tf.float32
         x = self.l1(state)
         x = self.l2(x)
-        return self.max_action * self.l3(x)
+        return self._max_action * self.l3(x)
 
 
 class Critic(tf.keras.Model):
@@ -115,7 +115,7 @@ class TD3(object):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
-        self.max_action = max_action
+        self._max_action = max_action
         self.discount = discount
         self.tau = tau
         self.policy_noise = policy_noise
@@ -178,7 +178,7 @@ class TD3(object):
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
         next_action = self.actor_target(next_state) + noise
         # this clip assures that we don't take impossible actions a > max_action
-        next_action = tf.clip_by_value(next_action, -self.max_action, self.max_action)
+        next_action = tf.clip_by_value(next_action, -self._max_action, self._max_action)
         # Compute the target Q value
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)

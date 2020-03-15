@@ -22,7 +22,7 @@ coppeliagym:
     random_target: true 
     random_eval_target: true
     sparse_rew: false
-    action_regularizer: 0.001
+    action_regularizer: 0.00086
     distance_function: euclid
 
   subgoals:

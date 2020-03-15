@@ -33,31 +33,36 @@ class TransitBuffer(ReplayBuffer):
         if self._needs_reset:
             raise Exception("You need to reset the agent if a 'done' has occurred in the environment.")
         if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
-            if done:
-                self._finish_one_step_episode(state, action, reward, next_state, done)
-                self._needs_reset = True
-            self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-            self._save_meta_transition(state, self.goal, done)
-            self._sum_of_rewards += reward
-            self._init = True
-            return None
-        self._finish_sub_transition(self.goal, reward)
-        self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-        if self._meta_time:
-            self._finish_meta_transition(state, done)
-            self._save_meta_transition(state, self.goal, done)
-            self._sum_of_rewards = 0
-        if done:
-            self._ep_rewards = 0
-            self._agent.select_action(next_state)
-            next_goal = self.goal
+            self._initialize_buffer(state, action, reward, next_state, done) 
+        else: 
             self._finish_sub_transition(self.goal, reward)
-            self._finish_meta_transition(next_state, done)
-            self._needs_reset = True
-            return self._ep_rewards
+            self._save_sub_transition(state, action, reward, next_state, done, self.goal)
+            if self.meta_time:
+                self._finish_meta_transition(state, done)
+                self._save_meta_transition(state, self.goal, done)
+                self._sum_of_rewards = 0
+            if done:
+                self._ep_rewards = 0
+                self._agent.select_action(next_state)
+                next_goal = self.goal
+                self._finish_sub_transition(self.goal, reward)
+                self._finish_meta_transition(next_state, done)
+                self._needs_reset = True
+                return self._ep_rewards
 
+            self._sum_of_rewards += reward
+
+    def _initialize_buffer(self, state, action, reward, next_state, done):
+        if done:
+            self._finish_one_step_episode(state, action, reward, next_state, done)
+            self._needs_reset = True
+            return None
+        self._save_sub_transition(state, action, reward, next_state, done, self.goal)
+        self._save_meta_transition(state, self.goal, done)
         self._sum_of_rewards += reward
-    
+        self._init = True
+        return None
+
     def compute_intr_reward(self, goal, state, next_state):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
         the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
@@ -75,14 +80,14 @@ class TransitBuffer(ReplayBuffer):
         '''These are collected so that the off policy correction for the meta-agent can
         be calculated in a more efficient way.'''
         if self._offpolicy:
-            self._state_seq[self._ptr] = state
-            self._action_seq[self._ptr] = action
-            self._ptr += 1
-
-    def _finish_sub_transition(self, next_goal, reward):
-        old = self._load_sub_transition()
-        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state) * self._sub_rew_scale
-        if self._ri_re:
+            self._state_seq[self._ptr] = state 
+            self._action_seq[self._ptr] = action 
+            self._ptr += 1 
+            
+    def _finish_sub_transition(self, next_goal, reward): 
+        old = self._load_sub_transition() 
+        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state) * self._sub_rew_scale 
+        if self._ri_re: 
             intr_reward += reward
         self._ep_rewards += intr_reward
         self._add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
@@ -154,7 +159,7 @@ class TransitBuffer(ReplayBuffer):
         self._sum_of_rewards = 0
         self._ep_rewards = 0
         self._init = False  # The buffer.add() does not create a transition in s0 as we need s1
-        self._meta_time = False
+        self.meta_time = False
         self._needs_reset = False
         self._timestep = -1
         self._ptr = 0
@@ -207,28 +212,28 @@ class HierarchicalAgent(Agent):
             self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
-    def train(self, time_step):
+    def train(self, timestep):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
         sub_avg = np.zeros([6,], dtype=np.float32)
         for i in range(self._gradient_steps):
-            *metrics, = self._sub_agent.train(self.transitbuffer.sub_replay_buffer, self._batch_size, time_step)
+            *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
             sub_avg += metrics
         sub_avg /= self._gradient_steps
-        # TODO FIX THIS
-        if self.meta_train_counter == self.c_step:
-            meta_avg = np.zeros([6,], dtype=np.float32)
-            for i in range(self._gradient_steps):
-                *metrics, = self.meta_agent.train(self._meta_replay_buffer, self._batch_size, time_step,
-                                                  self._sub_agent.actor)
-                meta_avg += metrics
-            meta_avg /= self._gradient_steps
 
-        wandb.log({f'sub/actor_loss': m_avg[0],
-                   f'sub/critic_loss': m_avg[1],
-                   f'sub/critic_gradmean': m_avg[2],
-                   f'sub/actor_gradmean': m_avg[3], 
-                   f'sub/actor_gradstd': m_avg[4],
-                   f'sub/critic_gradstd': m_avg[5]}, step = timestep)
+        meta_avg = np.zeros([6,], dtype=np.float32)
+        for i in range(int(self._gradient_steps / 10)):
+            *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
+                                              self._sub_agent.actor)
+            meta_avg += metrics
+        meta_avg /= int(self._gradient_steps / 10)
+        if self._log:
+            for avg, name in zip([sub_avg, meta_avg], ['sub', 'meta']):
+                wandb.log({f'{name}/actor_loss': avg[0],
+                           f'{name}/critic_loss': avg[1],
+                           f'{name}/critic_gradmean': avg[2],
+                           f'{name}/actor_gradmean': avg[3], 
+                           f'{name}/actor_gradstd': avg[4],
+                           f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
     def replay_add(self, state, action, reward, next_state, done):
         return self._transitbuffer.add(state, action, reward, next_state, done)
@@ -270,6 +275,7 @@ class HierarchicalAgent(Agent):
         self._c_step = main_cnf.c_step
         self._seed = main_cnf.seed
         self._log = main_cnf.log
+        self._gradient_steps = main_cnf.gradient_steps
 
         self._meta_mock = agent_cnf.meta_mock
         self._sub_mock = agent_cnf.sub_mock
@@ -418,6 +424,10 @@ class HierarchicalAgent(Agent):
     @meta_time.setter
     def meta_time(self, meta_time):
         self._transitbuffer.meta_time = meta_time
+
+    @property
+    def sub_replay_buffer(self):
+        return self._transitbuffer._sub_replay_buffer
 
     @property
     def meta_replay_buffer(self):

@@ -25,7 +25,8 @@ if name:
 cnf.merge_with_cli()
 
 #TODO include meta params here (difficult because they have the same name as sub params)
-config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model}
+config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model,
+         cnf.agent.meta_model}
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)

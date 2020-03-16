@@ -30,20 +30,21 @@ cnf.project = 'clip_sweep'
 cnf.coppeliagym.params.force = 0
 config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model, **cnf.coppeliagym.params}
 
-wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--sub_model_ac_lr', default=cnf.agent.sub_model.ac_lr, type=float)
-parser.add_argument('--sub_model_cr_lr', default=cnf.agent.sub_model.ac_lr, type=float)
-parser.add_argument('--sub_model_reg_coeff_ac', default=cnf.agent.sub_model.reg_coeff_ac, type=float)
-parser.add_argument('--sub_model_reg_coeff_cr', default=cnf.agent.sub_model.reg_coeff_cr, type=float)
-parser.add_argument('--sub_model_clip_ac', default=cnf.agent.sub_model.clip_ac, type=float)
-parser.add_argument('--sub_model_clip_cr', default=cnf.agent.sub_model.clip_cr, type=float)
-parser.add_argument('--sub_model_policy_freq', default=cnf.agent.sub_model.policy_freq, type=int)
-parser.add_argument('--sub_model_policy_noise', default=cnf.agent.sub_model.policy_noise, type=float)
-parser.add_argument('--sub_model_noise_clip', default=cnf.agent.sub_model.noise_clip, type=float)
-parser.add_argument('--sub_model_tau', default=cnf.agent.sub_model.tau, type=float)
-parser.add_argument('--sub_model_discount', default=cnf.agent.sub_model.discount, type=float)
+for name, model in zip(['sub', 'meta'], [cnf.agent.sub_model, cnf.agent.meta_model]):
+    parser.add_argument(f'--{name}_model_ac_lr', default=model.ac_lr, type=float)
+    parser.add_argument(f'--{name}_model_cr_lr', default=model.ac_lr, type=float)
+    parser.add_argument(f'--{name}_model_reg_coeff_ac', default=model.reg_coeff_ac, type=float)
+    parser.add_argument(f'--{name}_model_reg_coeff_cr', default=model.reg_coeff_cr, type=float)
+    parser.add_argument(f'--{name}_model_clip_ac', default=model.clip_ac, type=float)
+    parser.add_argument(f'--{name}_model_clip_cr', default=model.clip_cr, type=float)
+    parser.add_argument(f'--{name}_model_policy_freq', default=model.policy_freq, type=int)
+    parser.add_argument(f'--{name}_model_policy_noise', default=model.policy_noise, type=float)
+    parser.add_argument(f'--{name}_model_noise_clip', default=model.noise_clip, type=float)
+    parser.add_argument(f'--{name}_model_tau', default=model.tau, type=float)
+    parser.add_argument(f'--{name}_model_discount', default=model.discount, type=float)
+
 parser.add_argument('--action_regularizer', default=cnf.coppeliagym.params.action_regularizer, type=float)
 parser.add_argument('--start_timesteps', default=cnf.main.start_timesteps, type=int)
 parser.add_argument('--sub_noise', default=cnf.agent.sub_noise, type=float)
@@ -51,23 +52,25 @@ parser.add_argument('--sub_rew_scale', default=cnf.agent.sub_rew_scale, type=flo
 parser.add_argument('--max_size', default=cnf.buffer.max_size, type=int)
 
 args = parser.parse_args(sys.argv[1:])
-cnf.agent.sub_model.ac_lr = args.sub_model_ac_lr
-cnf.agent.sub_model.cr_lr = args.sub_model_cr_lr
-cnf.agent.sub_model.reg_coeff_ac = args.sub_model_reg_coeff_ac
-cnf.agent.sub_model.reg_coeff_cr = args.sub_model_reg_coeff_cr
-cnf.agent.sub_model.clip_ac = args.sub_model_clip_ac
-cnf.agent.sub_model.clip_cr = args.sub_model_clip_cr
-cnf.agent.sub_model.policy_noise = args.sub_model_policy_noise
-cnf.agent.sub_model.policy_freq = args.sub_model_policy_freq 
-cnf.agent.sub_model.noise_clip = args.sub_model_noise_clip
-cnf.agent.sub_model.tau= args.sub_model_tau
-cnf.agent.sub_model.discount = args.sub_model_discount
+for name, model in zip(['sub_model', 'meta_model'], [cnf.agent.sub_model, cnf.agent.meta_model]):   
+    model.ac_lr = getattr(args, f'{name}_ac_lr')
+    model.cr_lr = getattr(args, f'{name}_cr_lr')
+    model.reg_coeff_ac = getattr(args, f'{name}_reg_coeff_ac')
+    model.reg_coeff_cr = getattr(args, f'{name}_reg_coeff_cr')
+    model.clip_ac = getattr(args, f'{name}_clip_ac')
+    model.clip_cr = getattr(args, f'{name}_clip_cr')
+    model.policy_noise = getattr(args, f'{name}_policy_noise')
+    model.policy_freq = getattr(args, f'{name}_policy_freq')
+    model.noise_clip = getattr(args, f'{name}_noise_clip')
+    model.tau= getattr(args, f'{name}_tau')
+    model.discount = getattr(args, f'{name}_discount')
 cnf.coppeliagym.params.action_regularizer = args.action_regularizer
 cnf.main.start_timesteps = args.start_timesteps
 cnf.agent.sub_noise = args.sub_noise
 cnf.agent.sub_rew_scale = args.sub_rew_scale
 cnf.buffer.max_size = args.max_size
 
+wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)
 
 

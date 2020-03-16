@@ -1,5 +1,4 @@
 import numpy as np
-from pudb import set_trace
 from pyrep.robots.arms.lbr_iiwa_14_r820 import LBRIwaa14R820 as Kuka 
 from pyrep.robots.end_effectors.gripper import Gripper
 from pyrep.const import RenderMode

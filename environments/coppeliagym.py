@@ -7,13 +7,12 @@ from pyrep.const import RenderMode
 from pyrep.objects.shape import Shape
 from pyrep.objects.dummy import Dummy
 from pyrep.objects.vision_sensor import VisionSensor
+from utils.utils import suppress_stdout
 if __name__=='__main__':
     import robot
 else:
     from . import robot
 
-from pudb import set_trace
-from matplotlib import pyplot as plt
 
 
 class CoppeliaEnv(gym.Env):
@@ -91,7 +90,8 @@ class CoppeliaEnv(gym.Env):
         sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.
         sim.set_simulation_timestep(dt=sim_timestep)
-        sim.start()
+        with suppress_stdout():
+            sim.start()
         return sim  
 
     def _init_step(self):
@@ -146,7 +146,7 @@ class CoppeliaEnv(gym.Env):
                            action_regularizer,
                            gripper_range,
                            distance_function):
-        self._max_episode_steps = time_limit
+        self.max_episode_steps = time_limit
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(max_torque, np.float64) 
         self.force_mode = force
@@ -214,7 +214,7 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = True
         if self._get_distance() < 0.08:
             print("Success")
-        elif self.timestep >= self._max_episode_steps - 1:
+        elif self.timestep >= self.max_episode_steps - 1:
             pass
         else:
             self.needs_reset = False

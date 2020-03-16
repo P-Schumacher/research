@@ -22,7 +22,7 @@ def maybe_verbose_output(t, agent, env, action, cnf, state):
                 env.set_goal(agent.goal[:3])
 
 def decay_step(decay, stepper, agent, flat_agent):
-    c_step = [1 if flat_agent 10 else][0]
+    c_step = [1 if flat_agent else 10][0]
     if decay:
         c_step = int(next(stepper))
         agent.goal_every_n = c_step

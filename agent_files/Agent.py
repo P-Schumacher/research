@@ -103,12 +103,12 @@ class Agent:
                 avg_ep_reward.append(reward)
                 state = next_state
                 step += 1
-                if done and step < env._max_episode_steps:
+                if done and step < env.max_episode_steps:
                     success_rate += 1
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         success_rate = success_rate / self._num_eval_episodes
         print("---------------------------------------")
-        print("Evaluation over {eval_episodes} episodes: "+str(avg_ep_reward))
+        print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
         return avg_ep_reward, 0, success_rate

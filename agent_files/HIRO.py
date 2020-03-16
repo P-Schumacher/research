@@ -170,15 +170,18 @@ class TransitBuffer(ReplayBuffer):
         self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, **buffer_cnf)
 
     def _prepare_parameters(self, main_cnf, agent_cnf, target_dim, subgoal_dim):
+        # Env specs
         self._offpolicy = main_cnf.offpolicy
+        self._target_dim = target_dim
+        self._subgoal_dim = subgoal_dim
+        # Main cnf
         self._c_step = main_cnf.c_step
+        # Agent cnf
         self._zero_obs = agent_cnf.zero_obs
         self._goal_type = agent_cnf.goal_type
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re
-        self._target_dim = target_dim
-        self._subgoal_dim = subgoal_dim
 
 
 class HierarchicalAgent(Agent):
@@ -266,17 +269,20 @@ class HierarchicalAgent(Agent):
         self._transitbuffer._ptr = 0
 
     def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
+        # Env specs
         self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
         self._target_dim = env_spec['target_dim']
         self._action_dim = env_spec['action_dim']
         self._subgoal_dim = subgoal_dim
-
+        # Main cnf
         self._batch_size = main_cnf.batch_size
         self._c_step = main_cnf.c_step
         self._seed = main_cnf.seed
         self._log = main_cnf.log
         self._gradient_steps = main_cnf.gradient_steps
-
+        self._visit = main_cnf.visit
+        # Agent cnf
+        self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._meta_mock = agent_cnf.meta_mock
         self._sub_mock = agent_cnf.sub_mock
         self._meta_noise = agent_cnf.meta_noise
@@ -372,17 +378,17 @@ class HierarchicalAgent(Agent):
         self._check_inner_done(self._prev_state, state, goal)
         return goal, meta_time
     
-    def _eval_policy(self, env, env_name, seed, time_limit, visit, eval_episodes=5):
+    def _eval_policy(self, env, seed, visit):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
-        env.seed(self.main_cnf.seed + 100)
+        env.seed(self._seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
         success_rate = 0
-        visitation = np.zeros((time_limit, env.observation_space.shape[0]))
-        for episode_nbr in range(eval_episodes):
-            print(f'eval number: {episode_nbr} of {eval_episodes}')
+        visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
+        for episode_nbr in range(self._num_eval_episodes):
+            print(f'eval number: {episode_nbr} of {self._num_eval_episodes}')
             step = 0
             state, done = env.reset(evalmode=True), False
             self.reset()
@@ -395,16 +401,16 @@ class HierarchicalAgent(Agent):
                 if visit:
                     visitation[step, :] = state
                 step += 1
-                if done and step < env._max_episode_steps:
+                if done and step < env.max_episode_steps:
                     success_rate += 1
             if visit:
                 np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
-        avg_ep_reward = np.sum(avg_ep_reward) / eval_episodes
-        avg_intr_reward = np.sum(avg_intr_reward) / eval_episodes
-        success_rate = success_rate / eval_episodes
+        avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
+        avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes
+        success_rate = success_rate / self._num_eval_episodes
         print("---------------------------------------")
-        print(f'Evaluation over {eval_episodes} episodes: {avg_ep_reward}')
+        print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
         self._evals += 1
         return avg_ep_reward, avg_intr_reward, success_rate

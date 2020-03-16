@@ -3,6 +3,7 @@ import tensorflow as tf
 import argparse
 import os
 import sys
+from contextlib import contextmanager
 from pudb import set_trace
 from rl_algos import TD3_tf
 from environments.my_env import EnvWithGoal
@@ -50,7 +51,7 @@ def get_env_specs(env):
         print(f'state_dim: {state_dim}')
         print(f'action_dim: {action_dim}')
         print(f'max_action: {max_action}')
-        print(f'time_limit: {env._max_episode_steps}')
+        print(f'time_limit: {env.max_episode_steps}')
         print(f'subgoal_dim: {subgoal_dim}')
         print(f'target_dim: {target_dim}')
         return  {'state_dim': state_dim,
@@ -101,4 +102,12 @@ def exponential_decay(total_steps, init_step=100, min_step=10):
         while True:
             yield (min_step)
 
-
+@contextmanager
+def suppress_stdout():
+    with open(os.devnull, "w") as devnull:
+        old_stdout = sys.stdout
+        sys.stdout = devnull
+        try:  
+            yield
+        finally:
+            sys.stdout = old_stdout

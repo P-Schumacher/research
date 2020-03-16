@@ -1,6 +1,6 @@
+project: exp
 main:
   log: false
   save_model: false
   descriptor: 'nothing'
-  eval_freq: 600
 

@@ -19,7 +19,8 @@ class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
         # Allows us to restart sim in different force_mode without recreating sim threads
         if not init:
-            self._sim = self._start_sim(**cnf.sim)
+            with suppress_stdout():
+                self._sim = self._start_sim(**cnf.sim)
         self._prepare_parameters(**cnf.params)
         self._prepare_robot(self._sub_mock, self._gripper_range)
         self._prepare_shapes(self._render)
@@ -90,8 +91,7 @@ class CoppeliaEnv(gym.Env):
         sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.
         sim.set_simulation_timestep(dt=sim_timestep)
-        with suppress_stdout():
-            sim.start()
+        sim.start()
         return sim  
 
     def _init_step(self):

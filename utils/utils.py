@@ -111,3 +111,4 @@ def suppress_stdout():
             yield
         finally:
             sys.stdout = old_stdout
+

@@ -43,7 +43,7 @@ class EnvWithGoal(object):
     self.goal = None
     self.observation_space = spaces.Box(-np.inf, np.inf, shape=(self.base_env.observation_space.shape[0] + self.goal_sample_fn().shape[0],))
     self.step_count = 0
-    self._max_episode_steps = time_limit
+    self.max_episode_steps = time_limit
     self.render = render
     self.env_name = env_name
     self.target_dim = 2
@@ -79,7 +79,7 @@ class EnvWithGoal(object):
     return self.base_env.action_space
 
   def _done_condition(self, done, reward):
-    cd1_end_of_episode = self.step_count == self._max_episode_steps
+    cd1_end_of_episode = self.step_count == self.max_episode_steps
     cd2_success = success_fn(reward)
     if cd2_success:
       print("Success, Goal was: ({},{})".format(self.goal[0],self.goal[1]))

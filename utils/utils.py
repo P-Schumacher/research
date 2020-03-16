@@ -33,8 +33,8 @@ def create_env(cnf):
     else:
         # *show* necessary because we need to load a different xml file with spheres
         from environments.create_maze_env import create_maze_env
-        env = create_maze_env(cnf.maze_env)
-        return EnvWithGoal(env, cnf.env_w_goal)
+        env = create_maze_env(**cnf.maze_env)
+        return EnvWithGoal(env, **cnf.env_w_goal)
 
 def get_env_specs(env):
         ''' Get necessary dimensions from environment to instantiate model.'''

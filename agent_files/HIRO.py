@@ -88,7 +88,6 @@ class TransitBuffer(ReplayBuffer):
         if self._ri_re: 
             intr_reward += reward
         self._ep_rewards += intr_reward
-        set_trace()
         self._add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
 
     def _finish_meta_transition(self, next_state, done):

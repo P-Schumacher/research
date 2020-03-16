@@ -44,7 +44,6 @@ def main(cnf):
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent)
         action = agent.select_noisy_action(state)
-        set_trace()
         maybe_verbose_output(t, agent, env, action, cnf, state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)

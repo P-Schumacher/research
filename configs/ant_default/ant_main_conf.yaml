@@ -34,7 +34,7 @@ maze_env:
   show: ${main.render}
 
 env_w_goal:
-  env_name: ${env_name}
+  env_name: ${maze_env.env_name}
   time_limit: ${main.time_limit}
   render: ${main.render}
 

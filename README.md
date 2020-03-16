@@ -2,11 +2,11 @@
 This repository implements the HIRO algorithm for Hierarchical Reinforcement Learning on the original AntMaze environment as presented by Ofir Nachum (Data-Efficient Hierarchical Reinforcement Learning, 2018) 
 
 ## Dependencies 
-- gym==0.12.5
-- mujoco-py
+- gym==0.16.0
+- mujoco-py==1.50.1.68
 - tensorflow==2.0
-- wandb==
-- OmegaConf==
+- wandb==0.8.29
+- omegaconf==1.4.1
 - numpy==1.18.1
 
  ## Usage

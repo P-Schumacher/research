@@ -35,7 +35,7 @@ agent:
     noise_clip: 0.5
     policy_freq: 2
     ac_lr: 0.0001
-    cr_lr: 0.01
+    cr_lr: 0.001
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10
@@ -54,7 +54,7 @@ agent:
     noise_clip: 0.5
     policy_freq: 2
     ac_lr: 0.0001
-    cr_lr: 0.0001
+    cr_lr: 0.001
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10

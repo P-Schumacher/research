@@ -15,13 +15,11 @@
 
 from environments.ant_maze_env import AntMazeEnv
 from environments.point_maze_env import PointMazeEnv
-from pudb import set_trace
 
 
 
 
 def create_maze_env(env_name=None, top_down_view=False, show=False):  
-  set_trace()
   n_bins = 0
   manual_collision = False
   if env_name.startswith('Ego'):

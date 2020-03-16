@@ -24,12 +24,10 @@ coppeliagym:
     sparse_rew: false
     action_regularizer: 0.00086
     distance_function: euclid
+    spherical_coord: ${agent.spherical_coord}
 
   subgoals:
     ee_goal: 5.
     j_goal: 3.14
     ej_goal: [3, 5.] # Subgoal length and range [L,R]
-    custom_goal: [5., 5., 5.]
-
-
 

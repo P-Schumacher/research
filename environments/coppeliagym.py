@@ -108,7 +108,8 @@ class CoppeliaEnv(gym.Env):
         self._target.set_renderable(True)
         self._target.set_dynamic(False)
         self._target.set_respondable(False)
-        if render:
+        if render and not self._init:
+            self._init = True
             print("RENDER")
             from pyrep.const import PrimitiveShape
             self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=True,
@@ -145,8 +146,10 @@ class CoppeliaEnv(gym.Env):
                            sub_mock,
                            action_regularizer,
                            gripper_range,
-                           distance_function):
+                           distance_function,
+                           spherical_coord):
         self.max_episode_steps = time_limit
+        self._spherical_coord = spherical_coord
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(max_torque, np.float64) 
         self.force_mode = force
@@ -162,13 +165,14 @@ class CoppeliaEnv(gym.Env):
         self._distance_fn = self._get_distance_fn(distance_function)
         self.timestep = 0
         self.needs_reset = False
+        self._init = False
 
-    def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal, custom_goal):
+    def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Return the maximal subgoal ranges. In this case:
         [ee_pos, box_pos], which are 2*3 elements. This Method is always
         in flux.'''
-        if custom_goal:
-            self.subgoal_ranges = custom_goal 
+        if self._spherical_coord:
+            self.subgoal_ranges = 1
         if self._ee_pos:
             self.subgoal_ranges = [ee_goal for x in range(3)]
         elif self._ee_j_pos:

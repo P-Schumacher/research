@@ -43,13 +43,11 @@ class TransitBuffer(ReplayBuffer):
                 self._sum_of_rewards = 0
             if done:
                 self._ep_rewards = 0
-                self._agent.select_action(next_state)
-                next_goal = self.goal
+                self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
                 self._finish_sub_transition(self.goal, reward)
                 self._finish_meta_transition(next_state, done)
                 self._needs_reset = True
                 return self._ep_rewards
-
             self._sum_of_rewards += reward
 
     def _initialize_buffer(self, state, action, reward, next_state, done):
@@ -245,22 +243,22 @@ class HierarchicalAgent(Agent):
         '''Saves the weights of sub and meta agent to a file.'''
         self._sub_agent.actor.save_weights(string + "_sub_actor")
         self._sub_agent.critic.save_weights(string + "_sub_critic")
-        self.meta_agent.actor.save_weights(string + "_meta_actor")
-        self.meta_agent.critic.save_weights(string + "_meta_critic")
+        self._meta_agent.actor.save_weights(string + "_meta_actor")
+        self._meta_agent.critic.save_weights(string + "_meta_critic")
 
     def load_model(self, string):
         '''Loads the weights of sub and meta agent from a file.'''
         self._sub_agent.actor.load_weights(string + "_sub_actor")
         self._sub_agent.critic.load_weights(string + "_sub_critic")
-        self.meta_agent.actor.load_weights(string + "_meta_actor")
-        self.meta_agent.critic.load_weights(string + "_meta_critic")
+        self._meta_agent.actor.load_weights(string + "_meta_actor")
+        self._meta_agent.critic.load_weights(string + "_meta_critic")
 
     def reset(self):
         '''Want this reset such that the meta agent proposes the first goal every
         episode and we don't get the last goal from the previous episode. It also
         prevents lingering old transition components from being used. This also resets
         the sum of rewards for the meta agent.'''
-        self.goal_counter = self._c_step
+        self._goal_counter = self._c_step
         self._transitbuffer._init = False
         self._transitbuffer._sum_of_rewards = 0
         self._transitbuffer._needs_reset = False
@@ -282,6 +280,7 @@ class HierarchicalAgent(Agent):
         self._gradient_steps = main_cnf.gradient_steps
         self._visit = main_cnf.visit
         # Agent cnf
+        self._spherical_coord = agent_cnf.spherical_coord
         self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._meta_mock = agent_cnf.meta_mock
         self._sub_mock = agent_cnf.sub_mock
@@ -321,7 +320,26 @@ class HierarchicalAgent(Agent):
         if self._meta_mock:
             self.goal = self._meta_mock_goal
         self.goal, self.meta_time = self._sample_goal(state)
+        self._maybe_spherical_coord_trafo()
 
+    def _maybe_spherical_coord_trafo(self):
+        '''If we give a meta-goal in spherical coordinates, this transforms it back to cartesian
+        coordinates.
+        r = self.goal[0]
+        theta = self.goal[1]
+        phi = self.goal[2]
+        '''
+        if self._spherical_coord:
+            # Output of meta is goal \in [-1,1] Now bring it in [0,1] for spherical coordinates
+            r = 1.867/2 - 0.1
+            self.goal = (self.goal - (-1)) / (1 - (-1))
+            x = self.goal[0] * r * np.sin(self.goal[1] * np.pi) * np.cos(self.goal[2] * np.pi)
+            y = self.goal[0] * r * np.sin(self.goal[1] * np.pi) * np.sin(self.goal[2] * np.pi)
+            z = self.goal[0] * r * np.cos(self.goal[1] * np.pi)
+            x += 0.622
+            y -= 0.605
+            z += 0.86
+            self.goal = tf.constant(np.array([x, y, z], dtype=np.float32))
 
     def _get_sub_action(self, state):
         if self._sub_mock:

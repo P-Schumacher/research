@@ -1,6 +1,7 @@
 project: exp
 main:
-  log: false
+  render: false
+  log: true
   save_model: false
   descriptor: 'nothing'
 

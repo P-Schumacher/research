@@ -88,6 +88,7 @@ class TransitBuffer(ReplayBuffer):
         if self._ri_re: 
             intr_reward += reward
         self._ep_rewards += intr_reward
+        set_trace()
         self._add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
 
     def _finish_meta_transition(self, next_state, done):
@@ -210,7 +211,8 @@ class HierarchicalAgent(Agent):
         action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
             self.goal = self.goal + self._gaussian_noise(self._meta_noise, self._subgoal_dim)
-            self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
+            if not self._spherical_coord:
+                self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
     def train(self, timestep):

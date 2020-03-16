@@ -172,8 +172,8 @@ class CoppeliaEnv(gym.Env):
         [ee_pos, box_pos], which are 2*3 elements. This Method is always
         in flux.'''
         if self._spherical_coord:
-            self.subgoal_ranges = 1
-        if self._ee_pos:
+            self.subgoal_ranges = [1 for x in range(3)]
+        elif  self._ee_pos:
             self.subgoal_ranges = [ee_goal for x in range(3)]
         elif self._ee_j_pos:
             self.subgoal_ranges = [ej_goal[1] for x in range(ej_goal[0])]

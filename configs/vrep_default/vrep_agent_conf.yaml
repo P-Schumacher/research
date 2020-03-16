@@ -20,7 +20,6 @@ agent:
   meta_noise: 0.1
   seed: ${main.seed}
   c_step: ${main.c_step}
- 
 
   meta_model:
     ac_hidden_layers: [300, 300]

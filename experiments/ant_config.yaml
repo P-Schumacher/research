@@ -1,0 +1,4 @@
+main:
+  descriptor: hiro_ant
+  save_model: true
+  render: false

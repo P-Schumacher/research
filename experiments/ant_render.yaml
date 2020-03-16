@@ -1,0 +1,4 @@
+main:
+  descriptor: hiro_ant
+  load_model: true
+  render: true

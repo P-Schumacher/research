@@ -1,4 +1,6 @@
+project: ant_maze
 main:
+  log: true
   descriptor: hiro_ant
   save_model: true
   render: false

@@ -24,4 +24,4 @@ I use OmegaConf to load different configurations. The default settings are kept 
 experiments are saved in experiments/. 
 I use the wandb framework to save and analyse data from different runs.
 
-<img src="out.gif" width="324" height="324">
+<img src="ant.gif" width="324" height="324">

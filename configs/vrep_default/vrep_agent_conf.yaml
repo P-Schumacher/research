@@ -7,7 +7,7 @@ buffer:
 agent:
   # Params for the Agent. In case of flat agent, the sub-agent params
   # will be used.
-  spherical_coord: true
+  spherical_coord: false
   sub_mock: false
   meta_mock: false
   goal_type: Absolute

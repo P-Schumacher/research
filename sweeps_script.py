@@ -50,6 +50,7 @@ parser.add_argument('--start_timesteps', default=cnf.main.start_timesteps, type=
 parser.add_argument('--sub_noise', default=cnf.agent.sub_noise, type=float)
 parser.add_argument('--sub_rew_scale', default=cnf.agent.sub_rew_scale, type=float)
 parser.add_argument('--max_size', default=cnf.buffer.max_size, type=int)
+parser.add_argument('--ej_goal', default=cnf.coppeliagym.subgoals.ej_goal[1], type=int)
 
 args = parser.parse_args(sys.argv[1:])
 for name, model in zip(['sub_model', 'meta_model'], [cnf.agent.sub_model, cnf.agent.meta_model]):   
@@ -64,11 +65,14 @@ for name, model in zip(['sub_model', 'meta_model'], [cnf.agent.sub_model, cnf.ag
     model.noise_clip = getattr(args, f'{name}_noise_clip')
     model.tau= getattr(args, f'{name}_tau')
     model.discount = getattr(args, f'{name}_discount')
+
 cnf.coppeliagym.params.action_regularizer = args.action_regularizer
+cnf.coppeliagym.subgoals.ej_goal[1] = args.ej_goal
 cnf.main.start_timesteps = args.start_timesteps
 cnf.agent.sub_noise = args.sub_noise
 cnf.agent.sub_rew_scale = args.sub_rew_scale
 cnf.buffer.max_size = args.max_size
+
 
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)

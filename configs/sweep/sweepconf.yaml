@@ -50,4 +50,8 @@ parameters:
     max: 10
     distribution: uniform
 
+  ej_goal:
+    min: 1.
+    max: 10.
+
     

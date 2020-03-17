@@ -281,6 +281,7 @@ class HierarchicalAgent(Agent):
         self._gradient_steps = main_cnf.gradient_steps
         self._visit = main_cnf.visit
         # Agent cnf
+        self._center_meta_goal = agent_cnf.center_meta_goal
         self._spherical_coord = agent_cnf.spherical_coord
         self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._meta_mock = agent_cnf.meta_mock
@@ -294,15 +295,15 @@ class HierarchicalAgent(Agent):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
         if not self._meta_mock:
             return goal
-        mock_goal = np.array([0.625, -0.01, 0.58], np.float32)
+        mock_goal = np.random.uniform(-1, 1., size=[3,]) 
         return mock_goal
     
-    def _maybe_move_over_table(self, goal, move=False):
+    def _maybe_move_over_table(self, goal, move=True):
         '''Adds a constant term to the generated subgoal such that it is forced to be 
         above the table.'''
         if move:
             print("moved")
-            goal = tf.constant([0,0,1,0,0,0], dtype=tf.float32) + goal 
+            goal = tf.constant([0.622, -0.605, 0.86], dtype=tf.float32) + goal 
         return goal 
     
     def _build_modelspecs(self, env_spec):
@@ -317,9 +318,6 @@ class HierarchicalAgent(Agent):
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state):
-        # TODO correctly give meta goal with meta_time and the mock goal
-        if self._meta_mock:
-            self.goal = self._meta_mock_goal
         self.goal, self.meta_time = self._sample_goal(state)
         self._maybe_spherical_coord_trafo()
 
@@ -392,8 +390,8 @@ class HierarchicalAgent(Agent):
             self._prev_state = state
             meta_time = True
             goal = self._meta_agent.select_action(state)
-            goal = self._maybe_move_over_table(goal)
             goal = self._maybe_mock(goal)
+            goal = self._maybe_move_over_table(goal)
         self._check_inner_done(self._prev_state, state, goal)
         return goal, meta_time
     

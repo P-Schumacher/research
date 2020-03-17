@@ -113,7 +113,7 @@ class CoppeliaEnv(gym.Env):
             print("RENDER")
             from pyrep.const import PrimitiveShape
             self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=True,
-                                           respondable=False)
+                                           respondable=False, color=[0,0.05,1])
             self._meta_goal.set_dynamic(False)
 
     def _prepare_observation_space(self):

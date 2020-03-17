@@ -4,8 +4,8 @@ import wandb
 import sys
 import os
 os.environ['CUDA_VISIBLE_DEVICES']='-1'
-ant_env = True 
-vrep = False 
+ant_env = False 
+vrep = True 
 
 name = [sys.argv[1] if len(sys.argv) == 2 else None][0]
 if vrep:

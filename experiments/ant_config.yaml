@@ -4,3 +4,5 @@ main:
   descriptor: hiro_ant
   save_model: true
   render: false
+agent:
+ goal_type: Direction

@@ -66,9 +66,9 @@ class TransitBuffer(ReplayBuffer):
         the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
         also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
         dim = self._subgoal_dim
-        if self._goal_type == "Absolute":
+        if self.goal_type == "Absolute":
             rew = -tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
-        elif self._goal_type == "Direction":
+        elif self.goal_type == "Direction":
             rew =  -tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
         else:
             raise Exception("Goal type has to be Absolute or Direction")
@@ -176,7 +176,7 @@ class TransitBuffer(ReplayBuffer):
         self._c_step = main_cnf.c_step
         # Agent cnf
         self._zero_obs = agent_cnf.zero_obs
-        self._goal_type = agent_cnf.goal_type
+        self.goal_type = agent_cnf.goal_type
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re
@@ -288,7 +288,7 @@ class HierarchicalAgent(Agent):
         self._meta_noise = agent_cnf.meta_noise
         self._sub_noise = agent_cnf.sub_noise
         self._zero_obs = agent_cnf.zero_obs
-        self._goal_type = agent_cnf.goal_type
+        self.goal_type = agent_cnf.goal_type
 
     def _maybe_mock(self, goal):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
@@ -357,9 +357,9 @@ class HierarchicalAgent(Agent):
         '''When using directional goals, we have to transition the goal at every 
         timestep to keep it at the same absolute position for n timesteps. In absolute 
         mode, this is just the identity.'''
-        if self._goal_type == "Absolute":
+        if self.goal_type == "Absolute":
             return goal
-        elif self._goal_type == "Direction":
+        elif self.goal_type == "Direction":
             dim = self._subgoal_dim
             return previous_state[:dim] + goal - state[:dim]
         else:
@@ -373,7 +373,7 @@ class HierarchicalAgent(Agent):
     
     def _inner_done_cond(self, state, next_state, goal):
         dim = self._subgoal_dim
-        if self._goal_type == 'Absolute':
+        if self.goal_type == 'Absolute':
             diff = next_state[:dim] - goal[:dim]
         else:
             diff = state[:dim] + goal - next_state[:dim]

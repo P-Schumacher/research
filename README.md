@@ -22,6 +22,6 @@ $ python3 main.py ant_render
 to then load that model and render the environment.
 I use OmegaConf to load different configurations. The default settings are kept in configs/ant_default while configs for specific
 experiments are saved in experiments/. 
-I use the wandb framework to save and analyse data from different runs.
+I use the wandb framework to save and analyse data from different runs. By default logging is turned off.
 
-<img src="out.gif" width="324" height="324">
+<img src="ant.gif" width="324" height="324">

@@ -1,9 +1,15 @@
 main:
   save_model: false
   load_model: false
-  descriptor: 'l2reg'
+  log: false
+  render: true
+  descriptor: 'nonspherical coord'
 
 agent:
+  spherical_coord: false
+  meta_mock: false 
+  meta_noise: 0.1
+  center_meta_goal: true
   sub_model:
     clip_ac: 100000.
     clip_cr: 100000.
@@ -12,4 +18,8 @@ agent:
 
 coppeliagym:
   params:
+    ee_j_pos: true
     action_regularizer: 0.00000
+  subgoals:
+    ej_goal: [3, 1.]    
+

@@ -4,8 +4,8 @@ import wandb
 import sys
 import os
 os.environ['CUDA_VISIBLE_DEVICES']='-1'
-ant_env = True 
-vrep = False 
+ant_env = False 
+vrep = True 
 
 name = [sys.argv[1] if len(sys.argv) == 2 else None][0]
 if vrep:
@@ -23,7 +23,9 @@ if ant_env:
     agent_cnf = OmegaConf.load('configs/ant_default/ant_agent_conf.yaml')
     # Parameters of second cnf file overwrite those of first
     cnf = OmegaConf.merge(main_cnf, agent_cnf)
-
+    if name:
+        exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
+        cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
 if vrep:
     config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model}

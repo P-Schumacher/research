@@ -11,8 +11,9 @@ from agent_files.Agent import Agent
 from agent_files.HIRO import HierarchicalAgent
 
 def get_model_class(model_name):
-	if model_name == 'TD3':
-		return TD3_tf.TD3
+    '''Retrieves an RL agent by name.'''
+    if model_name == 'TD3':		
+        return TD3_tf.TD3
 
 def create_env(cnf):
     '''Creates an environment from either OpenAi Gym or the GoogleBrain Mujoco AntMaze
@@ -47,13 +48,6 @@ def get_env_specs(env):
         subgoal_ranges = env.subgoal_ranges
         subgoal_dim = env.subgoal_dim
         target_dim = env.target_dim
-        print('Env Specs: ')
-        print(f'state_dim: {state_dim}')
-        print(f'action_dim: {action_dim}')
-        print(f'max_action: {max_action}')
-        print(f'time_limit: {env.max_episode_steps}')
-        print(f'subgoal_dim: {subgoal_dim}')
-        print(f'target_dim: {target_dim}')
         return  {'state_dim': state_dim,
                 'action_dim': action_dim,
                 'max_action': max_action,
@@ -61,19 +55,19 @@ def get_env_specs(env):
                 'target_dim': target_dim}
         
 def create_directories(args):
-    '''Create directories to save weights and results.'''
-    if not os.path.exists('./results'):
-        os.makedirs('./results')
+    '''Create directories to save weights.'''
     if args.save_model and not os.path.exists('./models'):
-        os.makedirs('./models')
+        os.makedirs('./experiments/models')
 
 def set_seeds(env, seed):
-    '''Set seeds to get different random numbers for every experiment. Seeds have to be set by CMD Prompt.'''
+    '''Set seeds to get different random numbers for every experiment. Interestingly, this also resets
+    accumulated but unused tensorflow memory and frees the RAM'''
     env.seed(seed)
     tf.random.set_seed(seed)
     np.random.seed(seed)
 
 def create_world(cnf):
+    assert_sanity_check(cnf)
     create_directories(cnf)
     env = create_env(cnf)
     model_cls = get_model_class(cnf.main.model)
@@ -85,6 +79,15 @@ def create_world(cnf):
     set_seeds(env, cnf.main.seed)
     return env, agent 
 
+def assert_sanity_check(cnf):
+    ''' Stops the program if unlogical settings were made. E.g. We want to center the ee goal around the robot but we only have a J subgoal.'''
+    if cnf.agent.spherical_coord:
+        assert cnf.coppeliagym.params.ee_pos or cnf.coppeliagym.params.ee_j_pos
+        assert not cnf.agent.center_goal
+
+    if cnf.agent.center_goal:
+        assert cnf.coppeliagym.params.ee_pos or cnf.coppeliagym.params.ee_j_pos
+
 def exponential_decay(total_steps, init_step=100, min_step=10):
         '''Gives out an exponentially decayed step size for the 
         meta-agent. step = init_step * exp(- tau * iteration)
@@ -93,6 +96,7 @@ def exponential_decay(total_steps, init_step=100, min_step=10):
         :param init_step: Initial stepsize. E.g. 100
         :param min_step: Minimal step size that will be reached.
         :param decay_rate:
+        :yield: The decayed c_step value.
         '''
         decay_rate = -np.math.log(min_step / init_step) * (2 / total_steps)
         step = init_step
@@ -104,6 +108,7 @@ def exponential_decay(total_steps, init_step=100, min_step=10):
 
 @contextmanager
 def suppress_stdout():
+    '''Doesnt work with CoppeliaSim as of now.'''
     with open(os.devnull, "w") as devnull:
         old_stdout = sys.stdout
         sys.stdout = devnull

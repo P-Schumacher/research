@@ -1,9 +1,11 @@
 project: exp
 main:
-  render: false
-  log: true 
-  save_model: true 
+  render: false 
+  log: true
+  save_model: true
+  load_model: false 
   descriptor: 'optimized_full_hiro_reaching'
+  c_step: 10
 
 
 agent:
@@ -24,8 +26,8 @@ agent:
     policy_noise: 0.2
     noise_clip: 0.5
     policy_freq: 2
-    ac_lr: 0.0001
-    cr_lr: 0.001
+    ac_lr: 0.0007063
+    cr_lr: 0.0008919
 
 coppeliagym:
   params:

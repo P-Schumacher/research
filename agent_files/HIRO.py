@@ -232,8 +232,8 @@ class HierarchicalAgent(Agent):
             for avg, name in zip([sub_avg, meta_avg], ['sub', 'meta']):
                 wandb.log({f'{name}/actor_loss': avg[0],
                            f'{name}/critic_loss': avg[1],
-                           f'{name}/critic_gradnorm': avg[2],
-                           f'{name}/actor_gradnorm': avg[3], 
+                           f'{name}/actor_gradnorm': avg[2],
+                           f'{name}/critic_gradnorm': avg[3], 
                            f'{name}/actor_gradstd': avg[4],
                            f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
@@ -302,7 +302,6 @@ class HierarchicalAgent(Agent):
         '''Adds a constant term to the generated subgoal such that it is forced to be 
         above the table.'''
         if move:
-            print("moved")
             goal = tf.constant([0.622, -0.605, 0.86], dtype=tf.float32) + goal 
         return goal 
     

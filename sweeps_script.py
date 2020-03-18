@@ -23,7 +23,7 @@ if ant_env:
 cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf)
 cnf.merge_with_cli()
 
-cnf.main.max_timesteps = 100000
+cnf.main.max_timesteps = 300000
 cnf.main.log = 1
 cnf.main.eval_freq = 20000
 cnf.project = 'clip_sweep'
@@ -48,9 +48,11 @@ for name, model in zip(['sub', 'meta'], [cnf.agent.sub_model, cnf.agent.meta_mod
 parser.add_argument('--action_regularizer', default=cnf.coppeliagym.params.action_regularizer, type=float)
 parser.add_argument('--start_timesteps', default=cnf.main.start_timesteps, type=int)
 parser.add_argument('--sub_noise', default=cnf.agent.sub_noise, type=float)
+parser.add_argument('--meta_noise', default=cnf.agent.meta_noise, type=float)
 parser.add_argument('--sub_rew_scale', default=cnf.agent.sub_rew_scale, type=float)
+parser.add_argument('--meta_rew_scale', default=cnf.agent.meta_rew_scale, type=float)
 parser.add_argument('--max_size', default=cnf.buffer.max_size, type=int)
-parser.add_argument('--ej_goal', default=cnf.coppeliagym.subgoals.ej_goal[1], type=int)
+parser.add_argument('--ej_goal', default=cnf.coppeliagym.subgoals.ej_goal[1], type=float)
 
 args = parser.parse_args(sys.argv[1:])
 for name, model in zip(['sub_model', 'meta_model'], [cnf.agent.sub_model, cnf.agent.meta_model]):   
@@ -70,7 +72,9 @@ cnf.coppeliagym.params.action_regularizer = args.action_regularizer
 cnf.coppeliagym.subgoals.ej_goal[1] = args.ej_goal
 cnf.main.start_timesteps = args.start_timesteps
 cnf.agent.sub_noise = args.sub_noise
+cnf.agent.meta_noise = args.meta_noise
 cnf.agent.sub_rew_scale = args.sub_rew_scale
+cnf.agent.meta_rew_scale = args.meta_rew_scale
 cnf.buffer.max_size = args.max_size
 
 

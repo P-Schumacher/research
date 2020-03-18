@@ -2,10 +2,6 @@ import tensorflow as tf
 import tensorflow.keras.layers as kl
 import tensorflow.keras.initializers as inits
 import numpy as np
-import copy
-from matplotlib import pyplot as plt
-from pudb import set_trace
-import datetime
 from tensorflow.keras.regularizers import l2
 import wandb
 
@@ -45,9 +41,9 @@ class Critic(tf.keras.Model):
                            kernel_regularizer=l2(reg_coeff))
 
         # Q2 architecture
-        self.l4 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu,
+        self.l4 = kl.Dense(cr_layers[0], activation='relu', kernel_initializer=initialize_relu,
                            kernel_regularizer=l2(reg_coeff))
-        self.l5 = kl.Dense(300, activation='relu', kernel_initializer=initialize_relu,
+        self.l5 = kl.Dense(cr_layers[1], activation='relu', kernel_initializer=initialize_relu,
                            kernel_regularizer=l2(reg_coeff))
         self.l6 = kl.Dense(1, kernel_regularizer=l2(reg_coeff))
         self.build(input_shape=(None, state_dim+action_dim))

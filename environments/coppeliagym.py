@@ -62,11 +62,12 @@ class CoppeliaEnv(gym.Env):
         if self._gym_cam is None:
             # Add the camera to the scene
             cam_placeholder = Dummy.create()
-            cam_placeholder.set_position([0, 0.5, 5])
-            cam_placeholder.set_pose([0, 0.5, 5, 1, 0, 0, 0])
+            cam_placeholder.set_pose([0, -0.5, 5, 1, 0, 0, 0])
             self._gym_cam = VisionSensor.create([640, 360])
+            self._gym_cam2 = VisionSensor('Vision_sensor')
             self._gym_cam.set_pose(cam_placeholder.get_pose())
             self._gym_cam.set_render_mode(RenderMode.OPENGL3_WINDOWED)
+            self._gym_cam2.set_render_mode(RenderMode.OPENGL3_WINDOWED)
             if mode == "rgb_array":
                 self._gym_cam.set_render_mode(RenderMode.OPENGL3)
         if mode == "rgb_array":

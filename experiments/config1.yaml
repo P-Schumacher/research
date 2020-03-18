@@ -1,24 +1,25 @@
 project: exp
 main:
-  render: false 
-  log: true
-  save_model: true
-  load_model: false 
+  render: true
+  log: false 
+  save_model: false
+  load_model: true 
   descriptor: 'optimized_full_hiro_reaching'
   c_step: 10
 
-
 agent:
   center_meta_goal: true
-  meta_rew_scale: 5.
-  meta_noise: 0.11727
+  meta_rew_scale: 5.031
+  sub_noise: 0.0
+  meta_noise: 0.0
+  #meta_noise: 0.1727
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 1.456
-    clip_ac: 2.626
-    reg_coeff_ac: 0.0001
+    clip_cr: 2.626
+    clip_ac: 1.456
+    reg_coeff_ac: 0.000098
     reg_coeff_cr: 0.000015
     name: 'meta'
     discount: 0.99
@@ -26,7 +27,7 @@ agent:
     policy_noise: 0.2
     noise_clip: 0.5
     policy_freq: 2
-    ac_lr: 0.0007063
+    ac_lr: 0.0005914
     cr_lr: 0.0008919
 
 coppeliagym:

@@ -61,7 +61,6 @@ def main(cnf):
             agent.reset()
             hard_reset = logger.log(t, intr_rew, c_step)
             logger.reset()
-            hard_reset = True
             if hard_reset:
                 # Need to periodically restart physics engine because Darmstadt gripper model is unstable.
                 # Hard reset takes current arm position as initial position. This is why we first do a normal reset.

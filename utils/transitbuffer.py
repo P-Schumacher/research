@@ -1,3 +1,4 @@
+from pudb import set_trace
 import tensorflow as tf
 import numpy as np
 from collections import namedtuple

@@ -25,6 +25,7 @@ coppeliagym:
     action_regularizer: 0.00086
     distance_function: euclid
     spherical_coord: ${agent.spherical_coord}
+    flat_agent: ${main.flat_agent}
 
   subgoals:
     ee_goal: 5.

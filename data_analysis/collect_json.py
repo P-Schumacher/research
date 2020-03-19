@@ -37,4 +37,4 @@ for key_idx, key in enumerate(keys):
     concat_df = pd.DataFrame.from_records({key: columns})
     df = pd.concat([df, concat_df], axis=1)    
 
-df.to_json(project+'.json')
+df.to_pickle(f'{project}.pyc')

@@ -23,7 +23,7 @@ class CoppeliaEnv(gym.Env):
             self._sim = self._start_sim(**cnf.sim)
         self._prepare_parameters(**cnf.params)
         self._prepare_robot(self._sub_mock, self._gripper_range)
-        self._prepare_shapes(self._render)
+        self._prepare_shapes(self._render, self._flat_agent)
         self._prepare_observation_space()
         self._prepare_action_space()
         self._prepare_subgoal_ranges(**cnf.subgoals)
@@ -100,7 +100,7 @@ class CoppeliaEnv(gym.Env):
         self._robot.set_joint_target_velocities(np.zeros(shape=[self._max_vel.shape[0],], dtype=np.int32))
         self._sim.step()
 
-    def _prepare_shapes(self, render):
+    def _prepare_shapes(self, render, flat_agent):
         self._target = Shape('target')
         self._table = Shape('customizableTable')
         self._ep_target_pos = self._target.get_position()
@@ -109,7 +109,7 @@ class CoppeliaEnv(gym.Env):
         self._target.set_renderable(True)
         self._target.set_dynamic(False)
         self._target.set_respondable(False)
-        if render and not self._init:
+        if render and not flat_agent and not self._init:
             self._init = True
             print("RENDER")
             from pyrep.const import PrimitiveShape
@@ -148,7 +148,8 @@ class CoppeliaEnv(gym.Env):
                            action_regularizer,
                            gripper_range,
                            distance_function,
-                           spherical_coord):
+                           spherical_coord,
+                           flat_agent):
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
@@ -164,6 +165,7 @@ class CoppeliaEnv(gym.Env):
         self._gripper_range = gripper_range
         self._action_regularizer = action_regularizer
         self._distance_fn = self._get_distance_fn(distance_function)
+        self._flat_agent = flat_agent
         self.timestep = 0
         self.needs_reset = False
         self._init = False

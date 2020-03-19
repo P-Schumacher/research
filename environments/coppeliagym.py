@@ -7,7 +7,7 @@ from pyrep.const import RenderMode
 from pyrep.objects.shape import Shape
 from pyrep.objects.dummy import Dummy
 from pyrep.objects.vision_sensor import VisionSensor
-from utils.utils import suppress_stdout
+from utils.utils import suppress_stdout, huber
 if __name__=='__main__':
     import robot
 else:
@@ -245,7 +245,7 @@ class CoppeliaEnv(gym.Env):
     def _huber_distance(self, grip_pos, target_pos, delta=1.):
         'Returns distance between arm tip and target using the Huber distance function.'
         dist = tf.constant(grip_pos - target_pos, dtype=tf.float32)
-        return tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 ))
+        return huber(dist, delta)
 
     def _get_observation(self):
         ''' Compute observation. This method is always in flux before we decide on a state

@@ -2,6 +2,7 @@ import tensorflow as tf
 import numpy as np
 from collections import namedtuple
 from utils.replay_buffers import ReplayBuffer
+from utils.utils import huber
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
@@ -43,6 +44,21 @@ class TransitBuffer(ReplayBuffer):
                 return self._ep_rewards
             self._sum_of_rewards += reward
 
+    def compute_intr_reward(self, goal, state, next_state):
+        '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
+        the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
+        also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
+        dim = self._subgoal_dim
+        if self.goal_type == "Absolute":
+            rew = - tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
+        elif self.goal_type == "Direction":
+            rew =  - tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
+        elif self.goal_type == "Huber":
+            rew =  - huber(state[:dim] - next_state[:dim])  
+        else:
+            raise Exception("Goal type has to be Absolute or Direction")
+        return rew
+
     def _initialize_buffer(self, state, action, reward, next_state, done):
         if done:
             self._finish_one_step_episode(state, action, reward, next_state, done)
@@ -54,19 +70,6 @@ class TransitBuffer(ReplayBuffer):
         self._init = True
         return None
 
-    def compute_intr_reward(self, goal, state, next_state):
-        '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
-        the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
-        also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
-        dim = self._subgoal_dim
-        if self.goal_type == "Absolute":
-            rew = -tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
-        elif self.goal_type == "Direction":
-            rew =  -tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
-        else:
-            raise Exception("Goal type has to be Absolute or Direction")
-        return rew
-    
     def _collect_seq_state_actions(self, state, action):
         '''These are collected so that the off policy correction for the meta-agent can
         be calculated in a more efficient way.'''

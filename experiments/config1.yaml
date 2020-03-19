@@ -2,16 +2,17 @@ project: exp
 main:
   render: false
   log: true 
-  save_model: false
+  save_model: true 
   load_model: false 
-  descriptor: 'nonoffpolicy2_optimized_full_hiro_reaching'
+  descriptor: 'intrinsic_huber_optimized_full_hiro_reaching'
   c_step: 10
-  offpolicy: false
+  offpolicy: true 
 
 agent:
   center_meta_goal: true
   meta_rew_scale: 5.031
   meta_noise: 0.1727
+  goal_type: Huber 
 
   meta_model:
     ac_hidden_layers: [300, 300]

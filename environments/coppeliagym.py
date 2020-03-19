@@ -1,3 +1,4 @@
+from pudb import set_trace 
 import gym
 import tensorflow as tf
 import numpy as np
@@ -7,7 +8,7 @@ from pyrep.const import RenderMode
 from pyrep.objects.shape import Shape
 from pyrep.objects.dummy import Dummy
 from pyrep.objects.vision_sensor import VisionSensor
-from utils.utils import suppress_stdout, huber
+from utils.math_fns import huber, euclid
 if __name__=='__main__':
     import robot
 else:
@@ -19,8 +20,7 @@ class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
         # Allows us to restart sim in different force_mode without recreating sim threads
         if not init:
-            with suppress_stdout():
-                self._sim = self._start_sim(**cnf.sim)
+            self._sim = self._start_sim(**cnf.sim)
         self._prepare_parameters(**cnf.params)
         self._prepare_robot(self._sub_mock, self._gripper_range)
         self._prepare_shapes(self._render)
@@ -226,7 +226,7 @@ class CoppeliaEnv(gym.Env):
         return self.needs_reset
     
     def _get_distance(self):
-        grip_pos = np.array(self._robot.get_ee_position())
+        grip_pos = np.array(self._robot.get_ee_position(), dtype=np.float32)
         target_pos = self._ep_target_pos
         return self._distance_fn(grip_pos, target_pos)
     
@@ -240,7 +240,7 @@ class CoppeliaEnv(gym.Env):
 
     def _euclid_distance(self, grip_pos, target_pos):
         '''Returns L2 distance between arm tip and target.'''
-        return np.linalg.norm(grip_pos - target_pos)
+        return euclid(grip_pos - target_pos)
 
     def _huber_distance(self, grip_pos, target_pos, delta=1.):
         'Returns distance between arm tip and target using the Huber distance function.'
@@ -272,7 +272,7 @@ class CoppeliaEnv(gym.Env):
             x, y = self._sample_in_circular_reach()
             pose[:2] = [x, y]
             self._target.set_pose(pose)
-        return self._target.get_position()
+        return np.array(self._target.get_position(), dtype=np.float32)
 
     def _get_info(self):
         return ''

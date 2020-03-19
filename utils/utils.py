@@ -117,5 +117,3 @@ def suppress_stdout():
         finally:
             sys.stdout = old_stdout
 
-def huber(dist, delta):
-    return tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 ))

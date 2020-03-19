@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 from collections import namedtuple
 from utils.replay_buffers import ReplayBuffer
-from utils.utils import huber
+from utils.math_fns import huber, euclid
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
@@ -50,11 +50,11 @@ class TransitBuffer(ReplayBuffer):
         also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
         dim = self._subgoal_dim
         if self.goal_type == "Absolute":
-            rew = - tf.norm(next_state[:dim] - goal)  # complete absolute goal reward
+            rew = - euclid(next_state[:dim] - goal)  # complete absolute goal reward
         elif self.goal_type == "Direction":
-            rew =  - tf.norm(state[:dim] + goal - next_state[:dim])  # complete directional reward
+            rew =  - euclid(state[:dim] + goal - next_state[:dim])  # complete directional reward
         elif self.goal_type == "Huber":
-            rew =  - huber(state[:dim] - next_state[:dim])  
+            rew =  - huber(state[:dim] - next_state[:dim], 1.)  
         else:
             raise Exception("Goal type has to be Absolute or Direction")
         return rew

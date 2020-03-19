@@ -178,7 +178,7 @@ class HierarchicalAgent(Agent):
         '''When using directional goals, we have to transition the goal at every 
         timestep to keep it at the same absolute position for n timesteps. In absolute 
         mode, this is just the identity.'''
-        if self.goal_type == "Absolute":
+        if self.goal_type == "Absolute" or self.goal_type == "Huber":
             return goal
         elif self.goal_type == "Direction":
             dim = self._subgoal_dim

@@ -53,7 +53,7 @@ class CoppeliaEnv(gym.Env):
             self._sim.stop()
             self._sim.start()
             self._prepare_robot(self._sub_mock, self._gripper_range)
-            self._prepare_shapes(self._render)
+            self._prepare_shapes(self._render, self._flat_agent)
         return self._reset(evalmode)
 
     def render(self, mode='human'):

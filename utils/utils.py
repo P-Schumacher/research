@@ -87,6 +87,11 @@ def assert_sanity_check(cnf):
 
     if cnf.agent.center_goal:
         assert cnf.coppeliagym.params.ee_pos or cnf.coppeliagym.params.ee_j_pos
+    # tf.function decorated functions cannot have conditional branch dependent output type
+    for model in [cnf.agent.sub_model, cnf.agent.meta_model]:
+        assert type(model.clip_cr) != int
+        assert type(model.clip_ac) != int
+
 
 def exponential_decay(total_steps, init_step=100, min_step=10):
         '''Gives out an exponentially decayed step size for the 

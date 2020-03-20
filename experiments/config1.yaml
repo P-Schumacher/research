@@ -1,10 +1,10 @@
 project: exp
 main:
   render: false
-  log: true 
-  save_model: true 
+  log: true
+  save_model: false
   load_model: false 
-  descriptor: 'optimized_full_hiro_reaching'
+  descriptor: 'intuitive_full_hiro_reaching'
   c_step: 10
   offpolicy: true 
 
@@ -18,8 +18,8 @@ agent:
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 3.74
-    clip_ac: 4.31
+    clip_cr: 10000.
+    clip_ac: 10000.optimized_
     reg_coeff_ac: 3.464e-05
     reg_coeff_cr: 4.494e-05
     name: 'meta'
@@ -27,7 +27,7 @@ agent:
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 2
+    policy_freq: 4
     ac_lr: 0.000963
     cr_lr: 0.000728
 
@@ -35,5 +35,5 @@ coppeliagym:
   params:
     action_regularizer: 0.00077
   subgoals:
-    ej_goal: [3, 5.43]
+    ej_goal: [3, 0.9]
 

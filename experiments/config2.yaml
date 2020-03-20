@@ -2,9 +2,9 @@ project: exp
 main:
   render: false
   log: true
-  save_model: true 
-  load_model: false 
-  descriptor: 'huber_env_optimized_full_hiro_reaching'
+  save_model: true
+  load_model: false
+  descriptor: 'optimized_full_hiro_reaching'
   c_step: 10
   offpolicy: true 
 
@@ -12,7 +12,6 @@ agent:
   center_meta_goal: true
   meta_rew_scale: 5.031
   meta_noise: 0.1727
-
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -32,7 +31,7 @@ agent:
 
 coppeliagym:
   params:
-    distance_function: huber
+    distance_function: euclid 
     action_regularizer: 0.0007
   subgoals:
     ej_goal: [3, 6.3]

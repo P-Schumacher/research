@@ -34,7 +34,7 @@ config = {**cnf.main, **cnf.agent, **cnf.coppeliagym, **cnf.buffer, **cnf.agent.
 parser = argparse.ArgumentParser()
 for name, model in zip(['sub', 'meta'], [cnf.agent.sub_model, cnf.agent.meta_model]):
     parser.add_argument(f'--{name}_model_ac_lr', default=model.ac_lr, type=float)
-    parser.add_argument(f'--{name}_model_cr_lr', default=model.ac_lr, type=float)
+    parser.add_argument(f'--{name}_model_cr_lr', default=model.cr_lr, type=float)
     parser.add_argument(f'--{name}_model_reg_coeff_ac', default=model.reg_coeff_ac, type=float)
     parser.add_argument(f'--{name}_model_reg_coeff_cr', default=model.reg_coeff_cr, type=float)
     parser.add_argument(f'--{name}_model_clip_ac', default=model.clip_ac, type=float)
@@ -77,7 +77,7 @@ cnf.agent.sub_rew_scale = args.sub_rew_scale
 cnf.agent.meta_rew_scale = args.meta_rew_scale
 cnf.buffer.max_size = args.max_size
 
-
+set_trace()
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)
 

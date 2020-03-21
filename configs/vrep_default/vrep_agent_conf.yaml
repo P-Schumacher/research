@@ -19,6 +19,8 @@ agent:
   meta_rew_scale: 0.1
   sub_noise: 1.4
   meta_noise: 0.1
+  train_meta: true
+  train_sub: true
   seed: ${main.seed}
   c_step: ${main.c_step}
 
@@ -35,8 +37,8 @@ agent:
     policy_noise: 0.2
     noise_clip: 0.5
     policy_freq: 2
-    ac_lr: 0.0001
-    cr_lr: 0.001
+    ac_lr: 0.000963
+    cr_lr: 0.000728
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10

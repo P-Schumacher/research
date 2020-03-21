@@ -44,6 +44,7 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
+    init_tree = env._robot.bot[1].get_configuration_tree()
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent)
         action = agent.select_noisy_action(state)
@@ -57,15 +58,11 @@ def main(cnf):
 
         if done:
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
+            logger.log(t, intr_rew, c_step)
             # Reset environment
             agent.reset()
-            hard_reset = logger.log(t, intr_rew, c_step)
             logger.reset()
-            if hard_reset:
-                # Need to periodically restart physics engine because Darmstadt gripper model is unstable.
-                # Hard reset takes current arm position as initial position. This is why we first do a normal reset.
-                env.reset()
-            state, done = env.reset(hard_reset=hard_reset), False
+            state, done = env.reset(), False
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)

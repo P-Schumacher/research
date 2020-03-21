@@ -42,19 +42,14 @@ class CoppeliaEnv(gym.Env):
         self.timestep += 1
         return observation, reward, done, info
 
-    def reset(self, evalmode=False, hard_reset=False):
+    def reset(self, evalmode=False):
         '''Resets the environment to its initial state by setting all the object positions 
         explicitly.
-        :param evalmode: If True the target on the table will stay in a specific position.
-        :param hard_reset: If True the reset will stop and start the physics simulation. Takes longer but prevents error
-        accumulation'''
-        if hard_reset:
-            print("HARD reset")
-            self._sim.stop()
-            self._sim.start()
-            self._prepare_robot(self._sub_mock, self._gripper_range)
-            self._prepare_shapes(self._render, self._flat_agent)
-        return self._reset(evalmode)
+        :param evalmode: If True the target on the table will stay in a specific position.'''
+        state = self._reset(evalmode)
+        # This resets the gripper to its initial state, even if it broke during table touches
+        self._sim.set_configuration_tree(self._initial_gripper_conftree)
+        return state
 
     def render(self, mode='human'):
         '''gym render function. To render the simulator during simulation, call render(mode='human') once.
@@ -132,6 +127,7 @@ class CoppeliaEnv(gym.Env):
     def _prepare_robot(self, sub_mock, gripper_range):
         self._robot = robot.Robot(self.force_mode, self._max_torque, self._max_vel, gripper_range, sub_mock)
         self._init_pos = self._robot.get_joint_positions(gripper_special=False)
+        self._initial_gripper_conftree = self._robot.bot[1].get_configuration_tree()
 
     def _prepare_parameters(self, 
                            time_limit,

@@ -11,8 +11,6 @@ class Logger:
         self.episode_reward = 0
         self.episode_timesteps = 0
         self.episode_num = 0
-        self._stable_num = int(10000 / time_limit)
-        
 
     def inc(self, t, reward):
         '''Logs variables that should be logged every timestep, not 
@@ -43,7 +41,6 @@ class Logger:
         :return: None'''
         if self.logging:
             wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew, 'c_step': c_step}, step = t)
-        return self._should_reset()
 
     def log_eval(self, t, eval_rew, eval_intr_rew, eval_success):
         '''Log the evaluation metrics.
@@ -55,9 +52,3 @@ class Logger:
         if self.logging:
             wandb.log({'eval/eval_ep_rew': eval_rew, 'eval/eval_intr_rew': eval_intr_rew,
                   'eval/success_rate': eval_success}, step = t)
-
-    def _should_reset(self):
-        ''' Restart physics simulation every 10000 / time_limit episodes.
-        Prevents breaking of Darmstadt Gripper model.'''
-        return not self.episode_num % self._stable_num
-

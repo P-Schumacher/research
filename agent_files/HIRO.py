@@ -3,6 +3,7 @@ import numpy as np
 from agent_files.Agent import Agent
 from utils.transitbuffer import TransitBuffer
 import wandb
+from pudb import set_trace
 
 
 
@@ -40,26 +41,10 @@ class HierarchicalAgent(Agent):
     
     def train(self, timestep):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        sub_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(self._gradient_steps):
-            *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
-            sub_avg += metrics
-        sub_avg /= self._gradient_steps
+        sub_avg = [self._train_sub_agent(timestep) if self._train_sub else None][0]
+        meta_avg = [self._train_meta_agent(timestep) if self._train_meta else None][0]
+        self._maybe_log_training_metrics(sub_avg, meta_avg, timestep)
 
-        meta_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(int(self._gradient_steps / 10)):
-            *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
-                                              self._sub_agent.actor)
-            meta_avg += metrics
-        meta_avg /= int(self._gradient_steps / 10)
-        if self._log:
-            for avg, name in zip([sub_avg, meta_avg], ['sub', 'meta']):
-                wandb.log({f'{name}/actor_loss': avg[0],
-                           f'{name}/critic_loss': avg[1],
-                           f'{name}/actor_gradnorm': avg[2],
-                           f'{name}/critic_gradnorm': avg[3], 
-                           f'{name}/actor_gradstd': avg[4],
-                           f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
     def replay_add(self, state, action, reward, next_state, done):
         return self._transitbuffer.add(state, action, reward, next_state, done)
@@ -113,7 +98,35 @@ class HierarchicalAgent(Agent):
         self._meta_noise = agent_cnf.meta_noise
         self._sub_noise = agent_cnf.sub_noise
         self._zero_obs = agent_cnf.zero_obs
+        self._train_meta = agent_cnf.train_meta
+        self._train_sub = agent_cnf.train_sub
         self.goal_type = agent_cnf.goal_type
+
+    def _train_sub_agent(self, timestep):
+        sub_avg = np.zeros([6,], dtype=np.float32)
+        for i in range(self._gradient_steps):
+            *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
+            sub_avg += metrics
+        return sub_avg / self._gradient_steps
+
+    def _train_meta_agent(self, timestep):
+        meta_avg = np.zeros([6,], dtype=np.float32)
+        for i in range(int(self._gradient_steps / 10)):
+            *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
+                                              self._sub_agent.actor)
+            meta_avg += metrics
+        return meta_avg / int(self._gradient_steps / 10)
+
+    def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
+        if self._log:
+            should_log = [x for x in [np.array(sub_avg), np.array(meta_avg)] if x.any()]
+            for avg, name in zip(should_log, ['sub', 'meta']):
+                wandb.log({f'{name}/actor_loss': avg[0],
+                           f'{name}/critic_loss': avg[1],
+                           f'{name}/actor_gradnorm': avg[2],
+                           f'{name}/critic_gradnorm': avg[3], 
+                           f'{name}/actor_gradstd': avg[4],
+                           f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
     def _maybe_mock(self, goal):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''

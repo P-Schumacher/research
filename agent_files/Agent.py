@@ -35,18 +35,19 @@ class Agent:
         return tf.clip_by_value(action, -self._policy.max_action, self._policy.max_action)      
     
     def train(self, timestep):
-        m_avg = np.zeros([6, ], dtype=np.float32)
-        for i in range(self._gradient_steps):
-            *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep)
-            m_avg += metrics 
-        m_avg /= self._gradient_steps
-        if self._log:
-            wandb.log({f'sub/actor_loss': m_avg[0],
-                       f'sub/critic_loss': m_avg[1],
-                       f'sub/critic_gradnorm': m_avg[2],
-                       f'sub/actor_gradnorm': m_avg[3], 
-                       f'sub/actor_gradstd': m_avg[4],
-                       f'sub/critic_gradstd': m_avg[5]}, step = timestep)
+        if self._train_sub:
+            m_avg = np.zeros([6, ], dtype=np.float32)
+            for i in range(self._gradient_steps):
+                *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep)
+                m_avg += metrics 
+            m_avg /= self._gradient_steps
+            if self._log and self._train_sub:
+                wandb.log({f'sub/actor_loss': m_avg[0],
+                           f'sub/critic_loss': m_avg[1],
+                           f'sub/critic_gradnorm': m_avg[2],
+                           f'sub/actor_gradnorm': m_avg[3], 
+                           f'sub/actor_gradstd': m_avg[4],
+                           f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
     def replay_add(self, state, action, next_state, reward, done):
         self._replay_buffer.add(state, action, next_state, self._sub_rew_scale * reward, done, 0, 0)
@@ -63,9 +64,12 @@ class Agent:
         pass # Not necessary for simple agent
 
     def _prepare_params(self, agent_cnf, main_cnf):
+        # Agent cnf
         self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._sub_noise = agent_cnf.sub_noise
         self._sub_rew_scale = agent_cnf.sub_rew_scale
+        self._train_sub = agent_cnf.train_sub
+        # Main cnf
         self._seed = main_cnf.seed
         self._visit = main_cnf.visit
         self._log = main_cnf.log

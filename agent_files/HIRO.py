@@ -236,7 +236,7 @@ class HierarchicalAgent(Agent):
                 action = self.select_action(state)
                 next_state, reward, done, _ = env.step(action)
                 avg_ep_reward.append(reward)
-                avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state))
+                avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state, action))
                 state = next_state
                 if visit:
                     visitation[step, :] = state

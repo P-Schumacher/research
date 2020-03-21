@@ -4,7 +4,7 @@ main:
   log: true
   save_model: false
   load_model: false 
-  descriptor: 'intuitive_full_hiro_reaching'
+  descriptor: 'real_action_reg_intuitive_full_hiro_reaching'
   c_step: 10
   offpolicy: true 
 
@@ -14,12 +14,13 @@ agent:
   meta_noise: 0.3492
   goal_type: Absolute
   ri_re: false
+  action_regularizer: 0.007
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
     clip_cr: 10000.
-    clip_ac: 10000.optimized_
+    clip_ac: 10000.
     reg_coeff_ac: 3.464e-05
     reg_coeff_cr: 4.494e-05
     name: 'meta'
@@ -33,7 +34,7 @@ agent:
 
 coppeliagym:
   params:
-    action_regularizer: 0.00077
+    action_regularizer: 0.00
   subgoals:
     ej_goal: [3, 0.9]
 

@@ -45,10 +45,12 @@ class TransitBuffer(ReplayBuffer):
                 return self._ep_rewards
             self._sum_of_rewards += reward
 
-    def compute_intr_reward(self, goal, state, next_state):
+    def compute_intr_reward(self, goal, state, next_state, action):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
         the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
-        also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.'''
+        also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.
+        For robotic envs, a metabolic cost negative reward proved to be useful. It has to be incorporated in the
+        sub-agent reward, not the external meta-agent reward.'''
         dim = self._subgoal_dim
         if self.goal_type == "Absolute":
             rew = - euclid(next_state[:dim] - goal)  # complete absolute goal reward
@@ -58,7 +60,8 @@ class TransitBuffer(ReplayBuffer):
             rew =  - huber(state[:dim] - next_state[:dim], 1.)  
         else:
             raise Exception("Goal type has to be Absolute or Direction")
-        return rew
+
+        return rew - self._action_reg * tf.square(tf.norm(action))
 
     def _initialize_buffer(self, state, action, reward, next_state, done):
         if done:
@@ -81,7 +84,7 @@ class TransitBuffer(ReplayBuffer):
             
     def _finish_sub_transition(self, next_goal, reward): 
         old = self._load_sub_transition() 
-        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state) * self._sub_rew_scale 
+        intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state, old.action) * self._sub_rew_scale 
         if self._ri_re: 
             intr_reward += reward
         self._ep_rewards += intr_reward
@@ -97,7 +100,7 @@ class TransitBuffer(ReplayBuffer):
         goal = self.goal
         self._agent.select_action(next_state)
         next_goal = self.goal
-        intr_reward = self.compute_intr_reward(goal, state, next_state)
+        intr_reward = self.compute_intr_reward(goal, state, next_state, action)
         self._add_to_sub(state, goal, action, intr_reward, next_state, next_goal, done)
         self._add_to_meta(state, goal, reward * self._meta_rew_scale, next_state, done)
 
@@ -177,3 +180,4 @@ class TransitBuffer(ReplayBuffer):
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re
+        self._action_reg = agent_cnf.action_regularizer

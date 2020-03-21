@@ -1,10 +1,10 @@
-project: exp
+project: expo
 main:
   render: false 
   log: true
   save_model: false
   load_model: false 
-  descriptor: 'real_action_reg_intuitive_full_hiro_reaching'
+  descriptor: 'hiro_reaching'
   c_step: 10
   offpolicy: true 
   
@@ -15,8 +15,9 @@ agent:
   meta_noise: 0.3492
   goal_type: Absolute
   ri_re: false
-  action_regularizer: 0.007
-  train_meta: false
+  action_regularizer: 0.00086
+  train_meta: true
+  train_sub: true
 
   meta_model:
     ac_hidden_layers: [300, 300]

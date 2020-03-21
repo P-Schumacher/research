@@ -1,12 +1,13 @@
-project: exp
+project: expo
 main:
   render: false
   log: true
   save_model: true
   load_model: false 
-  descriptor: 'real_action_reg_optimized_full_hiro_reaching'
+  descriptor: 'only_sub_hiro_reaching'
   c_step: 10
   offpolicy: true 
+  
 
 agent:
   center_meta_goal: true
@@ -14,21 +15,24 @@ agent:
   meta_noise: 0.3492
   goal_type: Absolute
   ri_re: false
-  action_regularizer: 0.007
+  action_regularizer: 0.00086
+  train_meta: false
+  train_sub: true
+  meta_mock: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 2.626
-    clip_ac: 1.456
-    reg_coeff_ac: 3.464e-05
-    reg_coeff_cr: 4.494e-05
+    clip_cr: 10000.
+    clip_ac: 10000.
+    reg_coeff_ac: 0.0
+    reg_coeff_cr: 0.0
     name: 'meta'
     discount: 0.99
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 4
+    policy_freq: 10
     ac_lr: 0.000963
     cr_lr: 0.000728
 

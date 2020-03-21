@@ -22,7 +22,7 @@ coppeliagym:
     random_target: true 
     random_eval_target: true
     sparse_rew: false
-    action_regularizer: 0.00086
+    action_regularizer: 0.00000
     distance_function: euclid
     spherical_coord: ${agent.spherical_coord}
     flat_agent: ${main.flat_agent}
@@ -30,5 +30,5 @@ coppeliagym:
   subgoals:
     ee_goal: 5.
     j_goal: 3.14
-    ej_goal: [3, 5.] # Subgoal length and range [L,R]
+    ej_goal: [3, 1.] # Subgoal length and range [L,R]
 

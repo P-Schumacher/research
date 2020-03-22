@@ -1,13 +1,12 @@
 project: expo
 main:
-  render: false 
-  log: true
-  save_model: false
-  load_model: false 
-  descriptor: 'hiro_reaching'
-  c_step: 10
-  offpolicy: true 
-  
+  render: true 
+  log: false 
+  save_model: false 
+  load_model: true 
+  descriptor: 'meta_mock_sub_training2'
+  c_step: 50
+  offpolicy: false 
 
 agent:
   center_meta_goal: true
@@ -16,7 +15,8 @@ agent:
   goal_type: Absolute
   ri_re: false
   action_regularizer: 0.00086
-  train_meta: true
+  meta_mock: true
+  train_meta: false 
   train_sub: true
 
   meta_model:

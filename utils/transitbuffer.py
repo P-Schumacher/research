@@ -30,20 +30,7 @@ class TransitBuffer(ReplayBuffer):
         if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
             self._initialize_buffer(state, action, reward, next_state, done) 
         else: 
-            self._finish_sub_transition(self.goal, reward)
-            self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-            if self.meta_time:
-                self._finish_meta_transition(state, done)
-                self._save_meta_transition(state, self.goal, done)
-                self._sum_of_rewards = 0
-            if done:
-                self._ep_rewards = 0
-                self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
-                self._finish_sub_transition(self.goal, reward)
-                self._finish_meta_transition(next_state, done)
-                self._needs_reset = True
-                return self._ep_rewards
-            self._sum_of_rewards += reward
+            self._add(state, action, reward, next_state, done)
 
     def compute_intr_reward(self, goal, state, next_state, action):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
@@ -73,6 +60,22 @@ class TransitBuffer(ReplayBuffer):
         self._sum_of_rewards += reward
         self._init = True
         return None
+
+    def _add(self, state, action, reward, next_state, action):
+        self._finish_sub_transition(self.goal, reward)
+        self._save_sub_transition(state, action, reward, next_state, done, self.goal)
+        if self.meta_time:
+            self._finish_meta_transition(state, done)
+            self._save_meta_transition(state, self.goal, done)
+            self._sum_of_rewards = 0
+        if done:
+            self._ep_rewards = 0
+            self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
+            self._finish_sub_transition(self.goal, reward)
+            self._finish_meta_transition(next_state, done)
+            self._needs_reset = True
+            return self._ep_rewards
+        self._sum_of_rewards += reward
 
     def _collect_seq_state_actions(self, state, action):
         '''These are collected so that the off policy correction for the meta-agent can

@@ -17,8 +17,7 @@ class HierarchicalAgent(Agent):
                                            buffer_cnf)
         self._sub_agent = model_cls(**sub_env_spec, **agent_cnf.sub_model)
         self._meta_agent = model_cls(**meta_env_spec, **agent_cnf.meta_model)
-        # Logic variables
-        # Set this to its maximum, such that we query the meta agent in the first iteration
+        # Set * goal_counter* to its maximum, such that we query the meta agent in the first iteration
         self._goal_counter = self._c_step 
         self._evals = 0  
         
@@ -35,7 +34,7 @@ class HierarchicalAgent(Agent):
         action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
             self.goal = self.goal + self._gaussian_noise(self._meta_noise, self._subgoal_dim)
-            if not self._spherical_coord:
+            if not self._spherical_coord and not self._center_meta_goal:
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
@@ -101,6 +100,10 @@ class HierarchicalAgent(Agent):
         self._train_meta = agent_cnf.train_meta
         self._train_sub = agent_cnf.train_sub
         self.goal_type = agent_cnf.goal_type
+        
+        if self._center_meta_goal:
+            # We need to move this such that the ranges that are used for clipping are correct.
+            self._subgoal_ranges = self._subgoal_ranges + tf.constant([0.622, -0.605, 0.86], dtype=tf.float32)
 
     def _train_sub_agent(self, timestep):
         sub_avg = np.zeros([6,], dtype=np.float32)
@@ -222,9 +225,9 @@ class HierarchicalAgent(Agent):
             goal = self._goal_transition_fn(self.goal, self._prev_state, state)
             self._prev_state = state
         else:
+            meta_time = True
             self._goal_counter = 0
             self._prev_state = state
-            meta_time = True
             goal = self._meta_agent.select_action(state)
             goal = self._maybe_mock(goal)
             goal = self._maybe_move_over_table(goal)

@@ -18,7 +18,7 @@ main:
   batch_size: 128
   model: TD3
   eval_freq: 20000
-  seed: 9
+  seed: 15
   train_every: 300 
   gradient_steps: 300 
 

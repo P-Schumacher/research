@@ -1,13 +1,12 @@
 project: expo
 main:
-  render: false 
+  render: false
   log: true
-  save_model: false
-  load_model: false 
-  descriptor: 'longpolfreq_hiro_reaching'
-  c_step: 10
-  offpolicy: true 
-  
+  save_model: true
+  load_model: false
+  descriptor: 'long_meta_mock_sub_training'
+  c_step: 100
+  offpolicy: false 
 
 agent:
   center_meta_goal: true
@@ -16,7 +15,8 @@ agent:
   goal_type: Absolute
   ri_re: false
   action_regularizer: 0.00086
-  train_meta: true
+  meta_mock: true
+  train_meta: false 
   train_sub: true
 
   meta_model:
@@ -31,7 +31,7 @@ agent:
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 10
+    policy_freq: 2
     ac_lr: 0.000963
     cr_lr: 0.000728
 

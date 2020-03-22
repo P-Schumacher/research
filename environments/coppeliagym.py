@@ -207,6 +207,13 @@ class CoppeliaEnv(gym.Env):
         self._robot.actuate(action[-1])
 
     def _get_rew(self, done, action):
+        '''Computes the reward for the environment. This is at the moment a certain distance between the *target* and the end-effector.
+        If *sparse_rew* the agent only gets sparse binary rewards. This function also computes an action space regularization reward 
+        which incentivizes small (more stable) actions. In the HIRO application, this reward is internally computed for the sub-agent,
+        NOT the meta-agent. The prefactor should consequently be set to zero in this class via the cnf files.
+        :param done: Bool that indicates a termination of the environment
+        :param action: The action proposed by the agent.
+        :return: The reward obtained for the proposed action given the next state.'''
         if self._sparse_rew:
             if done:
                 return 0

@@ -13,10 +13,7 @@ from utils.utils import create_world, exponential_decay
 
 def maybe_verbose_output(t, agent, env, action, cnf, state):
     if cnf.render:
-        #print(f"action: {action}")
-        #print(f"time is: {t}")
         if not cnf.flat_agent:
-            print(f"goal: {agent.goal}")
             if agent.meta_time and cnf.render:
                 print(f"GOAL POSITION: {agent.goal}")
                 if agent.goal_type == 'Direction':

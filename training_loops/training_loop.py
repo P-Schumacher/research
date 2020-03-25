@@ -11,11 +11,12 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 
-def maybe_verbose_output(t, agent, env, action, cnf, state):
+def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
             if agent.meta_time and cnf.render:
-                print(f"GOAL POSITION: {agent.goal}")
+                print(f't: {t}')
+                #print(f"GOAL POSITION: {agent.goal}")
                 if agent.goal_type == 'Direction':
                     env.set_goal(state[:3] + agent.goal[:3])
                 else:
@@ -25,9 +26,8 @@ def decay_step(decay, stepper, agent, flat_agent):
     c_step = [1 if flat_agent else 10][0]
     if decay:
         c_step = int(next(stepper))
-        agent.goal_every_n = c_step
-        agent.c_step = c_step
-        agent.meta_agent.c_step = c_step
+        agent._c_step = c_step
+        agent._meta_agent.c_step = c_step
     return c_step
 
 
@@ -45,9 +45,9 @@ def main(cnf):
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent)
         action = agent.select_noisy_action(state)
-        maybe_verbose_output(t, agent, env, action, cnf, state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
+        maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         if t > cnf.start_timesteps and not t % cnf.train_every:
             agent.train(t)
         state = next_state

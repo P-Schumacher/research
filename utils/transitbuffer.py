@@ -27,10 +27,11 @@ class TransitBuffer(ReplayBuffer):
         self._timestep += 1
         if self._needs_reset:
             raise Exception("You need to reset the agent if a 'done' has occurred in the environment.")
+
         if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
             self._initialize_buffer(state, action, reward, next_state, done) 
         else: 
-            self._add(state, action, reward, next_state, done)
+            return self._add(state, action, reward, next_state, done)
 
     def compute_intr_reward(self, goal, state, next_state, action):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
@@ -49,19 +50,38 @@ class TransitBuffer(ReplayBuffer):
             raise Exception("Goal type has to be Absolute or Direction")
 
         return rew - self._action_reg * tf.square(tf.norm(action))
+    
+    def reset(self):
+        '''Resets the class for the next episode.'''
+        self._init = False
+        self._sum_of_rewards = 0
+        self._needs_reset = False
+        self._state_seq[:] = np.inf
+        self._action_seq[:] = np.inf
+        self._ptr = 0
 
     def _initialize_buffer(self, state, action, reward, next_state, done):
+        '''Should be the first function called when add transitions is added after a reset() was called. 
+        This function handles episodes which only last a single step. If the episode is longer, the MDP
+        information is stored to create a transition in the next add. As such, transition t=0 is created
+        and added to the buffer at t=1.
+        :param state: Array containing the state information of the MDP. (1D atm)
+        :param action: Array containing the proposed action of the MDP
+        :param reward: Float containing the reward for taking action a in state s 
+        :param next_state: Array containing the next_state of the MDP
+        :param done: Bool indicating whether an episode has ended.
+        :return: None'''
         if done:
             self._finish_one_step_episode(state, action, reward, next_state, done)
             self._needs_reset = True
-            return None
+            return 
         self._save_sub_transition(state, action, reward, next_state, done, self.goal)
         self._save_meta_transition(state, self.goal, done)
         self._sum_of_rewards += reward
         self._init = True
-        return None
+        return 
 
-    def _add(self, state, action, reward, next_state, action):
+    def _add(self, state, action, reward, next_state, done):
         self._finish_sub_transition(self.goal, reward)
         self._save_sub_transition(state, action, reward, next_state, done, self.goal)
         if self.meta_time:
@@ -69,16 +89,18 @@ class TransitBuffer(ReplayBuffer):
             self._save_meta_transition(state, self.goal, done)
             self._sum_of_rewards = 0
         if done:
-            self._ep_rewards = 0
             self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(next_state, done)
             self._needs_reset = True
-            return self._ep_rewards
+            ret = self._ep_rewards
+            self._ep_rewards = 0
+            return ret
+
         self._sum_of_rewards += reward
 
     def _collect_seq_state_actions(self, state, action):
-        '''These are collected so that the off policy correction for the meta-agent can
+        '''The states and actions of the sub-agent  are collected so that the offpolicy correction for the meta-agent can
         be calculated in a more efficient way.'''
         if self._offpolicy:
             self._state_seq[self._ptr] = state 

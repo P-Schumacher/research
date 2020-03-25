@@ -1,43 +1,50 @@
 project: expo
 main:
-  render: true 
-  log: false 
-  save_model: false 
-  load_model: true 
-  descriptor: 'meta_mock_sub_training2'
-  c_step: 50
-  offpolicy: false 
+  render: true
+  log: false
+  save_model: false
+  load_model: true
+  descriptor: 'relative_goal'
+  c_step: 30
+  offpolicy: true
+  
+  decay: false
+  step_decayer:
+    total_steps: 300
+    init_step: ${main.c_step}
+    min_step: 10
 
 agent:
-  center_meta_goal: true
-  meta_rew_scale: 4.515
-  meta_noise: 0.3492
-  goal_type: Absolute
+  center_meta_goal: false
+  meta_rew_scale: 3.7
+  meta_noise: 0.05
+  goal_type: Direction
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: true
-  train_meta: false 
+  meta_mock: false
+  train_meta: true
   train_sub: true
+  num_eval_episodes: 10
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 10000.
-    clip_ac: 10000.
-    reg_coeff_ac: 0.0
-    reg_coeff_cr: 0.0
+    clip_cr: 0.076
+    clip_ac: 4.079
+    reg_coeff_ac: 4.49e-5
+    reg_coeff_cr: 2.056e-5
     name: 'meta'
     discount: 0.99
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 2
-    ac_lr: 0.000963
-    cr_lr: 0.000728
+    policy_freq: 10
+    ac_lr: 0.000386     
+    cr_lr: 0.000254
 
 coppeliagym:
   params:
     action_regularizer: 0.00
   subgoals:
-    ej_goal: [3, 0.9]
+    ej_goal: [3, 0.15]
 

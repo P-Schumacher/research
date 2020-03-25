@@ -61,7 +61,7 @@ class TransitBuffer(ReplayBuffer):
         self._init = True
         return None
 
-    def _add(self, state, action, reward, next_state, action):
+    def _add(self, state, action, reward, next_state, done):
         self._finish_sub_transition(self.goal, reward)
         self._save_sub_transition(state, action, reward, next_state, done, self.goal)
         if self.meta_time:

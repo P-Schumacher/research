@@ -14,7 +14,7 @@ if __name__=='__main__':
 else:
     from . import robot
 
-
+import time
 
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
@@ -39,16 +39,17 @@ class CoppeliaEnv(gym.Env):
         done = self._get_done()
         reward = self._get_rew(done, action)
         info = self._get_info()
-        self.timestep += 1
+        self._timestep += 1
         return observation, reward, done, info
 
     def reset(self, evalmode=False):
         '''Resets the environment to its initial state by setting all the object positions 
         explicitly.
         :param evalmode: If True the target on the table will stay in a specific position.'''
+        self._sim.set_configuration_tree(self._initial_arm_conftree)
+        self._sim.set_configuration_tree(self._initial_gripper_conftree)
         state = self._reset(evalmode)
         # This resets the gripper to its initial state, even if it broke during table touches
-        self._sim.set_configuration_tree(self._initial_gripper_conftree)
         return state
 
     def render(self, mode='human'):
@@ -69,13 +70,16 @@ class CoppeliaEnv(gym.Env):
             return self._gym_cam.capture_rgb()
 
     def close(self):
+        '''Shuts simulator completely down'''
         self._sim.stop()
         self._sim.shutdown()
 
     def seed(self, seed):
+        '''Would change the seed of the RNGs but this simulator is a physics simulator, so there should be no RNGs.'''
         pass
     
     def set_goal(self, goal):
+        '''Set a goal position in the environment for visualisation purposes. Only works if *_render* is true.'''
         if not self._render:
             raise Exception('Do not set goal if you are not rendering. It will not even be present in the simulator.')
         self._meta_goal.set_position(goal, relative_to=None)
@@ -127,6 +131,7 @@ class CoppeliaEnv(gym.Env):
     def _prepare_robot(self, sub_mock, gripper_range):
         self._robot = robot.Robot(self.force_mode, self._max_torque, self._max_vel, gripper_range, sub_mock)
         self._init_pos = self._robot.get_joint_positions(gripper_special=False)
+        self._initial_arm_conftree = self._robot.bot[0].get_configuration_tree()
         self._initial_gripper_conftree = self._robot.bot[1].get_configuration_tree()
 
     def _prepare_parameters(self, 
@@ -162,7 +167,7 @@ class CoppeliaEnv(gym.Env):
         self._action_regularizer = action_regularizer
         self._distance_fn = self._get_distance_fn(distance_function)
         self._flat_agent = flat_agent
-        self.timestep = 0
+        self._timestep = 0
         self.needs_reset = False
         self._init = False
 
@@ -224,7 +229,7 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = True
         if self._get_distance() < 0.08:
             print("Success")
-        elif self.timestep >= self.max_episode_steps - 1:
+        elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:
             self.needs_reset = False
@@ -287,12 +292,12 @@ class CoppeliaEnv(gym.Env):
         # there is an additional simulation timestep between them. If the velocities are not reset properly, the
         # reset position of the robot will drift. This drift is small for the arm but can cause the gripper to
         # explode and destabilize the simulation.
-        self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
-        self._robot.set_position(self._init_pos)
+        #self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
+        #self._robot.set_position(self._init_pos)
         self._ep_target_pos = self._reset_target(evalmode)
         self._sim.step()
         self.needs_reset = False
-        self.timestep = 0
+        self._timestep = 0
         return self._get_observation()
     
     def _sample_in_circular_reach(self):

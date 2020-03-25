@@ -1,10 +1,10 @@
 project: expo
 main:
-  render: true 
-  log: false 
+  render: true
+  log: false
   save_model: false 
-  load_model: true 
-  descriptor: 'meta_mock_sub_training2'
+  load_model: false
+  descriptor: 'meta_train'
   c_step: 50
   offpolicy: false 
 
@@ -15,8 +15,8 @@ agent:
   goal_type: Absolute
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: true
-  train_meta: false 
+  meta_mock: false
+  train_meta: true
   train_sub: true
 
   meta_model:

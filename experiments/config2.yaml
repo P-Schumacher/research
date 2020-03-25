@@ -1,13 +1,13 @@
 project: expo
 main:
-  render: true
+  render: false
   log: false
-  save_model: false
-  load_model: true
-  descriptor: 'decay_hiro_even_longer'
-  c_step: 40
+  save_model: true
+  load_model: false
+  descriptor: 'decay_hiro_even_longer_corrected'
+  c_step: 100
   offpolicy: false 
-  decay: false
+  decay: true
   step_decayer:
     total_steps: 900000
     init_step: ${main.c_step}

@@ -38,10 +38,10 @@ class HierarchicalAgent(Agent):
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
-    def train(self, timestep):
+    def train(self, timestep, episode_steps):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        sub_avg = [self._train_sub_agent(timestep) if self._train_sub else None][0]
-        meta_avg = [self._train_meta_agent(timestep) if self._train_meta else None][0]
+        sub_avg = [self._train_sub_agent(timestep, episode_steps) if self._train_sub else None][0]
+        meta_avg = [self._train_meta_agent(timestep, episode_steps) if self._train_meta else None][0]
         self._maybe_log_training_metrics(sub_avg, meta_avg, timestep)
 
 
@@ -101,16 +101,18 @@ class HierarchicalAgent(Agent):
             # We need to move this such that the ranges that are used for clipping are correct.
             self._subgoal_ranges = self._subgoal_ranges + tf.constant([0.622, -0.605, 0.86], dtype=tf.float32)
 
-    def _train_sub_agent(self, timestep):
+    def _train_sub_agent(self, timestep, episode_steps):
         sub_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(self._gradient_steps):
+        for i in range(episode_steps):
+            print('sub_train')
             *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
             sub_avg += metrics
         return sub_avg / self._gradient_steps
 
-    def _train_meta_agent(self, timestep):
+    def _train_meta_agent(self, timestep, episode_steps):
         meta_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(int(self._gradient_steps / 10)):
+        for i in range(int(episode_steps / self._c_step)):
+            print('meta_train')
             *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
                                               self._sub_agent.actor)
             meta_avg += metrics

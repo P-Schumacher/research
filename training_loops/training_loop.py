@@ -49,7 +49,7 @@ def main(cnf):
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         if t > cnf.start_timesteps and not t % cnf.train_every:
-            agent.train(t)
+            agent.train(t, logger.episode_steps)
         state = next_state
         logger.inc(t, reward)
 

@@ -68,14 +68,10 @@ class HierarchicalAgent(Agent):
         prevents lingering old transition components from being used. This also resets
         the sum of rewards for the meta agent.'''
         self._goal_counter = self._c_step
-        self._transitbuffer._init = False
-        self._transitbuffer._sum_of_rewards = 0
-        self._transitbuffer._needs_reset = False
-        self._transitbuffer._state_seq[:] = np.inf
-        self._transitbuffer._action_seq[:] = np.inf
-        self._transitbuffer._ptr = 0
+        self._transitbuffer.reset()
 
     def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
+        '''Unpacks the parameters from the config files to state variables.'''
         # Env specs
         self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
         self._target_dim = env_spec['target_dim']

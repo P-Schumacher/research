@@ -1,7 +1,7 @@
 project: expo
 main:
   render: false
-  log: false
+  log: true
   save_model: true
   load_model: false
   descriptor: 'decay_hiro_even_longer_corrected'
@@ -20,7 +20,7 @@ agent:
   goal_type: Absolute
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: true
+  meta_mock: false
   train_meta: true
   train_sub: true
 

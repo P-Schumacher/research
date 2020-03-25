@@ -1,9 +1,9 @@
 project: expo
 main:
-  render: true
-  log: false
-  save_model: false
-  load_model: true
+  render: false
+  log: true
+  save_model: true
+  load_model: false
   descriptor: 'relative_goal'
   c_step: 30
   offpolicy: true
@@ -46,5 +46,5 @@ coppeliagym:
   params:
     action_regularizer: 0.00
   subgoals:
-    ej_goal: [3, 0.15]
+    ej_goal: [3, 0.3]
 

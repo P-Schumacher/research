@@ -41,19 +41,18 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
-    init_tree = env._robot.bot[1].get_configuration_tree()
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent)
         action = agent.select_noisy_action(state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
-        if t > cnf.start_timesteps and not t % cnf.train_every:
-            agent.train(t, logger.episode_steps)
         state = next_state
         logger.inc(t, reward)
 
         if done:
+            if t > cnf.start_timesteps:
+                agent.train(t, logger.episode_timesteps)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1}+ Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             # Reset environment

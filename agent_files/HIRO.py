@@ -104,19 +104,17 @@ class HierarchicalAgent(Agent):
     def _train_sub_agent(self, timestep, episode_steps):
         sub_avg = np.zeros([6,], dtype=np.float32)
         for i in range(episode_steps):
-            print('sub_train')
             *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
             sub_avg += metrics
-        return sub_avg / self._gradient_steps
+        return sub_avg / episode_steps 
 
     def _train_meta_agent(self, timestep, episode_steps):
         meta_avg = np.zeros([6,], dtype=np.float32)
         for i in range(int(episode_steps / self._c_step)):
-            print('meta_train')
             *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
                                               self._sub_agent.actor)
             meta_avg += metrics
-        return meta_avg / int(self._gradient_steps / 10)
+        return meta_avg / int(episode_steps / self._c_step)
 
     def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
         if self._log:

@@ -21,7 +21,7 @@ agent:
   goal_type: Direction
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: false
+  meta_mock: true
   train_meta: true
   train_sub: true
   num_eval_episodes: 10

@@ -29,11 +29,11 @@ class HierarchicalAgent(Agent):
         return action
 
     def select_noisy_action(self, state):
-        '''Selects an action from sub- and meta-agent and adds gaussian noise to it. Then clips actions appropriately to the sub.max_action
-        or the META_RANGES'''
+        '''Selects an action from sub- and meta-agent and adds gaussian noise to it. Then clips actions appropriately to
+        the *sub.max_action* for the sub-agent, or the *self._subgoal_ranges* for the meta-agent.'''
         action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
-            self.goal = self.goal + self._gaussian_noise(self._meta_noise, self._subgoal_dim)
+            self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
             if not self._spherical_coord and not self._center_meta_goal:
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
@@ -46,6 +46,7 @@ class HierarchicalAgent(Agent):
 
 
     def replay_add(self, state, action, reward, next_state, done):
+        '''Adds a transition to the replay buffer.'''
         return self._transitbuffer.add(state, action, reward, next_state, done)
         
     def save_model(self, string):
@@ -96,10 +97,6 @@ class HierarchicalAgent(Agent):
         self._train_meta = agent_cnf.train_meta
         self._train_sub = agent_cnf.train_sub
         self.goal_type = agent_cnf.goal_type
-        
-        if self._center_meta_goal:
-            # We need to move this such that the ranges that are used for clipping are correct.
-            self._subgoal_ranges = self._subgoal_ranges + tf.constant([0.622, -0.605, 0.86], dtype=tf.float32)
 
     def _train_sub_agent(self, timestep, episode_steps):
         sub_avg = np.zeros([6,], dtype=np.float32)
@@ -127,35 +124,19 @@ class HierarchicalAgent(Agent):
                            f'{name}/actor_gradstd': avg[4],
                            f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
-    def _maybe_mock(self, goal):
+    def _maybe_mock(self):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
         if not self._meta_mock:
-            return goal
-        mock_goal = np.random.uniform(-1, 1., size=[3,]) 
-        return mock_goal
+            return 
+        mock_goal = np.array(np.random.uniform(-1, 1., size=[3,]), dtype=np.float32) 
+        self.goal = mock_goal
     
-    def _maybe_move_over_table(self, goal, move=True):
+    def _maybe_center_goal(self):
         '''Adds a constant term to the generated subgoal such that it is forced to be 
         above the table.'''
-        if move:
-            goal = tf.constant([0.622, -0.605, 0.86], dtype=tf.float32) + goal 
-        return goal 
+        if self._center_meta_goal:
+            self.goal = tf.constant([0.622, -0.605, 0.86], dtype=tf.float32) + self.goal 
     
-    def _build_modelspecs(self, env_spec):
-        '''Prepares the keyword arguments for the TD3 algo for the meta and the sub agent. The meta agent outputs
-        an action corresponding to the META_RANGES dimension. The state space of the sub agent is the sum of its 
-        original state space and the action space of the meta agent.'''
-        meta_env_spec = env_spec.copy()
-        sub_env_spec = env_spec.copy()
-        meta_env_spec['action_dim'] = len(self._subgoal_ranges)
-        meta_env_spec['max_action'] = self._subgoal_ranges
-        sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
-        return meta_env_spec, sub_env_spec
-
-    def _get_meta_goal(self, state):
-        self.goal, self.meta_time = self._sample_goal(state)
-        self._maybe_spherical_coord_trafo()
-
     def _maybe_spherical_coord_trafo(self):
         '''If we give a meta-goal in spherical coordinates, this transforms it back to cartesian
         coordinates.
@@ -174,6 +155,25 @@ class HierarchicalAgent(Agent):
             y -= 0.605
             z += 0.86
             self.goal = tf.constant(np.array([x, y, z], dtype=np.float32))
+    
+    def _build_modelspecs(self, env_spec):
+        '''Prepares the keyword arguments for the TD3 algo for the meta and the sub agent. The meta agent outputs
+        an action corresponding to the META_RANGES dimension. The state space of the sub agent is the sum of its 
+        original state space and the action space of the meta agent.'''
+        meta_env_spec = env_spec.copy()
+        sub_env_spec = env_spec.copy()
+        meta_env_spec['action_dim'] = len(self._subgoal_ranges)
+        meta_env_spec['max_action'] = self._subgoal_ranges
+        sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
+        return meta_env_spec, sub_env_spec
+
+    def _get_meta_goal(self, state):
+        '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
+        self._sample_goal(state)
+        self._maybe_spherical_coord_trafo()
+        self._maybe_mock()
+        self._maybe_center_goal()
+        self._check_inner_done(state)
 
     def _get_sub_action(self, state):
         if self._sub_mock:
@@ -198,13 +198,14 @@ class HierarchicalAgent(Agent):
         else:
             raise Exception("Enter a valid type for the goal, Absolute or Direction.")
     
-    def _check_inner_done(self, state, next_state, goal):
-        '''Checks if the sub-agent has managed to reach the subgoal and then calls a new subgoal.'''
-        inner_done = self._inner_done_cond(state, next_state, goal)
+    def _check_inner_done(self, next_state):
+        '''Checks how close the sub-agent has gotten to the proposed subgoal and plots it.'''
+        inner_done = self._inner_done_cond(self._prev_state, next_state, self.goal)
         if self._log:
             wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal):
+        '''Checks how close the sub-agent got to the proposed goal.'''
         dim = self._subgoal_dim
         if self.goal_type == 'Absolute':
             diff = next_state[:dim] - goal[:dim]
@@ -217,23 +218,20 @@ class HierarchicalAgent(Agent):
         goal and the meta_time boolean are saved to the transitbuffer for later use by the add-fct.'''
         self._goal_counter += 1
         if self._goal_counter < self._c_step:
-            meta_time = False
-            goal = self._goal_transition_fn(self.goal, self._prev_state, state)
+            self.meta_time = False
+            self.goal = self._goal_transition_fn(self.goal, self._prev_state, state)
             self._prev_state = state
         else:
-            meta_time = True
+            self.meta_time = True
             self._goal_counter = 0
             self._prev_state = state
-            goal = self._meta_agent.select_action(state)
-            goal = self._maybe_mock(goal)
-            goal = self._maybe_move_over_table(goal)
-        self._check_inner_done(self._prev_state, state, goal)
-        return goal, meta_time
+            self.goal = self._meta_agent.select_action(state)
     
     def _eval_policy(self, env, seed, visit):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
         Different seeds are used for the eval environments. visit is a boolean that decides if we record visitation
         plots.'''
+        #avg_q = self._average_q_value()
         env.seed(self._seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
@@ -266,6 +264,12 @@ class HierarchicalAgent(Agent):
         print("---------------------------------------")
         self._evals += 1
         return avg_ep_reward, avg_intr_reward, success_rate
+
+    def _average_q_value(self):
+        '''Compute the average Q value by doing multivariate Monte Carlo Integration over
+        state and actions.'''
+        # TODO implement
+        return 0
 
     @property
     def goal(self):

@@ -77,7 +77,7 @@ class Agent:
         self._batch_size = main_cnf.batch_size
 
     def _gaussian_noise(self, expl_noise, dimension=1):
-        return np.random.normal(0, expl_noise, dimension) 
+        return np.array(np.random.normal(0, expl_noise, dimension), dtype=np.float32) 
 
     def _create_file_name(self, policy, env, descriptor):
         '''Create file_name from experiment information to save model weights.'''

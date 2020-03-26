@@ -83,7 +83,7 @@ def assert_sanity_check(cnf):
     ''' Stops the program if unlogical settings were made. E.g. We want to center the ee goal around the robot but we only have a J subgoal.'''
     if cnf.agent.spherical_coord:
         assert cnf.coppeliagym.params.ee_pos or cnf.coppeliagym.params.ee_j_pos
-        assert not cnf.agent.center_goal
+        assert not cnf.agent.center_meta_goal
 
     if cnf.agent.center_goal:
         assert cnf.coppeliagym.params.ee_pos or cnf.coppeliagym.params.ee_j_pos
@@ -93,6 +93,7 @@ def assert_sanity_check(cnf):
         assert type(model.clip_ac) != int
     # For flat agents this reward is computed in the env. for HIRO it has to be computed in the transitbuffer
     assert not (cnf.coppeliagym.params.action_regularizer and cnf.agent.action_regularizer)
+    assert not cnf.agent.center_metagoal and (agent.goal_type == 'Direction')
 
 
 def exponential_decay(total_steps, init_step=100, min_step=10):

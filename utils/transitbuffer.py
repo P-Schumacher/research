@@ -48,7 +48,6 @@ class TransitBuffer(ReplayBuffer):
             rew =  - huber(state[:dim] - next_state[:dim], 1.)  
         else:
             raise Exception("Goal type has to be Absolute or Direction")
-
         return rew - self._action_reg * tf.square(tf.norm(action))
     
     def reset(self):

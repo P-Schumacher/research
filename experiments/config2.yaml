@@ -4,10 +4,10 @@ main:
   log: true
   save_model: true
   load_model: false
-  descriptor: 'decay_hiro_even_longer_corrected'
-  c_step: 100
+  descriptor: 'hiro_corrected_polfreq2'
+  c_step: 40
   offpolicy: false 
-  decay: true
+  decay: false
   step_decayer:
     total_steps: 900000
     init_step: ${main.c_step}
@@ -36,7 +36,7 @@ agent:
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 10
+    policy_freq: 2
     ac_lr: 0.000386
     cr_lr: 0.000254
 

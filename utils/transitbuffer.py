@@ -92,9 +92,9 @@ class TransitBuffer(ReplayBuffer):
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(next_state, done)
             self._needs_reset = True
-            ret = self._ep_rewards
+            intr_return = self._ep_rewards
             self._ep_rewards = 0
-            return ret
+            return intr_return
 
         self._sum_of_rewards += reward
 

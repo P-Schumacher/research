@@ -22,8 +22,8 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
                 else:
                     env.set_goal(agent.goal[:3])
 
-def decay_step(decay, stepper, agent, flat_agent):
-    c_step = [1 if flat_agent else 10][0]
+def decay_step(decay, stepper, agent, flat_agent, init_c):
+    c_step = [1 if flat_agent else init_c][0]
     if decay:
         c_step = int(next(stepper))
         agent._c_step = c_step
@@ -42,7 +42,7 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
-        c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent)
+        c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_noisy_action(state)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)

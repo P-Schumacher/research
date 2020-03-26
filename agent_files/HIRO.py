@@ -34,7 +34,7 @@ class HierarchicalAgent(Agent):
         action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
             self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
-            if not self._spherical_coord and not self._center_meta_goal:
+            if (not self._spherical_coord) and (not self._center_meta_goal):
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
@@ -172,8 +172,9 @@ class HierarchicalAgent(Agent):
         self._sample_goal(state)
         self._maybe_spherical_coord_trafo()
         self._maybe_mock()
-        self._maybe_center_goal()
         self._check_inner_done(state)
+        if self.meta_time:
+            self._maybe_center_goal()
 
     def _get_sub_action(self, state):
         if self._sub_mock:

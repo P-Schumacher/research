@@ -13,7 +13,7 @@ main:
   start_timesteps: 5000
   max_timesteps: 1500000
   time_limit: ${coppeliagym.params.time_limit}
-  offpolicy: true
+  offpolicy: false
   flat_agent: false 
   batch_size: 128
   model: TD3
@@ -23,7 +23,7 @@ main:
   gradient_steps: 300 
 
   
-  c_step: 10
+  c_step: 40
   decay: false 
   step_decayer:
     total_steps: 700000

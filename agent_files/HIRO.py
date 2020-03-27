@@ -128,7 +128,7 @@ class HierarchicalAgent(Agent):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
         if not self._meta_mock:
             return 
-        mock_goal = np.array(np.random.uniform(-1, 1., size=[3,]), dtype=np.float32) 
+        mock_goal = np.array(np.random.uniform(-0.5, 0.5, size=[3,]), dtype=np.float32) 
         self.goal = mock_goal
     
     def _maybe_center_goal(self):

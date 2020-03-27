@@ -21,24 +21,25 @@ agent:
   meta_noise: 0.1
   train_meta: true
   train_sub: true
+  action_regularizer: 0.00086
   seed: ${main.seed}
   c_step: ${main.c_step}
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 10000.5
-    clip_ac: 10000.5
-    reg_coeff_ac: 0.0
-    reg_coeff_cr: 0.0
+    clip_cr: 0.076
+    clip_ac: 4.079
+    reg_coeff_ac: 4.49e-5
+    reg_coeff_cr: 2.056e-5
     name: 'meta'
     discount: 0.99
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
     policy_freq: 2
-    ac_lr: 0.000963
-    cr_lr: 0.000728
+    ac_lr: 0.000386
+    cr_lr: 0.000254
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10

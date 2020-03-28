@@ -2,12 +2,13 @@ project: expo
 main:
   render: false
   log: true
-  save_model: true
+  save_model: false
   load_model: false
-  descriptor: 'hiro_corrected_polfreq2'
+  descriptor: 'meta_mock'
   c_step: 40
   offpolicy: false 
   decay: false
+  seed: 40
   step_decayer:
     total_steps: 900000
     init_step: ${main.c_step}
@@ -20,9 +21,11 @@ agent:
   goal_type: Absolute
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: false
+  meta_mock: true
   train_meta: true
   train_sub: true
+  smooth_goal: false
+  smooth_factor: 0.9
 
   meta_model:
     ac_hidden_layers: [300, 300]

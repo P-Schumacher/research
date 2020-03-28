@@ -20,6 +20,7 @@ class HierarchicalAgent(Agent):
         # Set * goal_counter* to its maximum, such that we query the meta agent in the first iteration
         self._goal_counter = self._c_step 
         self._evals = 0  
+        self._init = False
         
     def select_action(self, state):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
@@ -34,15 +35,20 @@ class HierarchicalAgent(Agent):
         action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
             self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
+            self._maybe_goal_smoothing()
             if (not self._spherical_coord) and (not self._center_meta_goal):
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
         return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
     
     def train(self, timestep, episode_steps):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        sub_avg = [self._train_sub_agent(timestep, episode_steps) if self._train_sub else None][0]
-        meta_avg = [self._train_meta_agent(timestep, episode_steps) if self._train_meta else None][0]
-        self._maybe_log_training_metrics(sub_avg, meta_avg, timestep)
+        sub_avg = np.zeros([6,], dtype=np.float32) 
+        meta_avg = np.zeros([6,], dtype=np.float32) 
+        for train_index in range(episode_steps):
+            sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index) if self._train_sub else [0 for x in sub_avg]][0]
+            if (not train_index % self._c_step) and train_index:
+                meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index) if self._train_meta else [0 for x in meta_avg]][0]
+        self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
 
 
     def replay_add(self, state, action, reward, next_state, done):
@@ -97,21 +103,16 @@ class HierarchicalAgent(Agent):
         self._train_meta = agent_cnf.train_meta
         self._train_sub = agent_cnf.train_sub
         self.goal_type = agent_cnf.goal_type
+        self._smooth_goal = agent_cnf.smooth_goal
+        self._smooth_factor = agent_cnf.smooth_factor
 
-    def _train_sub_agent(self, timestep, episode_steps):
-        sub_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(episode_steps):
-            *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
-            sub_avg += metrics
-        return sub_avg / episode_steps 
+    def _train_sub_agent(self, timestep, train_index):
+        *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
+        return metrics 
 
-    def _train_meta_agent(self, timestep, episode_steps):
-        meta_avg = np.zeros([6,], dtype=np.float32)
-        for i in range(int(episode_steps / self._c_step)):
-            *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log,
-                                              self._sub_agent.actor)
-            meta_avg += metrics
-        return meta_avg / int(episode_steps / self._c_step)
+    def _train_meta_agent(self, timestep, train_index):
+        *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log, self._sub_agent.actor)
+        return metrics 
 
     def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
         if self._log:
@@ -123,6 +124,15 @@ class HierarchicalAgent(Agent):
                            f'{name}/critic_gradnorm': avg[3], 
                            f'{name}/actor_gradstd': avg[4],
                            f'{name}/critic_gradstd': avg[5]}, step = timestep)
+
+    def _maybe_goal_smoothing(self):
+        if self._smooth_goal:
+            if not self._init:
+                self._init = True
+                self._prev_goal = self.goal
+            else:
+                self.goal = self._smooth_factor * self._prev_goal + (1 - self._smooth_factor) * self.goal 
+                self._prev_goal = self.goal
 
     def _maybe_mock(self):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''

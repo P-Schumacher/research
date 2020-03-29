@@ -19,6 +19,8 @@ agent:
   sub_noise: 1.0
   meta_noise: 1.0
   action_regularizer: 0.0
+  train_meta: true
+  train_sub: true
   seed: ${main.seed}
   c_step: ${main.c_step}
 

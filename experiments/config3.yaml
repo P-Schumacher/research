@@ -5,7 +5,7 @@ main:
   save_model: false
   load_model: false
   descriptor: 'no_acr'
-  c_step: 40
+  c_step: 2
   offpolicy: false 
   decay: false
   seed: 40

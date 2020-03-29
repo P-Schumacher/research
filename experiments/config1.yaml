@@ -5,7 +5,7 @@ main:
   save_model: true
   load_model: false
   descriptor: 'relative_goal'
-  c_step: 30
+  c_step: 2
   offpolicy: true
   
   decay: false

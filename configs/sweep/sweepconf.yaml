@@ -1,54 +1,52 @@
 program: sweeps_script.py
 method: random
 metric:
-  name: eval/eval_intr_rew
+  name: eval/success_rate
   goal: maximize
 
 parameters:
-  sub_model_ac_lr:
+  meta_model_ac_lr:
     min: 0.0001
     max: 0.001
     distribution: uniform
 
-  sub_model_cr_lr:
+  meta_model_cr_lr:
     min: 0.0001
     max: 0.001
     distribution: uniform
 
-  sub_model_reg_coeff_ac:
+  meta_model_reg_coeff_ac:
     min: 0.0
     max: 0.0001
     distribution: uniform
 
-  sub_model_reg_coeff_cr:
+  meta_model_reg_coeff_cr:
     min: 0.0
     max: 0.0001
     distribution: uniform
 
-  sub_model_clip_ac:
+  meta_model_clip_ac:
     min: 0.0
     max: 8
     distribution: uniform
 
-  sub_model_clip_cr:
+  meta_model_clip_cr:
     min: 0.0
     max: 8
     distribution: uniform
 
   hiro_action_regularizer:
     min: 0.0
-    max: 0.001
+    max: 0.00001
     distribution: uniform
 
-  sub_rew_scale:
-    min: 0.1
-    max: 10
-    distribution: uniform
-
-  sub_noise:
+  meta_noise:
     min: 0.01
     max: 1
     distribution: uniform
+
+  smooth_factor:
+    values: {0.1, 0.3, 0.5, 0.7, 0.9}
 
 early_terminate:
   type: hyperband

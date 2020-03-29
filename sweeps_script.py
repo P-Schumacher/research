@@ -55,6 +55,8 @@ parser.add_argument('--sub_rew_scale', default=cnf.agent.sub_rew_scale, type=flo
 parser.add_argument('--meta_rew_scale', default=cnf.agent.meta_rew_scale, type=float)
 parser.add_argument('--max_size', default=cnf.buffer.max_size, type=int)
 parser.add_argument('--ej_goal', default=cnf.coppeliagym.subgoals.ej_goal[1], type=float)
+parser.add_argument('--smooth_factor', default=cnf.agent.smooth_factor, type=float)
+
 
 args = parser.parse_args(sys.argv[1:])
 for name, model in zip(['sub_model', 'meta_model'], [cnf.agent.sub_model, cnf.agent.meta_model]):   
@@ -79,6 +81,7 @@ cnf.agent.meta_noise = args.meta_noise
 cnf.agent.sub_rew_scale = args.sub_rew_scale
 cnf.agent.meta_rew_scale = args.meta_rew_scale
 cnf.buffer.max_size = args.max_size
+cnf.agent.smooth_factor = args.smooth_factor
 
 wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)

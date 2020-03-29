@@ -18,6 +18,7 @@ agent:
   meta_rew_scale: 0.1
   sub_noise: 1.0
   meta_noise: 1.0
+  action_regularizer: 0.0
   seed: ${main.seed}
   c_step: ${main.c_step}
 

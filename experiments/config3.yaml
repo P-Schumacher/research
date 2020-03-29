@@ -2,39 +2,46 @@ project: expo
 main:
   render: false
   log: true
-  save_model: true
-  load_model: false 
-  descriptor: 'only_sub_hiro_reaching'
-  c_step: 10
-  offpolicy: true 
-  
+  save_model: false
+  load_model: false
+  descriptor: 'no_acr'
+  c_step: 40
+  offpolicy: false 
+  decay: false
+  seed: 40
+  step_decayer:
+    total_steps: 900000
+    init_step: ${main.c_step}
+    min_step: 40
 
 agent:
   center_meta_goal: true
-  meta_rew_scale: 4.515
-  meta_noise: 0.3492
+  meta_rew_scale: 3.7
+  meta_noise: 0.2787
   goal_type: Absolute
   ri_re: false
-  action_regularizer: 0.00086
-  train_meta: false
+  action_regularizer: 0.00
+  meta_mock: false
+  train_meta: true
   train_sub: true
-  meta_mock: true
+  smooth_goal: false
+  smooth_factor: 0.9
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
-    clip_cr: 10000.
-    clip_ac: 10000.
-    reg_coeff_ac: 0.0
-    reg_coeff_cr: 0.0
+    clip_cr: 0.076
+    clip_ac: 4.079
+    reg_coeff_ac: 4.49e-5
+    reg_coeff_cr: 2.056e-5
     name: 'meta'
     discount: 0.99
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 10
-    ac_lr: 0.000963
-    cr_lr: 0.000728
+    policy_freq: 2
+    ac_lr: 0.000386
+    cr_lr: 0.000254
 
 coppeliagym:
   params:

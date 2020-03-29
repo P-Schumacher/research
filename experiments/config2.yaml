@@ -4,8 +4,8 @@ main:
   log: true
   save_model: false
   load_model: false
-  descriptor: 'meta_mock'
-  c_step: 40
+  descriptor: 'smooth_no_acr'
+  c_step: 10
   offpolicy: false 
   decay: false
   seed: 40
@@ -20,11 +20,11 @@ agent:
   meta_noise: 0.2787
   goal_type: Absolute
   ri_re: false
-  action_regularizer: 0.00086
-  meta_mock: true
+  action_regularizer: 0.00
+  meta_mock: false
   train_meta: true
   train_sub: true
-  smooth_goal: false
+  smooth_goal: true
   smooth_factor: 0.9
 
   meta_model:

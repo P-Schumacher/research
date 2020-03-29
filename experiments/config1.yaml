@@ -21,7 +21,7 @@ agent:
   goal_type: Direction
   ri_re: false
   action_regularizer: 0.00086
-  meta_mock: true
+  meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
@@ -46,5 +46,5 @@ coppeliagym:
   params:
     action_regularizer: 0.00
   subgoals:
-    ej_goal: [3, 0.3]
+    ej_goal: [3, 0.9]
 

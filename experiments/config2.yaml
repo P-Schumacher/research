@@ -2,7 +2,7 @@ project: expo
 main:
   render: false
   log: true
-  save_model: false
+  save_model: true
   load_model: false
   descriptor: 'smooth_no_acr'
   c_step: 10
@@ -25,7 +25,7 @@ agent:
   train_meta: true
   train_sub: true
   smooth_goal: true
-  smooth_factor: 0.9
+  smooth_factor: 0.8
 
   meta_model:
     ac_hidden_layers: [300, 300]

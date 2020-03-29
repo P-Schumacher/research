@@ -15,8 +15,7 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
             if agent.meta_time and cnf.render:
-                print(f't: {t}')
-                #print(f"GOAL POSITION: {agent.goal}")
+                print(f"GOAL POSITION: {agent.goal}")
                 if agent.goal_type == 'Direction':
                     env.set_goal(state[:3] + agent.goal[:3])
                 else:

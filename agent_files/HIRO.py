@@ -22,17 +22,19 @@ class HierarchicalAgent(Agent):
         self._evals = 0  
         self._init = False
         
-    def select_action(self, state):
+    def select_action(self, state, noisy=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
         saved(!) for the add-fct. In this function, no noise is added.'''
         self._get_meta_goal(state)
+        if not noisy:
+            self._maybe_goal_smoothing()
         action = self._get_sub_action(state)
         return action
 
     def select_noisy_action(self, state):
         '''Selects an action from sub- and meta-agent and adds gaussian noise to it. Then clips actions appropriately to
         the *sub.max_action* for the sub-agent, or the *self._subgoal_ranges* for the meta-agent.'''
-        action = self.select_action(state) + self._gaussian_noise(self._sub_noise, self._action_dim)
+        action = self.select_action(state, noisy=True) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
             self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
             self._maybe_goal_smoothing()

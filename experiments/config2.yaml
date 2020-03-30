@@ -1,8 +1,8 @@
 project: expo
 main:
-  render: false
-  log: true
-  save_model: true
+  render: true
+  log: false
+  save_model: false
   load_model: false
   descriptor: 'smooth_no_acr'
   c_step: 10

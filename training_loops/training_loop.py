@@ -42,7 +42,7 @@ def main(cnf):
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
-        action = agent.select_noisy_action(state)
+        action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)

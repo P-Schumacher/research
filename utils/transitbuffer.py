@@ -187,7 +187,7 @@ class TransitBuffer(ReplayBuffer):
         self._ptr = 0
 
     def _prepare_buffers(self, buffer_cnf, sub_state_dim, meta_state_dim, action_dim):
-        assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
+        #assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
         self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, **buffer_cnf)
         self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, **buffer_cnf)
 
@@ -201,6 +201,7 @@ class TransitBuffer(ReplayBuffer):
         # Agent cnf
         self._zero_obs = agent_cnf.zero_obs
         self.goal_type = agent_cnf.goal_type
+        self._smooth_goal = agent_cnf.smooth_goal
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re

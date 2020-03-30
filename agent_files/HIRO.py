@@ -21,26 +21,23 @@ class HierarchicalAgent(Agent):
         self._goal_counter = self._c_step 
         self._evals = 0  
         self._init = False
+        # we need an initial goal for goal smoothing
+        if self._smooth_goal:
+            self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
         
-    def select_action(self, state, noisy=False):
+    def select_action(self, state, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
-        saved(!) for the add-fct. In this function, no noise is added.'''
+        saved(!) for the add-fct. Depending on input, gaussian noise is added to the goal and the action. Goal smoothing 
+        means taking the Polyak Average of the old and the new goal. 
+        :param state: State of the MDP.
+        :param noise_bool: Boolean indicating if noise should be added to the action and the goal.
+        :return action: The action that the sub-agent takes.'''
         self._get_meta_goal(state)
-        if not noisy:
-            self._maybe_goal_smoothing()
-        action = self._get_sub_action(state)
-        return action
-
-    def select_noisy_action(self, state):
-        '''Selects an action from sub- and meta-agent and adds gaussian noise to it. Then clips actions appropriately to
-        the *sub.max_action* for the sub-agent, or the *self._subgoal_ranges* for the meta-agent.'''
-        action = self.select_action(state, noisy=True) + self._gaussian_noise(self._sub_noise, self._action_dim)
         if self.meta_time:
-            self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
+            self._maybe_apply_goal_noise(noise_bool)
             self._maybe_goal_smoothing()
-            if (not self._spherical_coord) and (not self._center_meta_goal):
-                self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
-        return tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
+        action = self._get_sub_action(state) 
+        return self._maybe_apply_action_noise(action, noise_bool)
     
     def train(self, timestep, episode_steps):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
@@ -51,7 +48,6 @@ class HierarchicalAgent(Agent):
             if (not train_index % self._c_step) and train_index:
                 meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index) if self._train_meta else [0 for x in meta_avg]][0]
         self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
-
 
     def replay_add(self, state, action, reward, next_state, done):
         '''Adds a transition to the replay buffer.'''
@@ -109,12 +105,31 @@ class HierarchicalAgent(Agent):
         self._smooth_factor = agent_cnf.smooth_factor
 
     def _train_sub_agent(self, timestep, train_index):
-        *metrics, = self._sub_agent.train(self.sub_replay_buffer, self._batch_size, timestep, self._log)
+        *metrics, = self._sub_agent.train(self.sub_replay_buffer, 
+                                          self._batch_size, 
+                                          timestep, 
+                                          self._log)
         return metrics 
 
     def _train_meta_agent(self, timestep, train_index):
-        *metrics, = self._meta_agent.train(self.meta_replay_buffer, self._batch_size, timestep, self._log, self._sub_agent.actor)
+        *metrics, = self._meta_agent.train(self.meta_replay_buffer, 
+                                           self._batch_size, 
+                                           timestep, 
+                                           self._log, 
+                                           self._sub_agent.actor)
         return metrics 
+
+    def _maybe_apply_action_noise(self, action, noise_bool):
+        if noise_bool:
+            action += self._gaussian_noise(self._sub_noise, self._action_dim)
+            return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
+        return action
+
+    def _maybe_apply_goal_noise(self, noise_bool=False):
+        if noise_bool:
+            self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
+            if (not self._spherical_coord) and (not self._center_meta_goal):
+                self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
 
     def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
         if self._log:
@@ -177,16 +192,28 @@ class HierarchicalAgent(Agent):
         meta_env_spec['action_dim'] = len(self._subgoal_ranges)
         meta_env_spec['max_action'] = self._subgoal_ranges
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
+        if self._smooth_goal:
+            meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        self._sample_goal(state)
-        self._maybe_spherical_coord_trafo()
+        meta_state = self._maybe_give_smoothed_goal(state)
+        self._sample_goal(meta_state)
         self._maybe_mock()
         self._check_inner_done(state)
         if self.meta_time:
+            self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
+
+    def _maybe_give_smoothed_goal(self, state):
+        '''Concatenates the previous given goal to the state vector for the
+        meta-agent. As we average old and new goals, the meta-agent needs
+        a way to be aware of past positions of the goal.'''
+        if not self._smooth_goal:
+            return state
+        meta_state = np.concatenate([state, self._prev_goal], axis=0)
+        return meta_state
 
     def _get_sub_action(self, state):
         if self._sub_mock:
@@ -307,3 +334,11 @@ class HierarchicalAgent(Agent):
     @property
     def meta_replay_buffer(self):
         return self._transitbuffer._meta_replay_buffer
+
+    @property
+    def _prev_goal(self):
+        return self._transitbuffer._prev_goal
+
+    @_prev_goal.setter
+    def _prev_goal(self, prev_goal):
+        self._transitbuffer._prev_goal = prev_goal

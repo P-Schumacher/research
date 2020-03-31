@@ -34,10 +34,11 @@ class HierarchicalAgent(Agent):
         :return action: The action that the sub-agent takes.'''
         self._get_meta_goal(state)
         if self.meta_time:
-            self._maybe_apply_goal_noise(noise_bool)
+            self._maybe_apply_goal_clipnoise(noise_bool)
+            # Need to correct goal after applying noise
             self._maybe_goal_smoothing()
         action = self._get_sub_action(state) 
-        return self._maybe_apply_action_noise(action, noise_bool)
+        return self._maybe_apply_action_clipnoise(action, noise_bool)
     
     def train(self, timestep, episode_steps):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
@@ -119,19 +120,27 @@ class HierarchicalAgent(Agent):
                                            self._sub_agent.actor)
         return metrics 
 
-    def _maybe_apply_action_noise(self, action, noise_bool):
+    def _maybe_apply_action_clipnoise(self, action, noise_bool):
+        '''Applies gaussian noise to the proposed action and then clips it to
+        the allowed maximum and minimum ranges.'''
         if noise_bool:
             action += self._gaussian_noise(self._sub_noise, self._action_dim)
             return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
         return action
 
-    def _maybe_apply_goal_noise(self, noise_bool=False):
+    def _maybe_apply_goal_clipnoise(self, noise_bool=False):
+        '''Applies gaussian noise to the proposed goal and then clips it to
+        the allowed maximum and minimum ranges.'''
         if noise_bool:
             self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
             if (not self._spherical_coord) and (not self._center_meta_goal):
                 self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
 
     def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
+        '''Logs different training metrics such as: actor, critic loss, the norms and standard
+        deviations of the gradients of each update.i
+        :param sub_avg: The episode averaged metrics of the sub-agent.
+        :param meta_avg: The episode averaged metrics of the meta-agent.'''
         if self._log:
             should_log = [x for x in [np.array(sub_avg), np.array(meta_avg)] if x.any()]
             for avg, name in zip(should_log, ['sub', 'meta']):
@@ -216,6 +225,10 @@ class HierarchicalAgent(Agent):
         return meta_state
 
     def _get_sub_action(self, state):
+        '''Gets the action from the sub-agent. Can use a mock-sub agent which
+        outputs a pre-specified action. *zero_obs* determines how many elements
+        of the state of the sub-agent should be zeroed out. Was used in HIRO 
+        to make sub-agent learn faster.'''
         if self._sub_mock:
             action = np.zeros([8,], dtype=np.float32)
             action[:7] = self.goal

@@ -95,7 +95,6 @@ class TransitBuffer(ReplayBuffer):
             intr_return = self._ep_rewards
             self._ep_rewards = 0
             return intr_return
-
         self._sum_of_rewards += reward
 
     def _collect_seq_state_actions(self, state, action):
@@ -151,8 +150,14 @@ class TransitBuffer(ReplayBuffer):
     def _load_sub_transition(self):
         return self.sub_transition
 
-    def _add_to_meta(self, state, goal, sum_of_rewards, next_state_c, done_c):
-        self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state_c, done_c, self._state_seq,
+    def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done_c):
+        # todo finish smooth goal implementation
+        if self._smooth_goal:
+            pass
+        else:
+            meta_state = state
+            meta_next_state = next_state
+        self._meta_replay_buffer.add(meta_state, goal, sum_of_rewards, meta_next_state, done_c, self._state_seq,
                                     self._action_seq)
         self._reset_sequence()
 
@@ -192,6 +197,7 @@ class TransitBuffer(ReplayBuffer):
         self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, **buffer_cnf)
 
     def _prepare_parameters(self, main_cnf, agent_cnf, target_dim, subgoal_dim):
+        '''Unpacks the cnf settings to state variables.'''
         # Env specs
         self._offpolicy = main_cnf.offpolicy
         self._target_dim = target_dim

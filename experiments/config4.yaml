@@ -1,15 +1,50 @@
+project: expo
 main:
-  save_model: false
+  render: false
+  log: true
+  save_model: true
   load_model: false
-  descriptor: 'clip'
+  descriptor: 'relative_goal_lessrange'
+  c_step: 2
+  offpolicy: false
+  
+  decay: false
+  step_decayer:
+    total_steps: 300
+    init_step: ${main.c_step}
+    min_step: 10
 
 agent:
-  sub_model:
-    clip_ac: 0.54
-    clip_cr: 0.99
-    reg_coeff_ac: 0.0
-    reg_coeff_cr: 0.0
+  center_meta_goal: false
+  meta_rew_scale: 0.1
+  meta_noise: 0.6442
+  goal_type: Direction
+  ri_re: false
+  action_regularizer: 0.000
+  meta_mock: false
+  train_meta: true
+  train_sub: true
+  num_eval_episodes: 10
+
+  meta_model:
+    ac_hidden_layers: [300, 300]
+    cr_hidden_layers: [300, 300]
+    clip_cr: 2.89
+    clip_ac: 0.019      
+    reg_coeff_ac: 4.93e-5
+    reg_coeff_cr: 6.89e-5
+    name: 'meta'
+    discount: 0.99
+    tau: 0.005
+    policy_noise: 0.2
+    noise_clip: 0.5
+    policy_freq: 2
+    ac_lr: 0.0005
+    cr_lr: 0.0007
 
 coppeliagym:
   params:
-    action_regularizer: 0.00000
+    action_regularizer: 0.00
+  subgoals:
+    ej_goal: [3, 0.2]
+

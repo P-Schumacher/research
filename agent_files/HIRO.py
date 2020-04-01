@@ -84,6 +84,7 @@ class HierarchicalAgent(Agent):
         self._action_dim = env_spec['action_dim']
         self._subgoal_dim = subgoal_dim
         # Main cnf
+        self._minilog = main_cnf.minilog
         self._batch_size = main_cnf.batch_size
         self._c_step = main_cnf.c_step
         self._seed = main_cnf.seed
@@ -109,14 +110,14 @@ class HierarchicalAgent(Agent):
         *metrics, = self._sub_agent.train(self.sub_replay_buffer, 
                                           self._batch_size, 
                                           timestep, 
-                                          self._log)
+                                          (self._log and not self._minilog))
         return metrics 
 
     def _train_meta_agent(self, timestep, train_index):
         *metrics, = self._meta_agent.train(self.meta_replay_buffer, 
                                            self._batch_size, 
                                            timestep, 
-                                           self._log, 
+                                           (self._log and not self._minilog), 
                                            self._sub_agent.actor)
         return metrics 
 
@@ -141,7 +142,7 @@ class HierarchicalAgent(Agent):
         deviations of the gradients of each update.i
         :param sub_avg: The episode averaged metrics of the sub-agent.
         :param meta_avg: The episode averaged metrics of the meta-agent.'''
-        if self._log:
+        if self._log and not self._minilog:
             should_log = [x for x in [np.array(sub_avg), np.array(meta_avg)] if x.any()]
             for avg, name in zip(should_log, ['sub', 'meta']):
                 wandb.log({f'{name}/actor_loss': avg[0],
@@ -207,10 +208,10 @@ class HierarchicalAgent(Agent):
 
     def _get_meta_goal(self, state):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        meta_state = self._maybe_give_smoothed_goal(state)
-        self._sample_goal(meta_state)
+        self._maybe_give_smoothed_goal(state)
+        self._sample_goal(self._meta_state)
         self._maybe_mock()
-        self._check_inner_done(state)
+        self._check_inner_done(self._meta_state)
         if self.meta_time:
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
@@ -220,9 +221,9 @@ class HierarchicalAgent(Agent):
         meta-agent. As we average old and new goals, the meta-agent needs
         a way to be aware of past positions of the goal.'''
         if not self._smooth_goal:
-            return state
-        meta_state = np.concatenate([state, self._prev_goal], axis=0)
-        return meta_state
+            self._meta_state = state
+        else:
+            self._meta_state = np.concatenate([state, self._prev_goal], axis=0)
 
     def _get_sub_action(self, state):
         '''Gets the action from the sub-agent. Can use a mock-sub agent which
@@ -254,7 +255,7 @@ class HierarchicalAgent(Agent):
     def _check_inner_done(self, next_state):
         '''Checks how close the sub-agent has gotten to the proposed subgoal and plots it.'''
         inner_done = self._inner_done_cond(self._prev_state, next_state, self.goal)
-        if self._log:
+        if self._log and not self._minilog:
             wandb.log({'distance_to_goal':inner_done}, commit=False)
     
     def _inner_done_cond(self, state, next_state, goal):
@@ -355,3 +356,11 @@ class HierarchicalAgent(Agent):
     @_prev_goal.setter
     def _prev_goal(self, prev_goal):
         self._transitbuffer._prev_goal = prev_goal
+
+    @property
+    def _meta_state(self):
+        return self._transitbuffer._meta_state
+
+    @_meta_state.setter
+    def _meta_state(self, meta_state):
+        self._transitbuffer._meta_state = meta_state  

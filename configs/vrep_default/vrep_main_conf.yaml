@@ -6,6 +6,7 @@ main:
   env: Vrep
   vrep: true
   log: true
+  minilog: false
   visit: false
   render: false
   save_model: false

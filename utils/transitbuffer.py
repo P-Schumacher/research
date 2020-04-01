@@ -38,12 +38,13 @@ class TransitBuffer(ReplayBuffer):
         the goal covers. In the HIRO Ant case: BodyPosition: x, y, z BodyOrientation: a, b, c, d JointPositions: 2 per leg. Total of 15 dims. State space
         also contains derivatives of those quantities (i.e. velocity). Total of 32 dims.
         For robotic envs, a metabolic cost negative reward proved to be useful. It has to be incorporated in the
-        sub-agent reward, not the external meta-agent reward.'''
+        sub-agent reward, not the external meta-agent reward.
+        The function supports Aboslute and Relative goal distances as well as the Huber distance.'''
         dim = self._subgoal_dim
         if self.goal_type == "Absolute":
-            rew = - euclid(next_state[:dim] - goal)  # complete absolute goal reward
+            rew = - euclid(next_state[:dim] - goal)  
         elif self.goal_type == "Direction":
-            rew =  - euclid(state[:dim] + goal - next_state[:dim])  # complete directional reward
+            rew =  - euclid(state[:dim] + goal - next_state[:dim])  
         elif self.goal_type == "Huber":
             rew =  - huber(state[:dim] - next_state[:dim], 1.)  
         else:
@@ -106,6 +107,9 @@ class TransitBuffer(ReplayBuffer):
             self._ptr += 1 
             
     def _finish_sub_transition(self, next_goal, reward): 
+        '''Completes a transition for the sub-agent and adds it to the buffer. 
+        *ri_re* determines
+        if the sub-agent should recieve the sum of extrinsic and intrinsic rewards.'''
         old = self._load_sub_transition() 
         intr_reward = self.compute_intr_reward(old.goal, old.state, old.next_state, old.action) * self._sub_rew_scale 
         if self._ri_re: 

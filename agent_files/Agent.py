@@ -9,7 +9,7 @@ import wandb
 
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
-        self._prepare_params(agent_cnf, main_cnf)
+        self._prepare_parameters(agent_cnf, main_cnf)
         self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], **buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
@@ -40,7 +40,7 @@ class Agent:
                 *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep)
                 m_avg += metrics 
             m_avg /= self._gradient_steps
-            if self._log and self._train_sub:
+            if self._log and not self._minilog:
                 wandb.log({f'sub/actor_loss': m_avg[0],
                            f'sub/critic_loss': m_avg[1],
                            f'sub/critic_gradnorm': m_avg[2],
@@ -62,13 +62,14 @@ class Agent:
     def reset(self):
         pass # Not necessary for simple agent
 
-    def _prepare_params(self, agent_cnf, main_cnf):
+    def _prepare_parameters(self, agent_cnf, main_cnf):
         # Agent cnf
         self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._sub_noise = agent_cnf.sub_noise
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._train_sub = agent_cnf.train_sub
         # Main cnf
+        self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed
         self._visit = main_cnf.visit
         self._log = main_cnf.log

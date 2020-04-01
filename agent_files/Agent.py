@@ -25,19 +25,18 @@ class Agent:
         self.reset()
         return avg_reward, avg_intr_reward, success_rate
 
-    def select_action(self, state):
+    def select_action(self, state, noise_bool=False):
         state = np.array(state)
-        return self._policy.select_action(state) 
-
-    def select_noisy_action(self, state):
-        state = np.array(state)
-        action = self._policy.select_action(state) + self._gaussian_noise(self._sub_noise)
-        return tf.clip_by_value(action, -self._policy.max_action, self._policy.max_action)      
+        action = self._policy.select_action(state) 
+        if noise_bool:
+            action += self._gaussian_noise(self._sub_noise)
+            action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
+        return action
     
-    def train(self, timestep):
+    def train(self, timestep, episode_timesteps):
         if self._train_sub:
             m_avg = np.zeros([6, ], dtype=np.float32)
-            for i in range(self._gradient_steps):
+            for i in range(episode_timesteps):
                 *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep)
                 m_avg += metrics 
             m_avg /= self._gradient_steps

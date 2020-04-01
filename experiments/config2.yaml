@@ -1,11 +1,12 @@
 project: expo
 main:
-  render: false
-  log: true
-  save_model: true
-  load_model: false
+  render: true
+  log: false
+  save_model: false
+  load_model: true
   descriptor: 'relative_goal_optimized_ac'
   c_step: 2
+  seed: 55
   offpolicy: false
   
   decay: false

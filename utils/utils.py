@@ -59,12 +59,13 @@ def create_directories(args):
     if args.save_model and not os.path.exists('./models'):
         os.makedirs('./experiments/models')
 
-def set_seeds(env, seed):
+def set_seeds(env, seed, no_seed=False):
     '''Set seeds to get different random numbers for every experiment. Interestingly, this also resets
     accumulated but unused tensorflow memory and frees the RAM'''
-    env.seed(seed)
-    tf.random.set_seed(seed)
-    np.random.seed(seed)
+    if not no_seed:
+        env.seed(seed)
+        tf.random.set_seed(seed)
+        np.random.seed(seed)
 
 def create_world(cnf):
     assert_sanity_check(cnf)
@@ -76,7 +77,7 @@ def create_world(cnf):
         agent = HierarchicalAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim)
     else: 
         agent = Agent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls)
-    set_seeds(env, cnf.main.seed)
+    set_seeds(env, cnf.main.seed, no_seed=cnf.main.no_seed)
     return env, agent 
 
 def assert_sanity_check(cnf):

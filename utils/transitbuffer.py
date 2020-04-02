@@ -74,12 +74,11 @@ class TransitBuffer(ReplayBuffer):
         if done:
             self._finish_one_step_episode(state, action, reward, next_state, done)
             self._needs_reset = True
-            return 
-        self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-        self._save_meta_transition(state, self.goal, done)
-        self._sum_of_rewards += reward
-        self._init = True
-        return 
+        else:
+            self._save_sub_transition(state, action, reward, next_state, done, self.goal)
+            self._save_meta_transition(state, self.goal, done)
+            self._sum_of_rewards += reward
+            self._init = True
 
     def _add(self, state, action, reward, next_state, done):
         self._finish_sub_transition(self.goal, reward)

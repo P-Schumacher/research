@@ -19,6 +19,7 @@ class HierarchicalAgent(Agent):
         self._meta_agent = model_cls(**meta_env_spec, **agent_cnf.meta_model)
         # Set * goal_counter* to its maximum, such that we query the meta agent in the first iteration
         self._goal_counter = self._c_step 
+        self._orig_goal = tf.zeros([1,])
         self._evals = 0  
         self._init = False
         # we need an initial goal for goal smoothing
@@ -158,6 +159,7 @@ class HierarchicalAgent(Agent):
                 self._init = True
                 self._prev_goal = self.goal
             else:
+                self._orig_goal = self.goal
                 self.goal = self._smooth_factor * self._prev_goal + (1 - self._smooth_factor) * self.goal 
                 self._prev_goal = self.goal
 
@@ -208,7 +210,7 @@ class HierarchicalAgent(Agent):
 
     def _get_meta_goal(self, state):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        self._maybe_give_smoothed_goal(state)
+        self._maybe_modify_smoothed_state(state)
         self._sample_goal(self._meta_state)
         self._maybe_mock()
         self._check_inner_done(self._meta_state)
@@ -216,7 +218,7 @@ class HierarchicalAgent(Agent):
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
 
-    def _maybe_give_smoothed_goal(self, state):
+    def _maybe_modify_smoothed_state(self, state):
         '''Concatenates the previous given goal to the state vector for the
         meta-agent. As we average old and new goals, the meta-agent needs
         a way to be aware of past positions of the goal.'''
@@ -364,3 +366,11 @@ class HierarchicalAgent(Agent):
     @_meta_state.setter
     def _meta_state(self, meta_state):
         self._transitbuffer._meta_state = meta_state  
+
+    @property
+    def _orig_goal(self):
+        return self._transitbuffer._orig_goal
+
+    @_orig_goal.setter
+    def _orig_goal(self, orig_goal):
+        self._transitbuffer._orig_goal = orig_goal  

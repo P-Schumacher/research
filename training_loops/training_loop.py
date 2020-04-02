@@ -15,7 +15,6 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
             if agent.meta_time and cnf.render:
-                print(f"GOAL POSITION: {agent.goal}")
                 if agent.goal_type == 'Direction':
                     env.set_goal(state[:3] + agent.goal[:3])
                 else:
@@ -45,7 +44,7 @@ def main(cnf):
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
-        maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
+        #maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
 

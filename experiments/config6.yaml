@@ -4,7 +4,7 @@ main:
   log: true
   save_model: false
   load_model: false
-  descriptor: 'relative_goal_optimized_ac'
+  descriptor: 'relative_goal_optimized'
   c_step: 2
   seed: 5
   offpolicy: false
@@ -22,7 +22,7 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  action_regularizer: 0.00001
+  agent_action_regularizer: 0.0000
   meta_mock: false
   train_meta: true
   train_sub: true

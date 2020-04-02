@@ -215,4 +215,4 @@ class TransitBuffer(ReplayBuffer):
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re
-        self._action_reg = agent_cnf.action_regularizer
+        self._action_reg = agent_cnf.agent_action_regularizer

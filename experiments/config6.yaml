@@ -1,11 +1,11 @@
 project: research
 main:
-  render: false
-  log: true
+  render: true
+  log: false
   save_model: false
-  load_model: false
-  descriptor: 'relative_goal_optimized_ac'
-  c_step: 2
+  load_model: true
+  descriptor: 'save_good_one'
+  c_step: 10
   seed: 5
   offpolicy: false
   no_seed: true
@@ -19,7 +19,8 @@ main:
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.6442
+  meta_noise: 0.0 #0.6442
+  sub_noise: 0.0
   goal_type: Direction
   ri_re: false
   action_regularizer: 0.00001
@@ -27,6 +28,8 @@ agent:
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
+  smooth_goal: false
+  smooth_factor: 0.0
 
   meta_model:
     ac_hidden_layers: [300, 300]

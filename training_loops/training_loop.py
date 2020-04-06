@@ -16,9 +16,9 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
         if not cnf.flat_agent:
             if agent.meta_time and cnf.render:
                 if agent.goal_type == 'Direction':
-                    env.set_goal(state[:3] + agent.goal[:3])
+                    env.set_goal(state[:3] + agent._prev_goal[:3])
                 else:
-                    env.set_goal(agent.goal[:3])
+                    env.set_goal(agent._prev_goal[:3])
 
 def decay_step(decay, stepper, agent, flat_agent, init_c):
     c_step = [1 if flat_agent else init_c][0]
@@ -44,7 +44,8 @@ def main(cnf):
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
-        #maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
+        maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
+        set_trace()
         state = next_state
         logger.inc(t, reward)
 

@@ -45,7 +45,6 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         intr_rew = agent.replay_add(state, action, reward, next_state, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
-        set_trace()
         state = next_state
         logger.inc(t, reward)
 

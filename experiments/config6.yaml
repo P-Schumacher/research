@@ -47,7 +47,7 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 10
+    no_candidates: 100
 
   sub_model:
     reg_coeff_ac: 0.0   

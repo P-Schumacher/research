@@ -1,13 +1,15 @@
 project: research
 main:
-  render: true
-  log: false
+  render: false
+  log: true
+  minilog: true
   save_model: false
-  load_model: true
-  descriptor: 'save_good_one'
-  c_step: 10
+  load_model: false
+  descriptor: 'baseline_corrected_correction'
+  c_step: 5
   seed: 5
-  offpolicy: false
+  offpolicy: true
+  start_timesteps: 5000
   no_seed: true
   
   decay: false
@@ -19,11 +21,10 @@ main:
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.0 #0.6442
-  sub_noise: 0.0
+  meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  action_regularizer: 0.00001
+  agent_action_regularizer: 0.00001
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -36,7 +37,7 @@ agent:
     cr_hidden_layers: [300, 300]
     clip_cr: 2.89
     clip_ac: 0.019      
-    reg_coeff_ac: 4.93e-5
+    reg_coeff_ac: 0.0 #4.93e-5
     reg_coeff_cr: 6.89e-5
     name: 'meta'
     discount: 0.99
@@ -46,9 +47,14 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
+    no_candidates: 10
+
+  sub_model:
+    reg_coeff_ac: 0.0   
 
 coppeliagym:
   params:
+    sparse_rew: false
     action_regularizer: 0.00
   subgoals:
     ej_goal: [3, 1.0]

@@ -21,7 +21,7 @@ agent:
   meta_noise: 0.1
   train_meta: true
   train_sub: true
-  action_regularizer: 0.00086
+  agent_action_regularizer: 0.00086
   smooth_factor: 0.8
   smooth_goal: false
   seed: ${main.seed}

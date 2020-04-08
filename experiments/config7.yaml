@@ -1,12 +1,12 @@
 project: goal_smoothing
 main:
-  render: false
-  log: true
+  render: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
   descriptor: 'goal_smoothing'
-  c_step: 2
+  c_step: 5
   seed: 5
   offpolicy: false
   no_seed: true
@@ -28,7 +28,7 @@ agent:
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
-  smooth_goal: true
+  smooth_goal: false
   smooth_factor: 0.95
 
   meta_model:

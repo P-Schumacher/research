@@ -37,7 +37,7 @@ agent:
     cr_hidden_layers: [300, 300]
     clip_cr: 2.89
     clip_ac: 0.019      
-    reg_coeff_ac: 0.0 #4.93e-5
+    reg_coeff_ac: 4.93e-5
     reg_coeff_cr: 6.89e-5
     name: 'meta'
     discount: 0.99
@@ -47,10 +47,7 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 100
-
-  sub_model:
-    reg_coeff_ac: 0.0   
+    no_candidates: 10
 
 coppeliagym:
   params:

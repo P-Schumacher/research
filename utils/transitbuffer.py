@@ -165,8 +165,8 @@ class TransitBuffer(ReplayBuffer):
         #self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
         #                            self._action_seq)
         # TODO finish offpolicy with smooth goal
-        self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, 0,
-                                    0)
+        self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+                                    self._action_seq)
         self._reset_sequence()
 
     def _reset_sequence(self):

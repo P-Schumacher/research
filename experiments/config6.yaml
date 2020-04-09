@@ -1,7 +1,7 @@
 project: research
 main:
   render: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
@@ -47,7 +47,7 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 100
+    no_candidates: 10
 
   sub_model:
     reg_coeff_ac: 0.0   

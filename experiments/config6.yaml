@@ -1,8 +1,8 @@
-project: research
+project: expo
 main:
   render: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
@@ -24,13 +24,13 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00001
+  agent_action_regularizer: 0.001
   meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.0
+  smooth_factor: 0.7
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -44,10 +44,10 @@ agent:
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 2
+    policy_freq: 3
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 10
+    no_candidates: 200
 
 coppeliagym:
   params:

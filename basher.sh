@@ -1,4 +1,4 @@
-for i in {1 ... 10}:
+for i in {1 2 3 4 5}:
 do
-	python3 main.py config_flat_agent_reaching &
+	python3 main.py config6 &
 done

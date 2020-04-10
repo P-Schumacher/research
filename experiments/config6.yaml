@@ -6,7 +6,7 @@ main:
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 5
+  c_step: 10
   seed: 5
   offpolicy: true
   start_timesteps: 5000
@@ -24,7 +24,7 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00001
+  agent_action_regularizer: 0.0000
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -37,7 +37,7 @@ agent:
     cr_hidden_layers: [300, 300]
     clip_cr: 2.89
     clip_ac: 0.019      
-    reg_coeff_ac: 0.0 #4.93e-5
+    reg_coeff_ac: 4.93e-5
     reg_coeff_cr: 6.89e-5
     name: 'meta'
     discount: 0.99
@@ -48,9 +48,6 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 10
-
-  sub_model:
-    reg_coeff_ac: 0.0   
 
 coppeliagym:
   params:

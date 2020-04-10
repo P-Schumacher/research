@@ -12,9 +12,12 @@ class Actor(tf.keras.Model):
     def __init__(self, state_dim, action_dim, max_action, ac_layers, reg_coeff):
         super(Actor, self).__init__()
 
-        self.l1 = kl.Dense(ac_layers[0], activation='relu', kernel_initializer=initialize_relu)
-        self.l2 = kl.Dense(ac_layers[1], activation='relu', kernel_initializer=initialize_relu)
-        self.l3 = kl.Dense(action_dim, activation='tanh', kernel_initializer=initialize_tanh)
+        self.l1 = kl.Dense(ac_layers[0], activation='relu', kernel_initializer=initialize_relu,
+                          kernel_regularizer=l2(reg_coeff))
+        self.l2 = kl.Dense(ac_layers[1], activation='relu', kernel_initializer=initialize_relu,
+                          kernel_regularizer=l2(reg_coeff))
+        self.l3 = kl.Dense(action_dim, activation='tanh', kernel_initializer=initialize_tanh,
+                          kernel_regularizer=l2(reg_coeff))
         
         self._max_action = max_action
         # Remember building your model before you can copy it
@@ -300,7 +303,6 @@ def _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, st
         diffn = tf.reshape(diff, [b_size, c_step, action_dim])
         # cf. HIRO Paper
         logprob = - 0.5 * tf.reduce_sum(tf.square(tf.norm(diffn, axis=2)), axis=1)
-        logprob = tf.ones([b_size,])
         best_c = tf.where(logprob > max_logprob, c, best_c)
         max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
     return best_c

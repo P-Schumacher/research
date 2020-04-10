@@ -15,11 +15,14 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
             if agent.meta_time and cnf.render:
-                print(f"GOAL POSITION: {agent.goal}")
-                if agent.goal_type == 'Direction':
-                    env.set_goal(state[:3] + agent.goal[:3])
+                if agent._smooth_goal:
+                    goal = agent._prev_goal
                 else:
-                    env.set_goal(agent.goal[:3])
+                    goal = agent.goal
+                if agent.goal_type == 'Direction':
+                    env.set_goal(state[:3] + goal[:3])
+                else:
+                    env.set_goal(goal[:3])
 
 def decay_step(decay, stepper, agent, flat_agent, init_c):
     c_step = [1 if flat_agent else init_c][0]

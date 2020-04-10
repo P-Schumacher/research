@@ -29,7 +29,7 @@ if ant_env:
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
 if vrep:
-    config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model}
+    config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
 else:
     config = {**cnf.main, **cnf.agent, **cnf.buffer, **cnf.agent.sub_model}
 

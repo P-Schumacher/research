@@ -9,8 +9,11 @@ sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_st
 meta_Transition = namedtuple('Transition', ['state', 'goal', 'done'])
 
 class TransitBuffer(ReplayBuffer):
-    '''This class can be used like a normal ReplayBuffer of a non Hierarchical agent. It stores generated goals internally and autonomously creates
-    the correct sub- and meta-agent transitions. Just don't sample directly from it.'''
+    '''This class handles adding the right sub- and meta-agent transitions
+    to the respective buffers. As the goal computed for the next_state 
+    is not known at the end of an episode step, we wait an additional 
+    iteration before adding a transitions. This prevents the meta-agent
+    from having to compute the same goal twice.'''
     def __init__(self, agent, sub_env_spec, meta_env_spec, subgoal_dim, target_dim, main_cnf, agent_cnf, buffer_cnf):
         self._prepare_parameters(main_cnf, agent_cnf, target_dim, subgoal_dim)
         self._prepare_buffers(buffer_cnf, sub_env_spec['state_dim'], meta_env_spec['state_dim'],
@@ -74,24 +77,27 @@ class TransitBuffer(ReplayBuffer):
         if done:
             self._finish_one_step_episode(state, action, reward, next_state, done)
             self._needs_reset = True
-            return 
-        self._save_sub_transition(state, action, reward, next_state, done, self.goal)
-        self._save_meta_transition(state, self.goal, done)
-        self._sum_of_rewards += reward
-        self._init = True
-        return 
+        else:
+            self._save_sub_transition(state, action, reward, next_state, done, self.goal)
+            if np.any(self._orig_goal):
+                self.goal = self._orig_goal
+            self._save_meta_transition(self._meta_state, self.goal, done)
+            self._sum_of_rewards += reward
+            self._init = True
 
     def _add(self, state, action, reward, next_state, done):
         self._finish_sub_transition(self.goal, reward)
         self._save_sub_transition(state, action, reward, next_state, done, self.goal)
         if self.meta_time:
-            self._finish_meta_transition(state, done)
-            self._save_meta_transition(state, self.goal, done)
+            self._finish_meta_transition(self._meta_state, done)
+            if np.any(self._orig_goal):
+                self.goal = self._orig_goal
+            self._save_meta_transition(self._meta_state, self.goal, done)
             self._sum_of_rewards = 0
         if done:
             self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
             self._finish_sub_transition(self.goal, reward)
-            self._finish_meta_transition(next_state, done)
+            self._finish_meta_transition(self._meta_state, done)
             self._needs_reset = True
             intr_return = self._ep_rewards
             self._ep_rewards = 0
@@ -124,12 +130,13 @@ class TransitBuffer(ReplayBuffer):
     def _finish_one_step_episode(self, state, action, reward, next_state, done):
         '''1 step episodes are handled separately because the adding of states to 
         the replay buffers is always one step behind the environment timestep.'''
-        goal = self.goal
+        meta_state = self._meta_state 
+        orig_goal = self._orig_goal
+        goal = self.goal 
         self._agent.select_action(next_state)
-        next_goal = self.goal
         intr_reward = self.compute_intr_reward(goal, state, next_state, action)
-        self._add_to_sub(state, goal, action, intr_reward, next_state, next_goal, done)
-        self._add_to_meta(state, goal, reward * self._meta_rew_scale, next_state, done)
+        self._add_to_sub(state, goal, action, intr_reward, next_state, self.goal, done)
+        self._add_to_meta(meta_state, orig_goal, reward * self._meta_rew_scale, self._meta_state, done)
 
     def _add_to_sub(self, state, goal, action, intr_reward, next_state, next_goal, extr_done):
         '''Adds the relevant transition to the sub-agent replay buffer.'''
@@ -154,14 +161,11 @@ class TransitBuffer(ReplayBuffer):
     def _load_sub_transition(self):
         return self.sub_transition
 
-    def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done_c):
-        # todo finish smooth goal implementation
-        if self._smooth_goal:
-            pass
-        else:
-            meta_state = state
-            meta_next_state = next_state
-        self._meta_replay_buffer.add(meta_state, goal, sum_of_rewards, meta_next_state, done_c, self._state_seq,
+    def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done):
+        #self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+        #                            self._action_seq)
+        # TODO finish offpolicy with smooth goal
+        self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                     self._action_seq)
         self._reset_sequence()
 

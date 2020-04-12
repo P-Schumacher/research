@@ -4,6 +4,7 @@ import tensorflow.keras.initializers as inits
 import numpy as np
 from tensorflow.keras.regularizers import l2
 import wandb
+from pudb import set_trace
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
@@ -84,6 +85,7 @@ class TD3(object):
         clip_ac,
         reg_coeff_ac,
         reg_coeff_cr,
+        zero_obs,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -126,6 +128,7 @@ class TD3(object):
         self.target_dim = target_dim
         self.clip_cr = clip_cr
         self.clip_ac = clip_ac
+        self._zero_obs = zero_obs
         # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
         self.total_it = tf.Variable(0, dtype=tf.int64)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)
@@ -156,7 +159,7 @@ class TD3(object):
         state, action, next_state, reward, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
-                                          self.c_step, state_seq, action_seq)
+                                          self.c_step, state_seq, action_seq, self._zero_obs)
         self._train_step(state, action, next_state, reward, done)
         self.total_it.assign_add(1)
         if log:
@@ -221,17 +224,16 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self.actor_loss.assign(mean_actor_loss)
 
-@tf.function
+#@tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
-                          action_seq):
+                          action_seq, zero_obs):
     # TODO Update docstring to real dimensions
     '''Computes the off-policy correction for the meta-agent.
     c = candidate_nbr; t = time; i = vector coordinate (e.g. action 0 of 8 dims) 
-    Dim(candidates) = [c i]
-    Dim(state_b)     = [t i]
-    Dim(action_seq)    = [t i]
+    Dim(candidates) = [b_size, g_dim, no_candidates+2 ]
+    Dim(state_b)     = [b_size, state_dim]
+    Dim(action_seq)    = []
     Dim(prop_goals) = [c_step, b_size, g_dim, no_candidates]'''
-    
     b_size = state_b.shape[0] # Batch Size
     g_dim = goal_b[0].shape[0] # Subgoal dimension
     action_dim = action_seq.shape[-1] # action dimension
@@ -245,7 +247,10 @@ def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_
     prop_goals = _multi_goal_transition(state_seq, candidates, c_step)
     # Zero out xy for sub agent, AFTER goals have been calculated from it.
     state_seq = tf.reshape(state_seq, [b_size * c_step, state_seq.shape[-1]])
-    state_seq *= tf.concat([tf.zeros([state_seq.shape[0], 2]), tf.ones([state_seq.shape[0], state_seq.shape[1] - 2])], axis=1)
+    if zero_obs:
+        state_seq *= tf.concat([tf.zeros([state_seq.shape[0], self._zero_obs]), tf.ones([state_seq.shape[0],
+                                                                                         state_seq.shape[1] -
+                                                                                         self._zero_obs])], axis=1)
     best_c = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
     return _get_corrected_goal(b_size, candidates, best_c) 
 
@@ -323,3 +328,5 @@ def clip_by_global_norm(t_list, clip_norm):
         norm = clip_norm
     return t_list, norm
 
+if __name__ == '__main__':
+ pass

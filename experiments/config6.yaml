@@ -1,8 +1,8 @@
-project: expo
+project: errorplots
 main:
   render: false
-  log: false
-  minilog: false
+  log: true
+  minilog: true
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
@@ -24,7 +24,7 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.001
+  agent_action_regularizer: 0.00
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -44,10 +44,10 @@ agent:
     tau: 0.005
     policy_noise: 0.2
     noise_clip: 0.5
-    policy_freq: 3
+    policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 10
+    no_candidates: 5
 
 coppeliagym:
   params:

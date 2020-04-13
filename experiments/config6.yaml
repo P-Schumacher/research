@@ -1,12 +1,12 @@
-project: research
+project: expo
 main:
   render: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 5
+  c_step: 20
   seed: 5
   offpolicy: true
   start_timesteps: 5000
@@ -24,20 +24,20 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.001
+  agent_action_regularizer: 0.00
   meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.0
+  smooth_factor: 0.7
 
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
     clip_cr: 2.89
     clip_ac: 0.019      
-    reg_coeff_ac: 0.0 #4.93e-5
+    reg_coeff_ac: 4.93e-5
     reg_coeff_cr: 6.89e-5
     name: 'meta'
     discount: 0.99
@@ -49,13 +49,10 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
 
-  sub_model:
-    reg_coeff_ac: 0.0
-
 coppeliagym:
   params:
     sparse_rew: false
-    action_regularizer: 0.00
+    action_regularizer: 0.000
   subgoals:
     ej_goal: [3, 1.0]
 

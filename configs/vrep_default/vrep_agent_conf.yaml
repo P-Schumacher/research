@@ -34,6 +34,7 @@ agent:
     clip_ac: 4.079
     reg_coeff_ac: 4.49e-5
     reg_coeff_cr: 2.056e-5
+    zero_obs: 0
     name: 'meta'
     discount: 0.99
     tau: 0.005
@@ -53,6 +54,7 @@ agent:
     clip_ac: 5.0
     reg_coeff_ac: 0.000009
     reg_coeff_cr: 0.00003
+    zero_obs: 0
     name: 'sub'
     discount: 0.977
     tau: 0.00533

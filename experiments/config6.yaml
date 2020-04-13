@@ -1,12 +1,12 @@
-project: expo
+project: sparse_exp
 main:
   render: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 20
+  c_step: 5
   seed: 5
   offpolicy: true
   start_timesteps: 5000
@@ -30,7 +30,7 @@ agent:
   train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.7
+  smooth_factor: 0.9
 
   meta_model:
     ac_hidden_layers: [300, 300]

@@ -5,7 +5,7 @@ from pudb import set_trace
 class ReplayBuffer(object):
     '''Simple replay buffer class which samples tensorflow tensors.'''
     # TODO max_size and c_step from command prmpt
-    def __init__(self, state_dim, action_dim, c_step, offpolicy, max_size):
+    def __init__(self, state_dim, action_dim, c_step, offpolicy, max_size, goal_smooth=0):
         if not offpolicy:
             c_step = 1
         self.max_size = max_size
@@ -17,7 +17,7 @@ class ReplayBuffer(object):
         self.next_state = np.zeros((max_size, state_dim), dtype = np.float32)
         self.reward = np.zeros((max_size, 1), dtype = np.float32)
         self.done = np.zeros((max_size, 1), dtype = np.float32)
-        self.state_seq = np.zeros((max_size, c_step, state_dim), dtype = np.float32)  
+        self.state_seq = np.zeros((max_size, c_step, state_dim - 3 * goal_smooth), dtype = np.float32)  
         self.action_seq = np.zeros((max_size, c_step, 8), dtype = np.float32)  
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):

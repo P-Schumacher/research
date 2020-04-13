@@ -1,4 +1,4 @@
-project: errorplots
+project: sparse_exp
 main:
   render: false
   log: true
@@ -29,8 +29,8 @@ agent:
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
-  smooth_goal: false
-  smooth_factor: 0.7
+  smooth_goal: true
+  smooth_factor: 0.9
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -47,11 +47,11 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
-    no_candidates: 5
+    no_candidates: 20
 
 coppeliagym:
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
   subgoals:
     ej_goal: [3, 1.0]

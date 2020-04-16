@@ -1,4 +1,4 @@
-project: sparse_exp
+project: dense_reaching_hiro
 main:
   render: false
   log: true
@@ -6,9 +6,9 @@ main:
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 5
+  c_step: 20
   seed: 5
-  offpolicy: true
+  offpolicy: false
   start_timesteps: 5000
   no_seed: true
   
@@ -29,7 +29,7 @@ agent:
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
-  smooth_goal: true
+  smooth_goal: false
   smooth_factor: 0.9
 
   meta_model:
@@ -51,7 +51,7 @@ agent:
 
 coppeliagym:
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
   subgoals:
     ej_goal: [3, 1.0]

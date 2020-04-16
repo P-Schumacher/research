@@ -3,6 +3,7 @@ main:
   flat_agent: true
   render: false 
   log: true 
+  minilog: true
   save_model: false
   load_model: false
   descriptor: 'flat-agent reaching'
@@ -17,7 +18,7 @@ agent:
   sub_rew_scale: 1
   meta_rew_scale: 0.1
   sub_noise: 1.4
-  action_regularizer: 0.0
+  agent_action_regularizer: 0.0
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -42,3 +43,4 @@ coppeliagym:
   params:
     action_regularizer: 0.001
     spherical_coord: ${agent.spherical_coord}
+    sparse_rew: true

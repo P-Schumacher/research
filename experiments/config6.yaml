@@ -1,8 +1,8 @@
 project: sparse_exp
 main:
   render: false
-  log: true
-  minilog: true
+  log: false
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
@@ -10,6 +10,7 @@ main:
   seed: 5
   offpolicy: true
   start_timesteps: 5000
+  max_timesteps: 300
   no_seed: true
   
   decay: false
@@ -51,8 +52,9 @@ agent:
 
 coppeliagym:
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.000
+
   subgoals:
     ej_goal: [3, 1.0]
 

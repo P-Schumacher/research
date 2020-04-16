@@ -11,13 +11,13 @@ main:
 agent:
   # Params for the Agent. In case of flat agent, the sub-agent params
   # will be used.
-  goal_type: Absolute
+  goal_type: Direction
   zero_obs: 0
   num_eval_episodes: 10
   sub_rew_scale: 1
   meta_rew_scale: 0.1
   sub_noise: 1.4
-  action_regularizer: 0.0
+  agent_action_regularizer: 0.
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -42,3 +42,4 @@ coppeliagym:
   params:
     action_regularizer: 0.001
     spherical_coord: ${agent.spherical_coord}
+    sparse_rew: true

@@ -23,6 +23,7 @@ agent:
   train_sub: true
   seed: ${main.seed}
   c_step: ${main.c_step}
+  smooth_goal: false
 
   meta_model:
     ac_hidden_layers: [300, 300]

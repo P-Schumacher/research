@@ -6,7 +6,7 @@ main:
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 20
+  c_step: 5
   seed: 5
   offpolicy: false
   start_timesteps: 5000

@@ -1,4 +1,4 @@
-project: dense_reaching_hiro
+project: constant_train_its
 main:
   render: false
   log: true

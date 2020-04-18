@@ -25,6 +25,7 @@ agent:
   agent_action_regularizer: 0.00086
   smooth_factor: 0.8
   smooth_goal: false
+  add_multiple_dones: false
   seed: ${main.seed}
   c_step: ${main.c_step}
 

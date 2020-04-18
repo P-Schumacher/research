@@ -1,4 +1,4 @@
-project: constant_train_its
+project: research
 main:
   render: false
   log: true
@@ -6,9 +6,9 @@ main:
   save_model: false
   load_model: false
   descriptor: 'baseline_corrected_correction'
-  c_step: 5
+  c_step: 10
   seed: 5
-  offpolicy: false
+  offpolicy: true
   start_timesteps: 5000
   no_seed: true
   
@@ -31,6 +31,7 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
+  add_multiple_dones: true
 
   meta_model:
     ac_hidden_layers: [300, 300]

@@ -168,7 +168,7 @@ class TransitBuffer(ReplayBuffer):
         to compute the offpolicy-correction.'''
         self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                     self._action_seq)
-        if sum_of_rewards and self._add_multiple_dones:
+        if sum_of_rewards != (-1 * self._meta_rew_scale * self._c_step) and self._add_multiple_dones:
             '''This can help in sparse reward environments.'''
             self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                         self._action_seq)

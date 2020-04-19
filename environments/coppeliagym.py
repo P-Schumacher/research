@@ -14,7 +14,6 @@ if __name__=='__main__':
 else:
     from . import robot
 
-import time
 
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):

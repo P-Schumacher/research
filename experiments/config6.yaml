@@ -2,10 +2,10 @@ project: research
 main:
   render: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'baseline_corrected_correction'
+  descriptor: 'trick_gather_data'
   c_step: 10
   seed: 5
   offpolicy: true
@@ -52,7 +52,7 @@ agent:
 
 coppeliagym:
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
   subgoals:
     ej_goal: [3, 1.0]

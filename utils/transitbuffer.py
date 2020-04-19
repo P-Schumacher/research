@@ -95,6 +95,7 @@ class TransitBuffer(ReplayBuffer):
             self._save_meta_transition(self._meta_state, self.goal, done)
             self._sum_of_rewards = 0
         if done:
+            self._sum_of_rewards += reward
             self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(self._meta_state, done)
@@ -167,7 +168,7 @@ class TransitBuffer(ReplayBuffer):
         to compute the offpolicy-correction.'''
         self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                     self._action_seq)
-        if done and self._add_multiple_dones:
+        if sum_of_rewards and self._add_multiple_dones:
             '''This can help in sparse reward environments.'''
             self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                         self._action_seq)

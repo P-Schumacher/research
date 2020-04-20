@@ -47,7 +47,7 @@ class HierarchicalAgent(Agent):
         meta_avg = np.zeros([6,], dtype=np.float32) 
         for train_index in range(episode_steps):
             sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index) if self._train_sub else [0 for x in sub_avg]][0]
-            if (not train_index % self._c_step) and train_index:
+            if (not train_index % 10) and train_index:
                 meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index) if self._train_meta else [0 for x in meta_avg]][0]
         self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
 

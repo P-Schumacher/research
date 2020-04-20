@@ -224,7 +224,7 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self.actor_loss.assign(mean_actor_loss)
 
-#@tf.function
+@tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
                           action_seq, zero_obs):
     # TODO Update docstring to real dimensions

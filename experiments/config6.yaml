@@ -1,12 +1,12 @@
-project: constant_training_its
+project: research
 main:
   render: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'baseline_corrected_correction'
-  c_step: 5
+  descriptor: 'trick_gather_data_rew_for_corrected'
+  c_step: 10
   seed: 5
   offpolicy: true
   start_timesteps: 5000
@@ -32,6 +32,7 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
+  add_multiple_dones: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -52,8 +53,8 @@ agent:
 
 coppeliagym:
   params:
-    sparse_rew: false
-    action_regularizer: 0.000
+    sparse_rew: true
+    action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]

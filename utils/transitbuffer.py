@@ -95,6 +95,7 @@ class TransitBuffer(ReplayBuffer):
             self._save_meta_transition(self._meta_state, self.goal, done)
             self._sum_of_rewards = 0
         if done:
+            self._sum_of_rewards += reward
             self._agent.select_action(next_state) # This computes the next goal in the transitbuffer
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(self._meta_state, done)
@@ -162,11 +163,22 @@ class TransitBuffer(ReplayBuffer):
         return self.sub_transition
 
     def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done):
-        #self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
-        #                            self._action_seq)
-        # TODO finish offpolicy with smooth goal
+        '''Adds transitions to the replay buffer of the meta agent. *self._state_seq* and 
+        *self._action_seq* are collected sub-agent experience transitions that are used
+        to compute the offpolicy-correction.'''
         self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                     self._action_seq)
+
+        if sum_of_rewards != (-1 * self._meta_rew_scale * self._c_step) and self._add_multiple_dones:
+            '''This can help in sparse reward environments.'''
+            self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+                                        self._action_seq)
+            self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+                                        self._action_seq)
+            self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+                                        self._action_seq)
+            self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
+                                        self._action_seq)
         self._reset_sequence()
 
     def _reset_sequence(self):
@@ -220,3 +232,4 @@ class TransitBuffer(ReplayBuffer):
         self._meta_rew_scale = agent_cnf.meta_rew_scale
         self._ri_re = agent_cnf.ri_re
         self._action_reg = agent_cnf.agent_action_regularizer
+        self._add_multiple_dones = agent_cnf.add_multiple_dones

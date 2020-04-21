@@ -7,3 +7,5 @@ main:
   render: false
 agent:
  goal_type: Direction
+ meta_model:
+   no_candidates: 100

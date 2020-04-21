@@ -2,12 +2,15 @@ project: research
 main:
   render: false
   log: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'relative_goal_optimized'
-  c_step: 2
+  descriptor: 'trick_gather_data_rew_for_corrected'
+  c_step: 10
   seed: 5
-  offpolicy: false
+  offpolicy: true
+  start_timesteps: 5000
+  max_timesteps: 1000000
   no_seed: true
   
   decay: false
@@ -22,11 +25,14 @@ agent:
   meta_noise: 0.6442
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.0000
+  agent_action_regularizer: 0.00
   meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
+  smooth_goal: false
+  smooth_factor: 0.9
+  add_multiple_dones: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -43,10 +49,13 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
+    no_candidates: 20
 
 coppeliagym:
   params:
+    sparse_rew: true
     action_regularizer: 0.00
+
   subgoals:
     ej_goal: [3, 1.0]
 

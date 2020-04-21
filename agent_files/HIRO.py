@@ -43,13 +43,9 @@ class HierarchicalAgent(Agent):
     
     def train(self, timestep, episode_steps):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
-        sub_avg = np.zeros([6,], dtype=np.float32) 
-        meta_avg = np.zeros([6,], dtype=np.float32) 
-        for train_index in range(episode_steps):
-            sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index) if self._train_sub else [0 for x in sub_avg]][0]
-            if (not train_index % self._c_step) and train_index:
-                meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index) if self._train_meta else [0 for x in meta_avg]][0]
-        self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
+        self._train_sub_agent(timestep, timestep)
+        if (not timestep % self._c_step) and timestep:
+            self._train_meta_agent(timestep, timestep)
 
     def replay_add(self, state, action, reward, next_state, done):
         '''Adds a transition to the replay buffer.'''

@@ -51,10 +51,9 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-
+        if t > cnf.start_timesteps:
+            agent.train(t, logger.episode_timesteps)
         if done:
-            if t > cnf.start_timesteps:
-                agent.train(t, logger.episode_timesteps)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             # Reset environment

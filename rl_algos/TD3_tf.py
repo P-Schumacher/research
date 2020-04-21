@@ -160,7 +160,7 @@ class TD3(object):
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
-        self._train_step(state, action, next_state, reward, done)
+        self._train_step(state, action, next_state, reward, done, log)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
@@ -168,7 +168,7 @@ class TD3(object):
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
    
     @tf.function
-    def _train_step(self, state, action, next_state, reward, done):
+    def _train_step(self, state, action, next_state, reward, done, log):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
         a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
@@ -200,10 +200,11 @@ class TD3(object):
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
-        self.cr_gr_norm.assign(norm)
-        self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+        if log:
+            self.cr_gr_norm.assign(norm)
+            self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+            self.critic_loss.assign(critic_loss)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
-        self.critic_loss.assign(critic_loss)
         if self.total_it % self.policy_freq == 0:
             with tf.GradientTape() as tape:
             # The gradient of Q_theta_1 w.r.t. phi (the actor weights)
@@ -217,12 +218,13 @@ class TD3(object):
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
-            self.ac_gr_norm.assign(norm)
-            self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+            if log:
+                self.ac_gr_norm.assign(norm)
+                self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+                self.actor_loss.assign(mean_actor_loss)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
-            self.actor_loss.assign(mean_actor_loss)
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,

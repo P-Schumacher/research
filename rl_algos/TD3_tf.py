@@ -156,7 +156,7 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None):
-        state, action, reward, next_state, done, idxs, is_weigts, state_seq, action_seq = replay_buffer.sample(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)

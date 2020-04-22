@@ -102,13 +102,13 @@ class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
 
 
     def _get_from_batch(self, batch, idxs, is_weight):
+        self.idxs = idxs
+        self.is_weight = is_weight
         return(tf.convert_to_tensor([i[0] for i in batch], dtype=tf.float32),
         tf.convert_to_tensor([i[1] for i in batch], dtype=tf.float32),
         tf.convert_to_tensor([i[2] for i in batch], dtype=tf.float32),
         tf.convert_to_tensor([i[3] for i in batch], dtype=tf.float32),
         tf.convert_to_tensor([i[4] for i in batch], dtype=tf.float32),
-        idxs,
-        is_weight,
         0,
         0)
 

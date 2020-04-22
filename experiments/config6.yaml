@@ -1,7 +1,7 @@
-project: whatever
+project: research
 main:
-  render: false
-  log: true
+  render: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
@@ -11,7 +11,7 @@ main:
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 1000000
-  no_seed: false
+  no_seed: true
   
   decay: false
   step_decayer:
@@ -32,7 +32,7 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: false
+  add_multiple_dones: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -53,7 +53,7 @@ agent:
 
 coppeliagym:
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:

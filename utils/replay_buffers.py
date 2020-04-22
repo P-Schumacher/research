@@ -1,10 +1,10 @@
 import numpy as np
 import tensorflow as tf
 from pudb import set_trace
+import random
 
 class ReplayBuffer(object):
     '''Simple replay buffer class which samples tensorflow tensors.'''
-    # TODO max_size and c_step from command prmpt
     def __init__(self, state_dim, action_dim, c_step, offpolicy, max_size, goal_smooth=0):
         if not offpolicy:
             c_step = 1
@@ -44,6 +44,73 @@ class ReplayBuffer(object):
         tf.convert_to_tensor(self.action_seq[ind]))
 
 
+
+
+class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
+    e = 0.001
+    a = 0.6
+    beta = 0.4
+    beta_increment_per_sampling = 0.001
+    pmax = 1e6
+
+    def __init__(self, capacity):
+        self.tree = SumTree(capacity)
+        self.capacity = capacity
+
+    def reset(self):
+        self.tree = SumTree(self.capacity)
+
+    def _getPriority(self, error):
+        return (error + self.e) ** self.a
+
+    def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+        sample = (state, action, reward, next_state, done)
+        error = pmax
+        self._add(error, sample)
+
+    def _add(self, error, sample):
+        #p = self._getPriority(error)
+        p = error
+        self.tree.add(p, sample)
+
+    def sample(self, n):
+        batch = []
+        idxs = []
+        segment = self.tree.total() / n
+        priorities = []
+        self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
+
+        for i in range(n):
+            a = segment * i
+            b = segment * (i + 1)
+
+            s = random.uniform(a, b)
+            (idx, p, data) = self.tree.get(s)
+            priorities.append(p)
+            batch.append(data)
+            idxs.append(idx)
+
+        sampling_probabilities = priorities / self.tree.total()
+        is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
+        is_weight /= is_weight.max()
+
+        return self._get_from_batch(batch, idxs, is_weight)
+
+    def update(self, idx, error):
+        p = self._getPriority(error)
+        self.tree.update(idx, p)
+
+
+    def _get_from_batch(self, batch, idxs, is_weight):
+        return(tf.convert_to_tensor([i[0] for i in batch], dtype=tf.float32),
+        tf.convert_to_tensor([i[1] for i in batch], dtype=tf.float32),
+        tf.convert_to_tensor([i[2] for i in batch], dtype=tf.float32),
+        tf.convert_to_tensor([i[3] for i in batch], dtype=tf.float32),
+        tf.convert_to_tensor([i[4] for i in batch], dtype=tf.float32),
+        idxs,
+        is_weight,
+        0,
+        0)
 
 class SumTree:
     write = 0
@@ -92,50 +159,3 @@ class SumTree:
         dataIdx = idx - self.capacity + 1
         return (idx, self.tree[idx], self.data[dataIdx])
 
-
-class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
-    e = 0.001
-    a = 0.6
-    beta = 0.4
-    beta_increment_per_sampling = 0.001
-
-    def __init__(self, capacity):
-        self.tree = SumTree(capacity)
-        self.capacity = capacity
-
-    def reset(self):
-        self.tree = SumTree(self.capacity)
-
-    def _getPriority(self, error):
-        return (error + self.e) ** self.a
-
-    def add(self, error, sample):
-        p = self._getPriority(error)
-        self.tree.add(p, sample)
-
-    def sample(self, n):
-        batch = []
-        idxs = []
-        segment = self.tree.total() / n
-        priorities = []
-        self.beta = np.min([1., self.beta + self.beta_increment_per_sampling])
-
-        for i in range(n):
-            a = segment * i
-            b = segment * (i + 1)
-
-            s = random.uniform(a, b)
-            (idx, p, data) = self.tree.get(s)
-            priorities.append(p)
-            batch.append(data)
-            idxs.append(idx)
-
-        sampling_probabilities = priorities / self.tree.total()
-        is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
-        is_weight /= is_weight.max()
-
-        return batch, idxs, is_weight
-
-    def update(self, idx, error):
-        p = self._getPriority(error)
-        self.tree.update(idx, p)

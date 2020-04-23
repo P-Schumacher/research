@@ -113,30 +113,10 @@ class TD3(object):
         # Equal initial network and target network weights
         self.update_target_models_hard()  
 
-        # Save parameters
-        self.name = name
-        self.offpolicy = offpolicy
-        self._max_action = max_action
-        self.discount = discount
-        self.tau = tau
-        self.policy_noise = policy_noise
-        self.noise_clip = noise_clip
-        self.policy_freq = policy_freq
-        self.c_step = c_step
-        self.no_candidates = no_candidates 
-        self.subgoal_ranges = np.array(subgoal_ranges, dtype=np.float32)
-        self.target_dim = target_dim
-        self.clip_cr = clip_cr
-        self.clip_ac = clip_ac
-        self._zero_obs = zero_obs
-        # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
-        self.total_it = tf.Variable(0, dtype=tf.int64)         
-        self.actor_loss = tf.Variable(0, dtype=tf.float32)
-        self.critic_loss = tf.Variable(0, dtype=tf.float32)
-        self.ac_gr_norm = tf.Variable(0, dtype=tf.float32)
-        self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
-        self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
-        self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
+        self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
+                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs)
+
+        self._create_persistent_tf_variables()
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state.reshape(1, -1))
@@ -200,11 +180,10 @@ class TD3(object):
 
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
-        if log:
-            self.cr_gr_norm.assign(norm)
-            self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
-            self.critic_loss.assign(critic_loss)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
+
+        self._maybe_log_critic(gradients, norm, critic_loss, log)
+
         if self.total_it % self.policy_freq == 0:
             with tf.GradientTape() as tape:
             # The gradient of Q_theta_1 w.r.t. phi (the actor weights)
@@ -218,13 +197,52 @@ class TD3(object):
 
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
-            if log:
-                self.ac_gr_norm.assign(norm)
-                self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
-                self.actor_loss.assign(mean_actor_loss)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
+
+            self._maybe_log_actor(gradients, norm, mean_actor_loss) 
+
+    def _maybe_log_critic(self, gradients, norm, critic_loss, log):
+        if log:
+            self.cr_gr_norm.assign(norm)
+            self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+            self.critic_loss.assign(critic_loss)
+
+    def _maybe_log_actor(self, gradients, norm, mean_actor_loss): 
+        if log:
+            self.ac_gr_norm.assign(norm)
+            self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
+            self.actor_loss.assign(mean_actor_loss)
+
+    def _create_persistent_tf_variables(self):
+        # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
+        self.total_it = tf.Variable(0, dtype=tf.int64)         
+        self.actor_loss = tf.Variable(0, dtype=tf.float32)
+        self.critic_loss = tf.Variable(0, dtype=tf.float32)
+        self.ac_gr_norm = tf.Variable(0, dtype=tf.float32)
+        self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
+        self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
+        self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
+
+    def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
+                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs):
+        # Save parameters
+        self.name = name
+        self.offpolicy = offpolicy
+        self._max_action = max_action
+        self.discount = discount
+        self.tau = tau
+        self.policy_noise = policy_noise
+        self.noise_clip = noise_clip
+        self.policy_freq = policy_freq
+        self.c_step = c_step
+        self.no_candidates = no_candidates 
+        self.subgoal_ranges = np.array(subgoal_ranges, dtype=np.float32)
+        self.target_dim = target_dim
+        self.clip_cr = clip_cr
+        self.clip_ac = clip_ac
+        self._zero_obs = zero_obs
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,

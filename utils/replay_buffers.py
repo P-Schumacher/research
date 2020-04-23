@@ -65,7 +65,7 @@ class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
         sample = (state, action, reward, next_state, done)
-        error = pmax
+        error = self.pmax
         self._add(error, sample)
 
     def _add(self, error, sample):

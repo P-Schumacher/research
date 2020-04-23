@@ -140,7 +140,7 @@ class TD3(object):
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
-        self._train_step(state, action, reward, next_state, done, log)
+        td_error = self._train_step(state, action, reward, next_state, done, log)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
@@ -149,7 +149,7 @@ class TD3(object):
 
 
    
-    @tf.function
+    #@tf.function
     def _train_step(self, state, action, reward, next_state, done, log):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -158,6 +158,8 @@ class TD3(object):
         :param : These should be explained by any Reinforcement Learning book.
         :return: None'''
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
+        done = tf.reshape(done, [done.shape[0], 1])
+        reward = tf.reshape(reward, [done.shape[0], 1])
         noise = tf.random.normal(action.shape, stddev=self.policy_noise)
         # this clip keeps the noisy action close to the original action
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
@@ -168,7 +170,9 @@ class TD3(object):
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
+        set_trace()
         target_Q = reward + (1. - done) * self.discount * target_Q
+        # Critic Update
         with tf.GradientTape() as tape:
             # Get current Q estimates
             current_Q1, current_Q2 = self.critic(state_action)
@@ -183,27 +187,25 @@ class TD3(object):
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
-
         self._maybe_log_critic(gradients, norm, critic_loss, log)
 
+        # Actor Update
         if self.total_it % self.policy_freq == 0:
             with tf.GradientTape() as tape:
-            # The gradient of Q_theta_1 w.r.t. phi (the actor weights)
-            # is equal to the product of the gradient of Q_theta_1 w.r.t. the actions and 
-            # the gradient of the actor w.r.t. phi 
-            # Look at TD3 paper for clarification
+                # Look at TD3 paper for clarification
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
 
-            self._maybe_log_actor(gradients, norm, mean_actor_loss) 
+            self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+
+        return target_Q - current_Q1
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
         if log:
@@ -211,7 +213,7 @@ class TD3(object):
             self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.critic_loss.assign(critic_loss)
 
-    def _maybe_log_actor(self, gradients, norm, mean_actor_loss): 
+    def _maybe_log_actor(self, gradients, norm, mean_actor_loss, log): 
         if log:
             self.ac_gr_norm.assign(norm)
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 

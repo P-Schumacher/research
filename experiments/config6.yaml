@@ -1,6 +1,6 @@
 project: research
 main:
-  render: true
+  render: false
   log: false
   minilog: true
   save_model: false

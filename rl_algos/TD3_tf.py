@@ -201,7 +201,7 @@ class TD3(object):
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
 
-            self._maybe_log_actor(gradients, norm, mean_actor_loss) 
+            self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
         if log:
@@ -209,7 +209,7 @@ class TD3(object):
             self.cr_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 
             self.critic_loss.assign(critic_loss)
 
-    def _maybe_log_actor(self, gradients, norm, mean_actor_loss): 
+    def _maybe_log_actor(self, gradients, norm, mean_actor_loss, log): 
         if log:
             self.ac_gr_norm.assign(norm)
             self.ac_gr_std.assign(tf.reduce_mean([tf.math.reduce_std(x) for x in gradients])) 

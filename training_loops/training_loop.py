@@ -51,6 +51,11 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
+        if t > cnf.start_timesteps:
+            wandb.log({'reward_proportion':np.where(agent.meta_replay_buffer.reward[:agent.meta_replay_buffer.size] !=
+                             -1.0)[0].shape[0]/np.where(agent.meta_replay_buffer.reward[:agent.meta_replay_buffer.size] ==
+                                                        -1.0)[0].shape[0]}, commit=False)
+
 
         if done:
             if t > cnf.start_timesteps:

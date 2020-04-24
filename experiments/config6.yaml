@@ -1,11 +1,11 @@
-project: research
+project: whatever
 main:
-  render: true
-  log: false
+  render: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'trick_gather_data_rew_for_corrected'
+  descriptor: 'fixed hiro'
   c_step: 10
   seed: 5
   offpolicy: true

@@ -1,8 +1,8 @@
-project: research
+project: whatever
 main:
   render: false
-  log: false
-  minilog: true
+  log: true
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'trick_gather_data_rew_for_corrected'
@@ -11,7 +11,7 @@ main:
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 1000000
-  no_seed: true
+  no_seed: false
   
   decay: false
   step_decayer:

@@ -145,11 +145,16 @@ class TD3(object):
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
+
+        td_error = tf.abs(td_error)
+        for i in range(td_error.shape[0]):
+            idx = replay_buffer.idxs[i]
+            replay_buffer.update(idx, td_error[i])
+        # TODO IS Weight multiplication
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
-
-
+        
    
-    #@tf.function
+    @tf.function
     def _train_step(self, state, action, reward, next_state, done, log):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -159,7 +164,7 @@ class TD3(object):
         :return: None'''
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
         done = tf.reshape(done, [done.shape[0], 1])
-        reward = tf.reshape(reward, [done.shape[0], 1])
+        reward = tf.reshape(reward, [reward.shape[0], 1])
         noise = tf.random.normal(action.shape, stddev=self.policy_noise)
         # this clip keeps the noisy action close to the original action
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
@@ -170,7 +175,6 @@ class TD3(object):
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
-        set_trace()
         target_Q = reward + (1. - done) * self.discount * target_Q
         # Critic Update
         with tf.GradientTape() as tape:

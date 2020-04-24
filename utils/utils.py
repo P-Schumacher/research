@@ -70,7 +70,14 @@ def set_seeds(env, seed, no_seed=False):
 def create_world(cnf):
     assert_sanity_check(cnf)
     create_directories(cnf)
-    env = create_env(cnf)
+    if not cnf.main.simple_env:
+        env = create_env(cnf)
+    else:
+        import gym
+        env = gym.make('Pendulum-v0')
+        env.subgoal_ranges = [1,1]
+        env.subgoal_dim = 2
+        env.target_dim = 0
     model_cls = get_model_class(cnf.main.model)
     env_spec = get_env_specs(env)
     if not cnf.main.flat_agent:

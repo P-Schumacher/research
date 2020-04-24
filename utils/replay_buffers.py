@@ -37,8 +37,8 @@ class ReplayBuffer(object):
         return (  
         tf.convert_to_tensor(self.state[ind]),
         tf.convert_to_tensor(self.action[ind]),
-        tf.convert_to_tensor(self.next_state[ind]),
         tf.convert_to_tensor(self.reward[ind]),
+        tf.convert_to_tensor(self.next_state[ind]),
         tf.convert_to_tensor(self.done[ind]),
         tf.convert_to_tensor(self.state_seq[ind]),
         tf.convert_to_tensor(self.action_seq[ind]))
@@ -51,7 +51,7 @@ class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
     a = 0.6
     beta = 0.4
     beta_increment_per_sampling = 0.001
-    pmax = 1e6
+    pmax = 100000
 
     def __init__(self, capacity):
         self.tree = SumTree(capacity)
@@ -69,7 +69,7 @@ class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
         self._add(error, sample)
 
     def _add(self, error, sample):
-        #p = self._getPriority(error)
+        p = self._getPriority(error)
         p = error
         self.tree.add(p, sample)
 
@@ -89,11 +89,10 @@ class PriorityBuffer(object):  # stored as ( s, a, r, s_ ) in SumTree
             priorities.append(p)
             batch.append(data)
             idxs.append(idx)
-
         sampling_probabilities = priorities / self.tree.total()
+
         is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
         is_weight /= is_weight.max()
-
         return self._get_from_batch(batch, idxs, is_weight)
 
     def update(self, idx, error):

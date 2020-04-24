@@ -22,7 +22,8 @@ main:
   seed: 15
   train_every: 300 
   gradient_steps: 300 
-  no_seed: False
+  no_seed: false
+  simple_env: false
 
   
   c_step: 40

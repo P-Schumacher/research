@@ -156,6 +156,8 @@ class TD3(object):
         :param : These should be explained by any Reinforcement Learning book.
         :return: None'''
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
+        done = tf.reshape(done, [done.shape[0], 1])
+        reward = tf.reshape(reward, [reward.shape[0], 1])
         noise = tf.random.normal(action.shape, stddev=self.policy_noise)
         # this clip keeps the noisy action close to the original action
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)

@@ -145,12 +145,13 @@ class TD3(object):
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-
+        '''
         td_error = tf.abs(td_error)
         for i in range(td_error.shape[0]):
             idx = replay_buffer.idxs[i]
             replay_buffer.update(idx, td_error[i])
         # TODO IS Weight multiplication
+        '''
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    

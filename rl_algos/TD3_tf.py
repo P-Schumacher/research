@@ -140,23 +140,20 @@ class TD3(object):
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
-        td_error = self._train_step(state, action, reward, next_state, done, log)
+        td_error = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-        '''
-        td_error = tf.abs(td_error)
-        for i in range(td_error.shape[0]):
-            idx = replay_buffer.idxs[i]
-            replay_buffer.update(idx, td_error[i])
+
         # TODO IS Weight multiplication
-        '''
+        td_error = tf.abs(td_error)
+        replay_buffer.update_priorities(td_error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
     @tf.function
-    def _train_step(self, state, action, reward, next_state, done, log):
+    def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
         a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
@@ -183,8 +180,8 @@ class TD3(object):
             current_Q1, current_Q2 = self.critic(state_action)
             # Sum of losses allows us to calculate them independantly at the same time,
             # as gradient is a linear operation
-            critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
-                        + self.critic_loss_fn(current_Q2, target_Q))
+            critic_loss = (self.critic_loss_fn(current_Q1, target_Q, sample_weight=is_weight) 
+                        + self.critic_loss_fn(current_Q2, target_Q, sample_weight=is_weight))
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)

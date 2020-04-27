@@ -10,11 +10,11 @@ main:
   c_step: 10
   seed: 5
   offpolicy: false
-  start_timesteps: 400
+  start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
-  eval_freq: 2000000
-  simple_env: true
+  eval_freq: 20000
+  simple_env: false
   
   decay: false
   step_decayer:
@@ -35,7 +35,7 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: false
+  add_multiple_dones: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -64,5 +64,5 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 1.
-  max_size: 5000
+  alpha: 0.
+  max_size: 200000

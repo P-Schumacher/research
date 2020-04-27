@@ -32,7 +32,8 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: true
+  add_multiple_dones: false
+  per: true
 
   meta_model:
     ac_hidden_layers: [300, 300]

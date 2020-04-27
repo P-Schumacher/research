@@ -5,13 +5,13 @@ from pudb import set_trace
 import random
 from matplotlib import pyplot as plt
 
+
+
 class ReplayBuffer(object):
     '''Simple replay buffer class which samples tensorflow tensors.'''
     def __init__(self, state_dim, action_dim, buffer_cnf):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
-        #self.arr = np.zeros([5000, 20000], dtype=np.float32)
-        #self.counter = 0
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
         self.state[self.ptr] = state.astype(np.float16)
@@ -27,14 +27,7 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         self.batch_idxs = self._sample_idxs(batch_size)
-        #wandb.log({f'sampleidxs': wandb.Histogram(self.batch_idxs)}, commit=False)
-        #self.arr[self.batch_idxs, self.counter] = 1
-        #self.counter += 1
-        #if self.counter == 15000:
-        #    plt.imshow(self.arr)
-        #    wandb.log({"chart": plt}, commit=False) 
-        #    self.counter = 0
-        #    print('log idxes')
+        wandb.log({f'sampleidxs': self.batch_idxs[0]}, commit=False)
         return (  
         tf.convert_to_tensor(self.state[self.batch_idxs]),
         tf.convert_to_tensor(self.action[self.batch_idxs]),
@@ -75,6 +68,7 @@ class ReplayBuffer(object):
         self.beta = buffer_cnf.beta
         self.beta_increment = buffer_cnf.beta_increment
         self.use_cer = buffer_cnf.use_cer
+        self.is_weight = 1
 
 class PriorityBuffer(ReplayBuffer):
     '''
@@ -90,7 +84,7 @@ class PriorityBuffer(ReplayBuffer):
         super().__init__(state_dim, action_dim, buffer_cnf)
         self.epsilon = np.full((1,), self.epsilon)
         self.alpha = np.full((1,), self.alpha)
-        self.is_weight = tf.Variable(tf.zeros([128,]), dtype=tf.float32) 
+        self.is_weight = tf.Variable(tf.zeros([buffer_cnf.batch_size,]), dtype=tf.float32) 
         self.reset()
 
     def reset(self):

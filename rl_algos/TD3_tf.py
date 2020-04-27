@@ -86,6 +86,7 @@ class TD3(object):
         reg_coeff_ac,
         reg_coeff_cr,
         zero_obs,
+        per,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -114,7 +115,7 @@ class TD3(object):
         self.update_target_models_hard()  
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs)
+                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per)
 
         self._create_persistent_tf_variables()
 
@@ -146,9 +147,10 @@ class TD3(object):
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
-        # TODO IS Weight multiplication
-        td_error = tf.abs(td_error)
-        replay_buffer.update_priorities(td_error)
+        if self._per: 
+            #td_error = tf.abs(td_error)
+            td_error = -tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 10
+            replay_buffer.update_priorities(td_error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
@@ -232,7 +234,7 @@ class TD3(object):
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs):
+                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
@@ -249,6 +251,7 @@ class TD3(object):
         self.clip_cr = clip_cr
         self.clip_ac = clip_ac
         self._zero_obs = zero_obs
+        self._per = per
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,

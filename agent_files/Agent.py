@@ -10,8 +10,10 @@ import wandb
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_parameters(agent_cnf, main_cnf)
-        #self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
-        self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+        if self._per:
+            self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+        else:
+            self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
         
@@ -69,6 +71,7 @@ class Agent:
         self._sub_noise = agent_cnf.sub_noise
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._train_sub = agent_cnf.train_sub
+        self._per = agent_cnf.per
         # Main cnf
         self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed

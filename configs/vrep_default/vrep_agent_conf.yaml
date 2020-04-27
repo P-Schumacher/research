@@ -9,6 +9,8 @@ buffer:
   beta: 0.4
   beta_increment: 0.001
   use_cer: false
+  batch_size: ${main.batch_size}
+
 
 agent:
   # Params for the Agent. In case of flat agent, the sub-agent params
@@ -31,6 +33,7 @@ agent:
   smooth_factor: 0.8
   smooth_goal: false
   add_multiple_dones: false
+  per: false
   seed: ${main.seed}
   c_step: ${main.c_step}
 
@@ -53,6 +56,7 @@ agent:
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10
+    per: ${agent.per}
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -73,4 +77,5 @@ agent:
     offpolicy: ${main.offpolicy}
     c_step: ${main.c_step}
     no_candidates: 10
+    per: false
 

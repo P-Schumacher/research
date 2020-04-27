@@ -227,7 +227,7 @@ class CoppeliaEnv(gym.Env):
     
     def _get_done(self):
         self.needs_reset = True
-        if self._get_distance() < 0.5:
+        if self._get_distance() < 0.08:
             print("Success")
             self._success = 1
         elif self._timestep >= self.max_episode_steps - 1:

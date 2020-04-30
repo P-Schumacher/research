@@ -1,9 +1,9 @@
 project: whatever
 main:
   render: false
-  flat_agent: true
+  flat_agent: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'profiler'
@@ -35,7 +35,8 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: true
+  add_multiple_dones: false
+  per: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -64,5 +65,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.
+  alpha: 0.6
+  beta: 0.
   max_size: 200000

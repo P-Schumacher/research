@@ -12,6 +12,11 @@ class ReplayBuffer(object):
     def __init__(self, state_dim, action_dim, buffer_cnf):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
+        self.counter = 0
+        self.rew_arr = []
+        self.sample_array = []
+        self.time_rew = []
+        self.time_tr = []
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
         self.state[self.ptr] = state.astype(np.float16)
@@ -27,7 +32,23 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         self.batch_idxs = self._sample_idxs(batch_size)
-        wandb.log({f'sampleidxs': self.batch_idxs[0]}, commit=False)
+        if self.action.shape[1] == 28:
+            for i in range(self.size):
+                set_trace()
+                if self.reward[i] != -0.5:
+                    self.rew_arr.append(i)
+                    self.time_rew.append(self.counter)
+            for i in range(self.batch_idxs.shape[0]):
+                self.sample_array.append(self.batch_idxs[i])
+                self.time_tr.append(self.counter)
+            self.counter += 1
+            np.save('rewer.npy', self.rew_arr)
+            np.save('time_rew.npy', self.time_rew)
+            np.save('time_tr.npy', self.time_tr)
+            np.save('sample.npy', self.sample_array)
+            
+            
+           
         return (  
         tf.convert_to_tensor(self.state[self.batch_idxs]),
         tf.convert_to_tensor(self.action[self.batch_idxs]),
@@ -74,9 +95,8 @@ class PriorityBuffer(ReplayBuffer):
     '''
     Prioritized Experience Replay
     Implementation follows the approach in the paper "Prioritized Experience Replay", Schaul et al 2015" https://arxiv.org/pdf/1511.05952.pdf and is Jaromír Janisch's with minor adaptations.
-    See memory_util.py for the license and link to Jaromír's excellent blog
     Stores agent experiences and samples from them for agent training according to each experience's priority
-    The memory has the same behaviour and storage structure as Replay memory with the addition of a SumTree to store and sample the priorities.
+    The memory has the same behaviour and storage structure as Replay memory with the addition of a SumTree and an array to store and sample the priorities.
     '''
 
     def __init__(self, state_dim, action_dim, buffer_cnf):
@@ -128,6 +148,8 @@ class PriorityBuffer(ReplayBuffer):
         sampling_probabilities = priorities / self.tree.total()
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        #print( (1 - 0.01 * self.priorities[batch_idxs]) / self.priorities[batch_idxs])
+        #print(batch_idxs)
         return batch_idxs
 
     def update_priorities(self, errors):

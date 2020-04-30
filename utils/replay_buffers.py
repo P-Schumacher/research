@@ -13,10 +13,6 @@ class ReplayBuffer(object):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
         self.counter = 0
-        self.rew_arr = []
-        self.sample_array = []
-        self.time_rew = []
-        self.time_tr = []
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
         self.state[self.ptr] = state.astype(np.float16)
@@ -32,23 +28,6 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         self.batch_idxs = self._sample_idxs(batch_size)
-        if self.action.shape[1] == 28:
-            for i in range(self.size):
-                set_trace()
-                if self.reward[i] != -0.5:
-                    self.rew_arr.append(i)
-                    self.time_rew.append(self.counter)
-            for i in range(self.batch_idxs.shape[0]):
-                self.sample_array.append(self.batch_idxs[i])
-                self.time_tr.append(self.counter)
-            self.counter += 1
-            np.save('rewer.npy', self.rew_arr)
-            np.save('time_rew.npy', self.time_rew)
-            np.save('time_tr.npy', self.time_tr)
-            np.save('sample.npy', self.sample_array)
-            
-            
-           
         return (  
         tf.convert_to_tensor(self.state[self.batch_idxs]),
         tf.convert_to_tensor(self.action[self.batch_idxs]),
@@ -57,6 +36,14 @@ class ReplayBuffer(object):
         tf.convert_to_tensor(self.done[self.batch_idxs]),
         tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
         tf.convert_to_tensor(self.action_seq[self.batch_idxs]))
+
+    def save_data(self):
+        for field in self.data_fields:
+            np.save(f'{field}.npy', getattr(self, field))
+
+    def load_data(self):
+        for field in self.data_fields:
+            setattr(self, field, np.load(f'{field}.npy'))
 
     def reset(self):
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
@@ -90,6 +77,7 @@ class ReplayBuffer(object):
         self.beta_increment = buffer_cnf.beta_increment
         self.use_cer = buffer_cnf.use_cer
         self.is_weight = 1
+        self.data_fields = ['state', 'action', 'next_state', 'reward', 'done', 'state_seq', 'action_seq']
 
 class PriorityBuffer(ReplayBuffer):
     '''
@@ -122,6 +110,18 @@ class PriorityBuffer(ReplayBuffer):
         self.priorities[self.ptr] = priority
         self.tree.add(priority, self.ptr)
 
+    def save_data(self):
+        super().save_data()
+        np.save('priorities.npy', self.priorities)
+        np.save('tree.npy', self.tree.tree)        
+        np.save('indices.npy', self.tree.indices)        
+
+    def load_data(self):
+        super().load_data()
+        self.priorities = np.load('priorities.npy')
+        self.tree.tree = np.load('tree.npy')
+        self.tree.indices = np.load('indices.npy')
+
     def _get_priority(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
         return np.power(error + self.epsilon, self.alpha).squeeze()
@@ -148,8 +148,6 @@ class PriorityBuffer(ReplayBuffer):
         sampling_probabilities = priorities / self.tree.total()
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
-        #print( (1 - 0.01 * self.priorities[batch_idxs]) / self.priorities[batch_idxs])
-        #print(batch_idxs)
         return batch_idxs
 
     def update_priorities(self, errors):

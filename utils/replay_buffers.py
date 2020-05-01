@@ -41,9 +41,9 @@ class ReplayBuffer(object):
         for field in self.data_fields:
             np.save(f'{field}.npy', getattr(self, field))
 
-    def load_data(self):
+    def load_data(self, directory):
         for field in self.data_fields:
-            setattr(self, field, np.load(f'{field}.npy'))
+            setattr(self, field, np.load(f'{directory}{field}.npy'))
 
     def reset(self):
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
@@ -116,11 +116,11 @@ class PriorityBuffer(ReplayBuffer):
         np.save('tree.npy', self.tree.tree)        
         np.save('indices.npy', self.tree.indices)        
 
-    def load_data(self):
-        super().load_data()
-        self.priorities = np.load('priorities.npy')
-        self.tree.tree = np.load('tree.npy')
-        self.tree.indices = np.load('indices.npy')
+    def load_data(self, directory):
+        super().load_data(directory)
+        self.priorities = np.load(f'{directory}priorities.npy')
+        self.tree.tree = np.load(f'{directory}tree.npy')
+        self.tree.indices = np.load(f'{directory}indices.npy')
 
     def _get_priority(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''

@@ -47,7 +47,10 @@ def main(cnf):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
-        intr_rew = agent.replay_add(state, action, reward, next_state, done)
+        done_rpl = done
+        if reward == -1.:
+            done_rpl = 0
+        intr_rew = agent.replay_add(state, action, reward, next_state, done_rpl)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)

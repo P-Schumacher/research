@@ -148,10 +148,11 @@ class TD3(object):
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
         if self._per: 
-            td_error = tf.abs(td_error)
-            #td_error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01) 
-            #td_error = tf.abs(1/(reward + 0.00001))
-            replay_buffer.update_priorities(td_error)
+            #td_error = tf.abs(td_error)
+            #td_error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01)
+            #td_error = reward + 1
+            td_error = np.where(reward == -1., 0, 1)
+            #replay_buffer.update_priorities(td_error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
@@ -183,8 +184,8 @@ class TD3(object):
             current_Q1, current_Q2 = self.critic(state_action)
             # Sum of losses allows us to calculate them independantly at the same time,
             # as gradient is a linear operation
-            critic_loss = (self.critic_loss_fn(current_Q1, target_Q, sample_weight=is_weight) 
-                        + self.critic_loss_fn(current_Q2, target_Q, sample_weight=is_weight))
+            critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
+                        + self.critic_loss_fn(current_Q2, target_Q))
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)

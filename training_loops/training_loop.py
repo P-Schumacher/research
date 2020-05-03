@@ -54,6 +54,9 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
+        #if t == 15000:
+        #    agent.meta_replay_buffer.save_data()
+        #    raise Exception
 
         if done:
             if t > cnf.start_timesteps:

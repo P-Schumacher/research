@@ -2,8 +2,8 @@ project: whatever
 main:
   render: false
   flat_agent: false
-  log: true
-  minilog: true
+  log: false
+  minilog: false
   save_model: false
   load_model: false
   descriptor: 'profiler'
@@ -30,13 +30,13 @@ agent:
   ri_re: false
   agent_action_regularizer: 0.00
   meta_mock: false
-  train_meta: true
-  train_sub: true
+  train_meta: false
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: true
-  per: false
+  add_multiple_dones: false
+  per: true
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -57,15 +57,14 @@ agent:
 
 coppeliagym:
   sim:
-    scene_file: 'coppelia_scenes/kuka.ttt'
+    scene_file: 'coppelia_scenes/kuka_tester.ttt'
   params:
     sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
-
 buffer:
-  alpha: 0.2
+  alpha: 1.
   beta: 0.
-  max_size: 200000
+  max_size: 1000

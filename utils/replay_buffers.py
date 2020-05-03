@@ -12,7 +12,6 @@ class ReplayBuffer(object):
     def __init__(self, state_dim, action_dim, buffer_cnf):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
-        self.counter = 0
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
         self.state[self.ptr] = state.astype(np.float16)
@@ -105,10 +104,13 @@ class PriorityBuffer(ReplayBuffer):
         Implementation for update() to add experience to memory, expanding the memory size if necessary.
         All experiences are added with a high priority to increase the likelihood that they are sampled at least once.
         '''
-        super().add(state, action, reward, next_state, done, state_seq, action_seq)
+        # In this version, immediately sample error before adding to buffer c.f. Distributed PER paper
+        error = [1 if reward != -1. else 0][0]
+
         priority = self._get_priority(error)
         self.priorities[self.ptr] = priority
         self.tree.add(priority, self.ptr)
+        super().add(state, action, reward, next_state, done, state_seq, action_seq)
 
     def save_data(self):
         super().save_data()

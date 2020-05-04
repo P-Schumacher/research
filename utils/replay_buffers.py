@@ -108,6 +108,7 @@ class PriorityBuffer(ReplayBuffer):
         priority = self._get_priority(error)
         self.priorities[self.ptr] = priority
         self.tree.add(priority, self.ptr)
+        # Call this AFTER the others, it increments the *self.ptr* pointer
         super().add(state, action, reward, next_state, done, state_seq, action_seq)
 
     def save_data(self):

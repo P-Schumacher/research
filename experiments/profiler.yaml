@@ -63,14 +63,15 @@ agent:
 
 coppeliagym:
   sim:
-    scene_file: 'coppelia_scenes/kuka_tester.ttt'
+    scene_file: 'coppelia_scenes/kuka.ttt'
   params:
     sparse_rew: false
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
+
 buffer:
-  alpha: 0.2
+  alpha: 0.5
   beta: 0.
   max_size: 200000

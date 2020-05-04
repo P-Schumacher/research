@@ -9,7 +9,7 @@ main:
   descriptor: 'profiler'
   c_step: 10
   seed: 5
-  offpolicy: false
+  offpolicy: true
   start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
@@ -22,6 +22,12 @@ main:
     init_step: ${main.c_step}
     min_step: 10
 
+# PER can be: 
+# None - Deactivated
+# 1 - TD Error based prio
+# 2 - Goal state distance based prio
+# 3 - reward based prio
+# 4 - actor grad based prio
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
@@ -36,7 +42,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: true
+  per: false
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -59,7 +65,7 @@ coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_tester.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
 
   subgoals:

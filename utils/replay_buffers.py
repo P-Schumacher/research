@@ -105,8 +105,6 @@ class PriorityBuffer(ReplayBuffer):
         All experiences are added with a high priority to increase the likelihood that they are sampled at least once.
         '''
         # In this version, immediately sample error before adding to buffer c.f. Distributed PER paper
-        error = [1 if reward != -1. else 0][0]
-
         priority = self._get_priority(error)
         self.priorities[self.ptr] = priority
         self.tree.add(priority, self.ptr)

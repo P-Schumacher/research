@@ -12,6 +12,12 @@ buffer:
   batch_size: ${main.batch_size}
 
 
+# PER can be: 
+# None - Deactivated
+# 1 - TD Error based prio
+# 2 - Goal state distance based prio
+# 3 - reward based prio
+# 4 - actor grad based prio
 agent:
   # Params for the Agent. In case of flat agent, the sub-agent params
   # will be used.
@@ -34,6 +40,7 @@ agent:
   smooth_goal: false
   add_multiple_dones: false
   per: false
+  goal_regul: false
   seed: ${main.seed}
   c_step: ${main.c_step}
 
@@ -57,6 +64,7 @@ agent:
     c_step: ${main.c_step}
     no_candidates: 10
     per: ${agent.per}
+    goal_regul: ${agent.goal_regul}
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -78,4 +86,5 @@ agent:
     c_step: ${main.c_step}
     no_candidates: 10
     per: false
+    goal_regul: false
 

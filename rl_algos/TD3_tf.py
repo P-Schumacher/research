@@ -5,6 +5,7 @@ import numpy as np
 from tensorflow.keras.regularizers import l2
 import wandb
 from pudb import set_trace
+from utils.math_fns import euclid
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
@@ -87,6 +88,7 @@ class TD3(object):
         reg_coeff_cr,
         zero_obs,
         per,
+        goal_regul,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -115,7 +117,8 @@ class TD3(object):
         self.update_target_models_hard()  
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per)
+                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
+                                 goal_regul)
 
         self._create_persistent_tf_variables()
 
@@ -141,18 +144,28 @@ class TD3(object):
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
+        if self.name == 'meta' and self._goal_regul:
+            reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         td_error = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-
+        # different versions of prioritized experience replay
         if self._per: 
-            #td_error = tf.abs(td_error)
-            #td_error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01)
-            #td_error = reward + 1
-            td_error = np.where(reward == -1., 0, 1)
-            #replay_buffer.update_priorities(td_error)
+            if self._per == 1:
+                td_error = tf.abs(td_error)
+            elif self._per == 2:
+                td_error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01)
+            elif self._per == 3:
+                td_error = reward + 1
+                #td_error = np.where(reward == -1., 0, 1)
+            elif self._per == 4:
+                # TODO implement actor based prio
+                td_error = tf.abs(td_error)
+                raise NotImplementedError
+            replay_buffer.update_priorities(td_error)
+
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
@@ -236,7 +249,8 @@ class TD3(object):
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per):
+                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
+                            goal_regul):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
@@ -254,6 +268,7 @@ class TD3(object):
         self.clip_ac = clip_ac
         self._zero_obs = zero_obs
         self._per = per
+        self._goal_regul = goal_regul
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,

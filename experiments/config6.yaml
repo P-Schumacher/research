@@ -1,17 +1,20 @@
 project: whatever
 main:
   render: false
+  flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'trick_gather_data_rew_for_corrected'
+  descriptor: 'profiler'
   c_step: 10
   seed: 5
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
+  eval_freq: 20000
+  simple_env: false
   
   decay: false
   step_decayer:
@@ -19,6 +22,12 @@ main:
     init_step: ${main.c_step}
     min_step: 10
 
+# PER can be: 
+# None - Deactivated
+# 1 - TD Error based prio
+# 2 - Goal state distance based prio
+# 3 - reward based prio
+# 4 - actor grad based prio
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
@@ -32,7 +41,7 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
-  add_multiple_dones: true
+  add_multiple_dones: false
   per: false
 
   meta_model:
@@ -53,10 +62,15 @@ agent:
     no_candidates: 20
 
 coppeliagym:
+  sim:
+    scene_file: 'coppelia_scenes/kuka_tester.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
-
+buffer:
+  alpha: 0.2
+  beta: 0.
+  max_size: 200000

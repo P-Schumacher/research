@@ -42,7 +42,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: false
+  per: 1
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -72,6 +72,6 @@ coppeliagym:
     ej_goal: [3, 1.0]
 
 buffer:
-  alpha: 0.5
+  alpha: 0.6
   beta: 0.
   max_size: 200000

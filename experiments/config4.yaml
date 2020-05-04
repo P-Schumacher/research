@@ -1,17 +1,17 @@
-project: whatever
+project: sparse_per_vs_md
 main:
   render: false
   flat_agent: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'profiler'
+  descriptor: 'standard_hiro'
   c_step: 10
   seed: 5
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 1000000
+  max_timesteps: 2000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -23,7 +23,7 @@ main:
     min_step: 10
 
 # PER can be: 
-# None - Deactivated
+# false - Deactivated
 # 1 - TD Error based prio
 # 2 - Goal state distance based prio
 # 3 - reward based prio
@@ -42,7 +42,8 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: false
+  per: 0
+  goal_regul: false
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -65,12 +66,12 @@ coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_tester.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.2
+  alpha: 0.17
   beta: 0.
   max_size: 200000

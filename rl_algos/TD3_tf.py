@@ -154,22 +154,22 @@ class TD3(object):
         # different versions of prioritized experience replay
         if self._per: 
             if self._per == 1:
-                td_error = tf.abs(td_error)
+                error = tf.abs(td_error)
             elif self._per == 2:
-                td_error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01)
+                error = 1/(tf.norm(next_state[:,:action.shape[1]] - action, axis=1)+0.01)
             elif self._per == 3:
-                td_error = reward + 1
+                error = reward + 1
                 #td_error = np.where(reward == -1., 0, 1)
             elif self._per == 4:
                 # TODO implement actor based prio
-                td_error = tf.abs(td_error)
+                error = tf.abs(td_error)
                 raise NotImplementedError
-            replay_buffer.update_priorities(td_error)
+            replay_buffer.update_priorities(error)
 
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
-    @tf.function
+    #@tf.function
     def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -210,7 +210,7 @@ class TD3(object):
 
         # Actor Update
         if self.total_it % self.policy_freq == 0:
-            with tf.GradientTape() as tape:
+            with tf.GradientTape(persistent=True) as tape:
                 # Look at TD3 paper for clarification
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
@@ -247,6 +247,7 @@ class TD3(object):
         self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
         self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
+        self.batch_grad = tf.Variable(tf.zeros([128 ,1]), dtype=tf.float32)
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                             c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,

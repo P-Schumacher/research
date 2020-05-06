@@ -107,6 +107,7 @@ def assert_sanity_check(cnf):
         assert not (cnf.agent.add_multiple_dones and not cnf.coppeliagym.params.sparse_rew)
         assert not (cnf.agent.add_multiple_dones and (cnf.agent.per == 3 or cnf.agent.per == 4))
         assert isinstance(cnf.agent.per, int)  
+        assert not (cnf.main.flat_agent and cnf.agent.per == 2)
 
 
 def exponential_decay(total_steps, init_step=100, min_step=10):

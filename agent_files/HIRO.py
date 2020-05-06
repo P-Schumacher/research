@@ -5,26 +5,11 @@ from utils.transitbuffer import TransitBuffer
 import wandb
 from pudb import set_trace
 
-
-
 class HierarchicalAgent(Agent):
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
         self._prepare_parameters(agent_cnf, main_cnf, env_spec, subgoal_dim)
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
-        
-        meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
-        self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
-                                           buffer_cnf)
-        self._sub_agent = model_cls(**sub_env_spec, **agent_cnf.sub_model)
-        self._meta_agent = model_cls(**meta_env_spec, **agent_cnf.meta_model)
-        # Set * goal_counter* to its maximum, such that we query the meta agent in the first iteration
-        self._goal_counter = self._c_step 
-        self._orig_goal = tf.zeros([1,])
-        self._evals = 0  
-        self._init = False
-        # we need an initial goal for goal smoothing
-        if self._smooth_goal:
-            self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
+        self._self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
+        self._prepare_control_variables(self)
         
     def select_action(self, state, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
@@ -76,6 +61,25 @@ class HierarchicalAgent(Agent):
         the sum of rewards for the meta agent.'''
         self._goal_counter = self._c_step
         self._transitbuffer.reset()
+
+    def _self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
+        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
+        
+        meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
+        self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
+                                           buffer_cnf)
+        self._sub_agent = model_cls(**sub_env_spec, **agent_cnf.sub_model)
+        self._meta_agent = model_cls(**meta_env_spec, **agent_cnf.meta_model)
+
+    def _prepare_control_variables(self):
+        # Set * goal_counter* to its maximum, such that we query the meta agent in the first iteration
+        self._goal_counter = self._c_step 
+        self._orig_goal = tf.zeros([1,])
+        self._evals = 0  
+        self._init = False
+        # we need an initial goal for goal smoothing
+        if self._smooth_goal:
+            self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
 
     def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
         '''Unpacks the parameters from the config files to state variables.'''

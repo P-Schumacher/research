@@ -145,27 +145,17 @@ class TD3(object):
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
-            reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
-        td_error, ac_norm = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
+            self._goal_regularization(action, reward, next_state)
+        td_error = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         self.total_it.assign_add(1)
+
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-        # different versions of prioritized experience replay
-        if self._per: 
-            if self._per == 1:
-                error = tf.abs(td_error)
-            elif self._per == 2:
-                error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
-            elif self._per == 3:
-                error = reward + 1
-            elif self._per == 4:
-                # TODO replace -1 by c * -1 * meta_rew_scale
-                error = np.where(reward == -1., 0, 1)
-            replay_buffer.update_priorities(error)
+
+        self._prioritized_experience_update(self._per, td_error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
-        
-   
+
     @tf.function
     def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
@@ -218,7 +208,30 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
-        return target_Q - current_Q1, actor_elem_grad
+        return target_Q - current_Q1
+
+    def _goal_regularization(self, action, reward, next_state):
+        reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        
+    def _prioritized_experience_update(self, per, td_error):
+        '''Updates the priorities in the PER buffer depending on the *per* int.
+        :params per: 
+        If 1, sample based on absolute TD-error.
+        If 2, sample based on the distance between goal and state.
+        If 3, sample proportional to the reward of a transition.
+        If 4, sample transitions with a reward with a higher probability.
+        N.B. Python doesn't have switch statements...'''
+        if per: 
+            if per == 1:
+                error = tf.abs(td_error)
+            elif per == 2:
+                error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
+            elif per == 3:
+                error = reward + 1
+            elif per == 4:
+                # TODO replace -1 by c * -1 * meta_rew_scale
+                error = np.where(reward == -1., 0, 1)
+            replay_buffer.update_priorities(error)
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
         if log:

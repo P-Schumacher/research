@@ -153,7 +153,7 @@ class TD3(object):
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
-        self._prioritized_experience_update(self._per, td_error)
+        self._prioritized_experience_update(self._per, td_error, replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     @tf.function
@@ -213,7 +213,7 @@ class TD3(object):
     def _goal_regularization(self, action, reward, next_state):
         reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         
-    def _prioritized_experience_update(self, per, td_error):
+    def _prioritized_experience_update(self, per, td_error, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.
         :params per: 
         If 1, sample based on absolute TD-error.

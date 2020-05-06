@@ -102,8 +102,10 @@ def assert_sanity_check(cnf):
             assert type(model.clip_ac) != int
         # For flat agents this reward is computed in the env. for HIRO it has to be computed in the transitbuffer
         assert not (cnf.coppeliagym.params.action_regularizer and cnf.agent.agent_action_regularizer)
+        assert not ((not cnf.main.flat_agent) and (cnf.coppeliagym.params.action_regularizer))
         assert not (cnf.agent.center_metagoal and (cnf.agent.goal_type == 'Direction'))
         assert not (cnf.agent.add_multiple_dones and not cnf.coppeliagym.params.sparse_rew)
+        assert not (cnf.agent.add_multiple_dones and (cnf.agent.per == 3 or cnf.agent.per == 4))
         assert isinstance(cnf.agent.per, int)  
 
 

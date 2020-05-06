@@ -2,7 +2,7 @@ project: whatever
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: false
   save_model: false
   load_model: false
@@ -42,7 +42,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 1
+  per: 0
   goal_regul: false
 
   meta_model:

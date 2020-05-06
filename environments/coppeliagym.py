@@ -169,7 +169,7 @@ class CoppeliaEnv(gym.Env):
         self._timestep = 0
         self.needs_reset = False
         self._init = False
-        self._success = 0
+        self.success = 0
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Return the maximal subgoal ranges. In this case:
@@ -220,7 +220,7 @@ class CoppeliaEnv(gym.Env):
         :param action: The action proposed by the agent.
         :return: The reward obtained for the proposed action given the next state.'''
         if self._sparse_rew:
-            if self._success:
+            if self.success:
                 return 0
             return -1 
         return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
@@ -229,12 +229,12 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = True
         if self._get_distance() < 0.08:
             print("Success")
-            self._success = 1
+            self.success = 1
         elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:
             self.needs_reset = False
-            self._success = 0
+            self.success = 0
         return self.needs_reset
     
     def _get_distance(self):

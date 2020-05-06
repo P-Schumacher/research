@@ -159,17 +159,10 @@ class TD3(object):
                 error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
             elif self._per == 3:
                 error = reward + 1
-                #error = np.where(reward == -1., 0, 1)
             elif self._per == 4:
-                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])
-            elif self._per == 5:
-                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])  + tf.abs(td_error)
-
-            if self._per == 4 or self._per == 5:
-                if not self.total_it % self.policy_freq:
-                    replay_buffer.update_priorities(error)
-            else:
-                replay_buffer.update_priorities(error)
+                # TODO replace -1 by c * -1 * meta_rew_scale
+                error = np.where(reward == -1., 0, 1)
+            replay_buffer.update_priorities(error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    
@@ -197,12 +190,10 @@ class TD3(object):
         target_Q = reward + (1. - done) * self.discount * target_Q
         # Critic Update
         with tf.GradientTape() as tape:
-            # Get current Q estimates
             current_Q1, current_Q2 = self.critic(state_action)
-            # Sum of losses allows us to calculate them independantly at the same time,
-            # as gradient is a linear operation
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
+            # 6 because Q losses + L2-regul losses
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
@@ -211,11 +202,10 @@ class TD3(object):
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
+        # Can't use *if not* in tf.function graph
         if self.total_it % self.policy_freq == 0:
-            # Actor Update
-            #if self.total_it % self.policy_freq == 0:
+            # Actor update
             with tf.GradientTape(persistent=True) as tape:
-                # Look at TD3 paper for clarification
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
@@ -226,12 +216,8 @@ class TD3(object):
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
-
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
-            actor_elem_grad = [get_norm(tape.gradient(x, self.actor.trainable_variables)) for x in actor_loss_list]
-        else:
-            actor_elem_grad = [0.] * 128
-        
+
         return target_Q - current_Q1, actor_elem_grad
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
@@ -255,7 +241,6 @@ class TD3(object):
         self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
         self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
-        self.batch_grad = tf.Variable(tf.zeros([128 ,1]), dtype=tf.float32)
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                             c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,

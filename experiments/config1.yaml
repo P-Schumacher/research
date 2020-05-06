@@ -26,9 +26,8 @@ main:
 # false - Deactivated
 # 1 - TD Error based prio
 # 2 - Goal state distance based prio
-# 3 - reward based prio
-# 4 - actor grad based prio
-# 5- actor + td based prio
+# 3 - proportional reward based prio
+# 4 - binary reward based prio 
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1

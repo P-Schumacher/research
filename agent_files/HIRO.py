@@ -8,8 +8,8 @@ from pudb import set_trace
 class HierarchicalAgent(Agent):
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
         self._prepare_parameters(agent_cnf, main_cnf, env_spec, subgoal_dim)
-        self._self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
-        self._prepare_control_variables(self)
+        self._self_prepare_algo_objects(agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
+        self._prepare_control_variables()
         
     def select_action(self, state, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and

@@ -1,18 +1,18 @@
-project: whatever
+project: dense_per_n_regul
 main:
   render: false
   flat_agent: false
-  log: false
-  minilog: false
+  log: true
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'td per sparse'
+  descriptor: 'standard_dense'
   c_step: 10
   seed: 5
   offpolicy: false
   start_timesteps: 5000
   max_timesteps: 2000000
-  no_seed: false
+  no_seed: true
   eval_freq: 20000
   simple_env: false
   

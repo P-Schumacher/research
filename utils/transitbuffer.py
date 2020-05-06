@@ -2,7 +2,7 @@ from pudb import set_trace
 import tensorflow as tf
 import numpy as np
 from collections import namedtuple
-from utils.replay_buffers import ReplayBuffer
+from utils.replay_buffers import ReplayBuffer, PriorityBuffer
 from utils.math_fns import huber, euclid
 
 sub_Transition = namedtuple('Transition', ['state', 'action', 'reward', 'next_state', 'done', 'goal'])
@@ -139,6 +139,12 @@ class TransitBuffer(ReplayBuffer):
         self._add_to_sub(state, goal, action, intr_reward, next_state, self.goal, done)
         self._add_to_meta(meta_state, orig_goal, reward * self._meta_rew_scale, self._meta_state, done)
 
+    def _save_sub_transition(self, state, action, reward, next_state, done, goal):
+        self.sub_transition = sub_Transition(state, action, reward, next_state, done, goal)
+
+    def _load_sub_transition(self):
+        return self.sub_transition
+
     def _add_to_sub(self, state, goal, action, intr_reward, next_state, next_goal, extr_done):
         '''Adds the relevant transition to the sub-agent replay buffer.'''
         if self._offpolicy:
@@ -156,12 +162,6 @@ class TransitBuffer(ReplayBuffer):
         self._sub_replay_buffer.add(cat_state, action, intr_reward,
                                    cat_next_state, extr_done, 0, 0)
         
-    def _save_sub_transition(self, state, action, reward, next_state, done, goal):
-        self.sub_transition = sub_Transition(state, action, reward, next_state, done, goal)
-
-    def _load_sub_transition(self):
-        return self.sub_transition
-
     def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done):
         '''Adds transitions to the replay buffer of the meta agent. *self._state_seq* and 
         *self._action_seq* are collected sub-agent experience transitions that are used
@@ -212,9 +212,12 @@ class TransitBuffer(ReplayBuffer):
         self._ptr = 0
 
     def _prepare_buffers(self, buffer_cnf, sub_state_dim, meta_state_dim, action_dim):
-        #assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
-        self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, **buffer_cnf)
-        self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, **buffer_cnf)
+        assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
+        self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, buffer_cnf)
+        if not self._per:
+            self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, buffer_cnf)
+        else:
+            self._meta_replay_buffer = PriorityBuffer(meta_state_dim, self._subgoal_dim, buffer_cnf)
 
     def _prepare_parameters(self, main_cnf, agent_cnf, target_dim, subgoal_dim):
         '''Unpacks the cnf settings to state variables.'''
@@ -233,3 +236,4 @@ class TransitBuffer(ReplayBuffer):
         self._ri_re = agent_cnf.ri_re
         self._action_reg = agent_cnf.agent_action_regularizer
         self._add_multiple_dones = agent_cnf.add_multiple_dones
+        self._per = agent_cnf.per

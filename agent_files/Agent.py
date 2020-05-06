@@ -4,13 +4,16 @@ import numpy as np
 import gym
 import tensorflow as tf
 from pudb import set_trace
-from utils.replay_buffers import ReplayBuffer
+from utils.replay_buffers import ReplayBuffer, PriorityBuffer
 import wandb 
 
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_parameters(agent_cnf, main_cnf)
-        self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], **buffer_cnf)
+        if self._per:
+            self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+        else:
+            self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
         
@@ -37,14 +40,14 @@ class Agent:
         if self._train_sub:
             m_avg = np.zeros([6, ], dtype=np.float32)
             for i in range(episode_timesteps):
-                *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep)
+                *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep, (self._log and not self._minilog))
                 m_avg += metrics 
             m_avg /= self._gradient_steps
             if self._log and not self._minilog:
                 wandb.log({f'sub/actor_loss': m_avg[0],
                            f'sub/critic_loss': m_avg[1],
-                           f'sub/critic_gradnorm': m_avg[2],
-                           f'sub/actor_gradnorm': m_avg[3], 
+                           f'sub/actor_gradnorm': m_avg[2],
+                           f'sub/critic_gradnorm': m_avg[3], 
                            f'sub/actor_gradstd': m_avg[4],
                            f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
@@ -68,6 +71,7 @@ class Agent:
         self._sub_noise = agent_cnf.sub_noise
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._train_sub = agent_cnf.train_sub
+        self._per = agent_cnf.per
         # Main cnf
         self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed

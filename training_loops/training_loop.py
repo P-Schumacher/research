@@ -47,25 +47,26 @@ def main(cnf):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
-        intr_rew = agent.replay_add(state, action, reward, next_state, done)
+        done_rpl = done
+        if reward == -1.:
+            done_rpl = 0
+        intr_rew = agent.replay_add(state, action, reward, next_state, done_rpl)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-        if t > cnf.start_timesteps:
-            wandb.log({'reward_proportion':np.where(agent.meta_replay_buffer.reward[:agent.meta_replay_buffer.size] !=
-                             -1.0)[0].shape[0]/np.where(agent.meta_replay_buffer.reward[:agent.meta_replay_buffer.size] ==
-                                                        -1.0)[0].shape[0]}, commit=False)
-
 
         if done:
+            # Train at the end of the episode for the appropriate times. makes collecting
+            # norms stds and losses easier
             if t > cnf.start_timesteps:
                 agent.train(t, logger.episode_timesteps)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
-            # Reset environment
+
             agent.reset()
             logger.reset()
             state, done = env.reset(), False
+
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)

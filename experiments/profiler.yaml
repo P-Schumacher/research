@@ -1,20 +1,20 @@
 project: whatever
 main:
   render: false
-  flat_agent: false
+  flat_agent: true
   log: true
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'ac per sparse'
+  descriptor: 'profiler'
   c_step: 10
   seed: 5
-  offpolicy: false
+  offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 2000000
+  max_timesteps: 1000000
   no_seed: false
-  eval_freq: 20000
-  simple_env: false
+  eval_freq: 200000
+  simple_env: true
   
   decay: false
   step_decayer:
@@ -23,12 +23,11 @@ main:
     min_step: 10
 
 # PER can be: 
-# false - Deactivated
+# None - Deactivated
 # 1 - TD Error based prio
 # 2 - Goal state distance based prio
 # 3 - reward based prio
 # 4 - actor grad based prio
-# 5- actor + td based prio
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
@@ -43,8 +42,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 4
-  goal_regul: false
+  per: 5
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -62,6 +60,11 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
+  sub_model:
+    per: 5
+    clip_ac: 1000000.
+    clip_cr: 1000000.
+    policy_freq: 2
 
 coppeliagym:
   sim:
@@ -72,6 +75,7 @@ coppeliagym:
 
   subgoals:
     ej_goal: [3, 1.0]
+
 buffer:
   alpha: 0.6
   beta: 0.

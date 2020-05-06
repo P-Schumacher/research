@@ -227,7 +227,7 @@ class CoppeliaEnv(gym.Env):
     
     def _get_done(self):
         self.needs_reset = True
-        if self._get_distance() < 0.5:
+        if self._get_distance() < 0.08:
             print("Success")
             self._success = 1
         elif self._timestep >= self.max_episode_steps - 1:
@@ -290,7 +290,8 @@ class CoppeliaEnv(gym.Env):
         return ''
     
     def _reset(self, evalmode):
-        # Reset target vels BEFORE positions. As arm and gripper are reset independently in *set_position()*
+        # Reset target velocities BEFORE positions. As arm and gripper are reset independently 
+        # in *set_position()*
         # there is an additional simulation timestep between them. If the velocities are not reset properly, the
         # reset position of the robot will drift. This drift is small for the arm but can cause the gripper to
         # explode and destabilize the simulation.

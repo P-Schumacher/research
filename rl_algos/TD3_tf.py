@@ -5,6 +5,7 @@ import numpy as np
 from tensorflow.keras.regularizers import l2
 import wandb
 from pudb import set_trace
+from utils.math_fns import euclid
 
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
@@ -86,6 +87,8 @@ class TD3(object):
         reg_coeff_ac,
         reg_coeff_cr,
         zero_obs,
+        per,
+        goal_regul,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -114,7 +117,8 @@ class TD3(object):
         self.update_target_models_hard()  
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs)
+                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
+                                 goal_regul)
 
         self._create_persistent_tf_variables()
 
@@ -136,19 +140,41 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None):
-        state, action, next_state, reward, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
-        self._train_step(state, action, next_state, reward, done, log)
+        if self.name == 'meta' and self._goal_regul:
+            reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        td_error, ac_norm = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
+        # different versions of prioritized experience replay
+        if self._per: 
+            if self._per == 1:
+                error = tf.abs(td_error)
+            elif self._per == 2:
+                error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
+            elif self._per == 3:
+                error = reward + 1
+                #error = np.where(reward == -1., 0, 1)
+            elif self._per == 4:
+                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])
+            elif self._per == 5:
+                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])  + tf.abs(td_error)
+
+            if self._per == 4 or self._per == 5:
+                if not self.total_it % self.policy_freq:
+                    replay_buffer.update_priorities(error)
+            else:
+                replay_buffer.update_priorities(error)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+        
    
     @tf.function
-    def _train_step(self, state, action, next_state, reward, done, log):
+    def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
         a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
@@ -169,6 +195,7 @@ class TD3(object):
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self.discount * target_Q
+        # Critic Update
         with tf.GradientTape() as tape:
             # Get current Q estimates
             current_Q1, current_Q2 = self.critic(state_action)
@@ -183,20 +210,17 @@ class TD3(object):
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
-
         self._maybe_log_critic(gradients, norm, critic_loss, log)
-
         if self.total_it % self.policy_freq == 0:
-            with tf.GradientTape() as tape:
-            # The gradient of Q_theta_1 w.r.t. phi (the actor weights)
-            # is equal to the product of the gradient of Q_theta_1 w.r.t. the actions and 
-            # the gradient of the actor w.r.t. phi 
-            # Look at TD3 paper for clarification
+            # Actor Update
+            #if self.total_it % self.policy_freq == 0:
+            with tf.GradientTape(persistent=True) as tape:
+                # Look at TD3 paper for clarification
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-
+                actor_loss_list = tf.unstack(actor_loss)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
@@ -204,6 +228,11 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
 
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+            actor_elem_grad = [get_norm(tape.gradient(x, self.actor.trainable_variables)) for x in actor_loss_list]
+        else:
+            actor_elem_grad = [0.] * 128
+        
+        return target_Q - current_Q1, actor_elem_grad
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
         if log:
@@ -219,16 +248,18 @@ class TD3(object):
 
     def _create_persistent_tf_variables(self):
         # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
-        self.total_it = tf.Variable(0, dtype=tf.int64)         
+        self.total_it = tf.Variable(0, dtype=tf.int32)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)
         self.critic_loss = tf.Variable(0, dtype=tf.float32)
         self.ac_gr_norm = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_norm = tf.Variable(0, dtype=tf.float32)
         self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
+        self.batch_grad = tf.Variable(tf.zeros([128 ,1]), dtype=tf.float32)
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs):
+                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
+                            goal_regul):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
@@ -245,6 +276,8 @@ class TD3(object):
         self.clip_cr = clip_cr
         self.clip_ac = clip_ac
         self._zero_obs = zero_obs
+        self._per = per
+        self._goal_regul = goal_regul
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
@@ -344,11 +377,14 @@ def clip_by_global_norm(t_list, clip_norm):
     :param clip_norm: Norm over which the tensors should be clipped.
     :return t_list: List of clipped tensors. 
     :return norm: New norm after clipping.'''
-    norm = tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
+    norm = get_norm(t_list)
     if norm > clip_norm:
         t_list = [tf.scalar_mul(clip_norm / norm, t) for t in t_list]
         norm = clip_norm
     return t_list, norm
+
+def get_norm(t_list):
+    return tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
 
 if __name__ == '__main__':
  pass

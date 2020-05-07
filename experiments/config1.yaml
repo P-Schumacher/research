@@ -6,9 +6,9 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'standard_dense'
+  descriptor: 'actd per sparse'
   c_step: 10
-  seed: 5
+  seed: 10
   offpolicy: false
   start_timesteps: 5000
   max_timesteps: 2000000
@@ -42,7 +42,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 0
+  per: 5
   goal_regul: false
 
   meta_model:

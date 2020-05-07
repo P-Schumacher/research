@@ -145,15 +145,31 @@ class TD3(object):
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
-            self._goal_regularization(action, reward, next_state)
-        td_error = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
-        self.total_it.assign_add(1)
-
+            reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        td_error, ac_norm = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-
-        self._prioritized_experience_update(self._per, td_error, replay_buffer)
+        # different versions of prioritized experience replay
+        if self._per: 
+            if self._per == 1:
+                error = tf.abs(td_error)
+            elif self._per == 2:
+                error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
+            elif self._per == 3:
+                error = reward + 1
+                #error = np.where(reward == -1., 0, 1)
+            elif self._per == 4:
+                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])
+            elif self._per == 5:
+                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])  + tf.abs(td_error)
+            if self._per == 4 or self._per == 5:
+                if not self.total_it % self.policy_freq:
+                    print(error)
+                    replay_buffer.update_priorities(error)
+            else:
+                replay_buffer.update_priorities(error)
+        self.total_it.assign_add(1)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     @tf.function

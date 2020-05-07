@@ -24,7 +24,7 @@ ymax = m2.max()
 X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
 positions = np.vstack([X.ravel(), Y.ravel()])
 values = np.vstack([m1, m2])
-kernel = stats.gaussian_kde(values, bw_method=0.8)
+kernel = stats.gaussian_kde(values, bw_method=0.05)
 Z = np.reshape(kernel(positions).T, X.shape)
 
 plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,

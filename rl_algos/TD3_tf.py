@@ -162,10 +162,9 @@ class TD3(object):
             elif self._per == 4:
                 error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])
             elif self._per == 5:
-                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])  + tf.abs(td_error)
+                error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1]) + tf.abs(td_error)
             if self._per == 4 or self._per == 5:
                 if not self.total_it % self.policy_freq:
-                    print(error)
                     replay_buffer.update_priorities(error)
             else:
                 replay_buffer.update_priorities(error)
@@ -223,13 +222,15 @@ class TD3(object):
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
-
-        return target_Q - current_Q1
+            actor_elem_grad = [get_norm(tape.gradient(x, self.actor.trainable_variables)) for x in actor_loss_list]
+        else:
+            actor_elem_grad = [0.] * 128
+        return target_Q - current_Q1, actor_elem_grad
 
     def _goal_regularization(self, action, reward, next_state):
         reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         
-    def _prioritized_experience_update(self, per, td_error, replay_buffer):
+    def _prioritized_experience_update(self, per, td_error, next_state, action, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.
         :params per: 
         If 1, sample based on absolute TD-error.

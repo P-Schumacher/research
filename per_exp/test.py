@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('GTK3Agg')
 plt.style.use('seaborn')
-
+plt.figure(figsize=(15,8))
 plt.subplot(121)
 m1 = np.load('./buffer_data/m1.npy')
 m2 = np.load('./buffer_data/m2.npy')
@@ -29,8 +29,9 @@ Z = np.reshape(kernel(positions).T, X.shape)
 
 plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
           extent=[xmin, xmax, ymin, ymax])
-plt.plot(m1, m2, 'k.', markersize=2)
-plt.xlim([xmin, xmax])
+plt.title('Sampled transitions over time')
+plt.plot(m1, m2, 'k.', markersize=1, marker='o')
+plt.xlim([xmin, xmax+1])
 plt.ylim([ymin, ymax])
 plt.xlabel('Transition')
 plt.ylabel('High-level training iterations')
@@ -46,8 +47,9 @@ for re in rew[:1000]:
         for i in range(1):
             new_rew.append(re)
 plt.plot(new_rew)
-plt.xlabel('Number of transition')
+plt.xlabel('Transition')
 plt.ylabel('High-level reward')
+plt.title('Reward distribution in the buffer')
 plt.xlim([0,1000])
-
+plt.savefig('ac_per.pdf')
 plt.show()

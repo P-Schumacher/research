@@ -36,7 +36,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 4
+  per: 3
 
   meta_model:
     ac_hidden_layers: [300, 300]

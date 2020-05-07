@@ -147,7 +147,6 @@ class TD3(object):
         if self.name == 'meta' and self._goal_regul:
             reward -= self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         td_error, ac_norm = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
-        self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
@@ -164,12 +163,13 @@ class TD3(object):
                 error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])
             elif self._per == 5:
                 error = tf.reshape(tf.stack(ac_norm),[len(ac_norm), 1])  + tf.abs(td_error)
-
             if self._per == 4 or self._per == 5:
                 if not self.total_it % self.policy_freq:
+                    print(error)
                     replay_buffer.update_priorities(error)
             else:
                 replay_buffer.update_priorities(error)
+        self.total_it.assign_add(1)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
         
    

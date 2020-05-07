@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('GTK3Agg')
 plt.style.use('seaborn')
-
+plt.figure(figsize=(16, 8)
 plt.subplot(121)
 m1 = np.load('./buffer_data/m1.npy')
 m2 = np.load('./buffer_data/m2.npy')
@@ -29,7 +29,7 @@ Z = np.reshape(kernel(positions).T, X.shape)
 
 plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
           extent=[xmin, xmax, ymin, ymax])
-plt.plot(m1, m2, 'k.', markersize=2)
+plt.plot(m1, m2, 'k.', markersize=1, marker='o')
 plt.xlim([xmin, xmax+1])
 plt.ylim([ymin, ymax])
 plt.xlabel('Transition')
@@ -48,5 +48,5 @@ plt.plot(new_rew)
 plt.xlabel('Transition')
 plt.ylabel('High-level reward')
 plt.xlim([0,1000])
-plt.savefig('ac_per.pdf')
+plt.savefig('td_per.pdf')
 plt.show()

@@ -30,11 +30,10 @@ Z = np.reshape(kernel(positions).T, X.shape)
 plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
           extent=[xmin, xmax, ymin, ymax])
 plt.plot(m1, m2, 'k.', markersize=2)
-plt.xlim([xmin, xmax])
+plt.xlim([xmin, xmax+1])
 plt.ylim([ymin, ymax])
 plt.xlabel('Transition')
 plt.ylabel('High-level training iterations')
-
 
 plt.subplot(122)
 plt.plot(rew[:1000])
@@ -46,8 +45,8 @@ for re in rew[:1000]:
         for i in range(1):
             new_rew.append(re)
 plt.plot(new_rew)
-plt.xlabel('Number of transition')
+plt.xlabel('Transition')
 plt.ylabel('High-level reward')
 plt.xlim([0,1000])
-
+plt.savefig('ac_per.pdf')
 plt.show()

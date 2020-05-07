@@ -211,7 +211,8 @@ class TD3(object):
         return target_Q - current_Q1
 
     def _goal_regularization(self, action, reward, next_state):
-        return reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        return reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,
+                                                                                                                 1])
         
     def _prioritized_experience_update(self, per, td_error, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.

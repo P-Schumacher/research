@@ -37,16 +37,17 @@ def main(cnf):
     counter = 0
     idxs = np.zeros([N, N])
     for t in range(N):
-        print(f'train {t} of 10000')
+        #print(f'train {t} of 10000')
         agent._meta_agent.train(buff, 128, t, False, None)
-        print(buff.batch_idxs)
+        #print(buff.batch_idxs)
         for i in range(buff.batch_idxs.shape[0]):
                 if buff.reward[buff.batch_idxs[i]] != -1.:
                     counter += 1
                     print(counter)
+                print(f' counter {counter}')
                 m1.append(buff.batch_idxs[i])
                 m2.append(t)
-    print(np.std(m1))
+    #print(np.std(m1))
     np.save('m1.npy', m1)    
     np.save('m2.npy', m2)    
     env.close()

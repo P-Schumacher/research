@@ -1,15 +1,16 @@
-project: dense_per_n_regul
+project: dense_fixed_hiro_vs_flat
 main:
   render: false
   flat_agent: false
-  log: true
-  minilog: true
+  log: false
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'standard_dense'
+  descriptor: 'goalregulreward_new'
+
   c_step: 10
-  seed: 5
-  offpolicy: false
+  seed: 25
+  offpolicy: true
   start_timesteps: 5000
   max_timesteps: 2000000
   no_seed: true
@@ -43,7 +44,7 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 0
-  goal_regul: false
+  goal_regul: 0.001
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -61,17 +62,19 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
+  sub_model:
+    per: 0
 
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.6
+  alpha: 0.9
   beta: 0.
   max_size: 200000

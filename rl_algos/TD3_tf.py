@@ -145,8 +145,10 @@ class TD3(object):
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
-            reward = self._goal_regularization(action, reward, next_state)
-        td_error = self._train_step(state, action, reward, next_state, done, log, replay_buffer.is_weight)
+            reward_new = self._goal_regularization(action, reward, next_state)
+        else:
+            reward_new = reward
+        td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self.total_it.assign_add(1)
 
         if log:
@@ -211,8 +213,9 @@ class TD3(object):
         return target_Q - current_Q1
 
     def _goal_regularization(self, action, reward, next_state):
-        return reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
-        
+        ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        return ans
+
     def _prioritized_experience_update(self, per, td_error, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.
         :params per: 

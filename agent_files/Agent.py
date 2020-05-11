@@ -51,8 +51,8 @@ class Agent:
                            f'sub/actor_gradstd': m_avg[4],
                            f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
-    def replay_add(self, state, action, next_state, reward, done):
-        self._replay_buffer.add(state, action, next_state, self._sub_rew_scale * reward, done, 0, 0)
+    def replay_add(self, state, action, next_state, reward, done, success_cd):
+        self._replay_buffer.add(state, action, next_state, self._sub_rew_scale * reward, success_cd, 0, 0)
 
     def save_model(self, string):
         self._policy.actor.save_weights(string + "_policy_actor")

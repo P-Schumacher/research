@@ -1,4 +1,4 @@
-project: dense_per_n_regul
+project: whatever
 main:
   render: false
   flat_agent: false
@@ -6,10 +6,10 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'standard_dense'
+  descriptor: 'evenstrongerstronregul'
   c_step: 10
-  seed: 5
-  offpolicy: false
+  seed: 25
+  offpolicy: true
   start_timesteps: 5000
   max_timesteps: 2000000
   no_seed: true
@@ -43,7 +43,7 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 0
-  goal_regul: 10000.
+  goal_regul: 0.01
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -72,6 +72,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.6
+  alpha: 0.9
   beta: 0.
   max_size: 200000

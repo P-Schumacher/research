@@ -94,7 +94,7 @@ class PriorityBuffer(ReplayBuffer):
         super().__init__(state_dim, action_dim, buffer_cnf)
         self.epsilon = np.full((1,), self.epsilon)
         self.alpha = np.full((1,), self.alpha)
-        self.is_weight = tf.Variable(tf.zeros([buffer_cnf.batch_size,]), dtype=tf.float32) 
+        self.is_weight = tf.Variable(tf.zeros([buffer_cnf.batch_size,]), dtype=tf.float32)
         self.reset()
 
     def reset(self):

@@ -59,7 +59,8 @@ class ReplayBuffer(object):
     def _sample_idxs(self, batch_size):
         '''Uniformly samples idxs to sample from. This fct is overwritten by PER to
         sample non-uniformly.'''
-        return  tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
+        #return  tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
+        return np.random.randint(0, self.size, size=[batch_size,])
 
     def _prepare_parameters(self, state_dim, action_dim, buffer_cnf):
         if not buffer_cnf.offpolicy:
@@ -154,6 +155,18 @@ class PriorityBuffer(ReplayBuffer):
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
+
+    def sample_uniformly(self, batch_size):
+        idxs = np.random.randint(0, self.size, size=[batch_size,])
+        return (  
+        tf.convert_to_tensor(self.state[idxs]),
+        tf.convert_to_tensor(self.action[idxs]),
+        tf.convert_to_tensor(self.reward[idxs]),
+        tf.convert_to_tensor(self.next_state[idxs]),
+        tf.convert_to_tensor(self.done[idxs]),
+        tf.convert_to_tensor(self.state_seq[idxs]),
+        tf.convert_to_tensor(self.action_seq[idxs]))
+
 
     def update_priorities(self, errors):
         '''

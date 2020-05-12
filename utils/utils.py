@@ -5,7 +5,7 @@ import os
 import sys
 from contextlib import contextmanager
 from pudb import set_trace
-from rl_algos import TD3_tf
+from rl_algos import TD3_tf, TD3_split
 from environments.my_env import EnvWithGoal
 from agent_files.Agent import Agent
 from agent_files.HIRO import HierarchicalAgent
@@ -14,6 +14,8 @@ def get_model_class(model_name):
     '''Retrieves an RL agent by name.'''
     if model_name == 'TD3':		
         return TD3_tf.TD3
+    if model_name == 'SplitTD3':
+        return TD3_split.SplittedTD3
 
 def create_env(cnf):
     '''Creates an environment from either OpenAi Gym or the GoogleBrain Mujoco AntMaze

@@ -165,7 +165,8 @@ class PriorityBuffer(ReplayBuffer):
         tf.convert_to_tensor(self.next_state[idxs]),
         tf.convert_to_tensor(self.done[idxs]),
         tf.convert_to_tensor(self.state_seq[idxs]),
-        tf.convert_to_tensor(self.action_seq[idxs]))
+        tf.convert_to_tensor(self.action_seq[idxs]),
+        idxs)
 
 
     def update_priorities(self, errors):

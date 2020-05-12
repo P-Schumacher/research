@@ -10,7 +10,7 @@ class SplittedTD3(TD3):
     def train(self, replay_buffer, batch_size, t, log=False):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         td_error = self._train_step_critic(state, action, reward, next_state, done, log, replay_buffer.is_weight)
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample2(batch_size)
+        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample2(batch_size)
         wandb.log({'td_error_as_seen_critic': np.mean(td_error)}, commit=False)
         if self.total_it % self.policy_freq == 0:
             td_error_as_seen_by_actor = self._train_step_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight)
@@ -71,8 +71,8 @@ class SplittedTD3(TD3):
         if per: 
             error = td_error
             replay_buffer.update_priorities(error)
-            error = 1/(error+0.0001)
-            replay_buffer.update_priorities2(error)
+            #error = 1/(error+0.0001)
+            #replay_buffer.update_priorities2(error)
 
     @tf.function
     def _train_step_critic(self, state, action, reward, next_state, done, log, is_weight):

@@ -1,4 +1,4 @@
-project: dense_fixed_hiro_vs_flat
+project: split_exp
 main:
   render: false
   flat_agent: true
@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'polfreq1'
+  descriptor: 'tdpervrep'
 
   c_step: 10
   seed: 25
@@ -45,7 +45,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 0
+  per: 1
   goal_regul: 0.000
 
   meta_model:
@@ -65,8 +65,10 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
   sub_model:
-    per: 0
-    policy_freq: 1
+    per: 1
+    policy_freq: 2
+    clip_ac: 100000.
+    clip_cr: 100000.
 
 coppeliagym:
   sim:

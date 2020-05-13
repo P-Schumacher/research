@@ -183,6 +183,8 @@ class TD3(object):
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
+            current_Q1 = current_Q1 * is_weight
+            current_Q2 = current_Q2 * is_weight
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             # 6 because Q losses + L2-regul losses
@@ -201,8 +203,8 @@ class TD3(object):
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
+                actor_loss = actor_loss * is_weight
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-                actor_loss_list = tf.unstack(actor_loss)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

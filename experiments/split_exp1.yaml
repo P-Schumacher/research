@@ -1,0 +1,83 @@
+project: split_exp
+main:
+  render: false
+  flat_agent: true
+  log: true
+  minilog: false
+  save_model: false
+  load_model: false
+  descriptor: 'uniform_together'
+  c_step: 10
+  seed: 25
+  model: 'SplitTD3'
+  offpolicy: true
+  start_timesteps: 5000
+  max_timesteps: 200000
+  no_seed: false
+  eval_freq: 20000
+  simple_env: false
+  
+  decay: false
+  step_decayer:
+    total_steps: 300
+    init_step: ${main.c_step}
+    min_step: 10
+
+# PER can be: 
+# false - Deactivated
+# 1 - TD Error based prio
+# 2 - Goal state distance based prio
+# 3 - proportional reward based prio
+# 4 - binary reward based prio 
+agent:
+  center_meta_goal: false
+  meta_rew_scale: 0.1
+  meta_noise: 0.6442
+  goal_type: Direction
+  ri_re: false
+  agent_action_regularizer: 0.00
+  meta_mock: false
+  train_meta: true
+  train_sub: true
+  num_eval_episodes: 10
+  smooth_goal: false
+  smooth_factor: 0.9
+  add_multiple_dones: false
+  per: 0
+  goal_regul: 0.00
+
+  meta_model:
+    ac_hidden_layers: [300, 300]
+    cr_hidden_layers: [300, 300]
+    clip_cr: 2.89
+    clip_ac: 0.019      
+    reg_coeff_ac: 4.93e-5
+    reg_coeff_cr: 6.89e-5
+    name: 'meta'
+    discount: 0.99
+    tau: 0.005
+    policy_noise: 0.2
+    noise_clip: 0.5
+    policy_freq: 2
+    ac_lr: 0.0005
+    cr_lr: 0.0007
+    no_candidates: 20
+  sub_model:
+    per: 0
+    clip_ac: 10000.
+    clip_cr: 10000.
+    policy_freq: 2
+
+coppeliagym:
+  sim:
+    scene_file: 'coppelia_scenes/kuka.ttt'
+  params:
+    sparse_rew: false
+    action_regularizer: 0.00
+
+  subgoals:
+    ej_goal: [3, 1.0]
+buffer:
+  alpha: 0.0
+  beta: 0.
+  max_size: 200000

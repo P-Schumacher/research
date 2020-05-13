@@ -70,8 +70,8 @@ class SplittedTD3(TD3):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = tf.abs(td_error)
-                #error = 1/(tf.abs(td_error)+0.0001)
+                #error = tf.abs(td_error)
+                error = 1/(tf.abs(td_error)+0.0001)
             replay_buffer.update_priorities(error)
 
     @tf.function

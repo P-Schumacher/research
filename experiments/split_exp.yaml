@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'both_low_td'
+  descriptor: 'uniform_together'
   c_step: 10
   seed: 25
   model: 'SplitTD3'
@@ -43,7 +43,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 1
+  per: 0
   goal_regul: 0.00
 
   meta_model:
@@ -63,7 +63,7 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
   sub_model:
-    per: 1
+    per: 0
     clip_ac: 10000.
     clip_cr: 10000.
     policy_freq: 2
@@ -78,6 +78,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.9
+  alpha: 0.0
   beta: 0.
   max_size: 200000

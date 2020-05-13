@@ -6,15 +6,15 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'pol4bothlowtd'
+  descriptor: 'both_low_td'
   c_step: 10
   seed: 25
   model: 'SplitTD3'
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 2000000
+  max_timesteps: 200000
   no_seed: false
-  eval_freq: 200000
+  eval_freq: 20000
   simple_env: false
   
   decay: false
@@ -66,7 +66,7 @@ agent:
     per: 1
     clip_ac: 10000.
     clip_cr: 10000.
-    policy_freq: 4
+    policy_freq: 2
 
 coppeliagym:
   sim:

@@ -16,7 +16,7 @@ class SplittedTD3(TD3):
             td_error_as_seen_by_actor = self._train_step_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight)
             wandb.log({'td_error_as_seen_by_actor': np.mean(td_error_as_seen_by_actor)}, commit=False)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward,
-                                         replay_buffer)
+                                     replay_buffer)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
@@ -70,7 +70,8 @@ class SplittedTD3(TD3):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = 1/(tf.abs(td_error)+0.0001)
+                error = tf.abs(td_error)
+                #error = 1/(tf.abs(td_error)+0.0001)
             replay_buffer.update_priorities(error)
 
     @tf.function
@@ -115,7 +116,8 @@ class SplittedTD3(TD3):
     def _train_step_actor(self, state, action, reward, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
         # Actor update
-        with tf.GradientTape(persistent=True) as tape:
+        error = self._compute_td_errors(state, action, reward, next_state, done)
+        with tf.GradientTape() as tape:
             action = self.actor(state)
             state_action = tf.concat([state, action], 1)
             actor_loss = self.critic.Q1(state_action)
@@ -127,5 +129,4 @@ class SplittedTD3(TD3):
         self.transfer_weights(self.actor, self.actor_target, self.tau)
         self.transfer_weights(self.critic, self.critic_target, self.tau)
         self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
-        error = self._compute_td_errors(state, action, reward, next_state, done)
         return error

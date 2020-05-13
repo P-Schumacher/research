@@ -94,7 +94,7 @@ class PriorityBuffer(ReplayBuffer):
         super().__init__(state_dim, action_dim, buffer_cnf)
         self.epsilon = np.full((1,), self.epsilon)
         self.alpha = np.full((1,), self.alpha)
-        self.is_weight = tf.Variable(tf.zeros([buffer_cnf.batch_size,]), dtype=tf.float32) 
+        self.is_weight = tf.Variable(tf.zeros([buffer_cnf.batch_size, 1]), dtype=tf.float32) 
         self.reset()
 
     def reset(self):
@@ -136,7 +136,7 @@ class PriorityBuffer(ReplayBuffer):
         '''Samples batch_size indices from memory in proportional to their priority.'''
         batch_idxs = np.zeros(batch_size)
         tree_idxs = np.zeros(batch_size, dtype=np.int)
-        priorities = np.zeros(batch_size) 
+        priorities = np.zeros([batch_size, 1]) 
         self.beta = np.min([1., self.beta + self.beta_increment])
 
         for i in range(batch_size):

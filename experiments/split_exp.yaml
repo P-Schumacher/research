@@ -1,4 +1,4 @@
-project: split_exp
+project: whatever
 main:
   render: false
   flat_agent: true
@@ -6,10 +6,10 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'uniform_together'
+  descriptor: 'long_polfreq'
   c_step: 10
   seed: 25
-  model: 'SplitTD3'
+  model: 'TD3'
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 200000
@@ -43,7 +43,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 0
+  per: 1
   goal_regul: 0.00
 
   meta_model:
@@ -63,21 +63,21 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
   sub_model:
-    per: 0
+    per: 1
     clip_ac: 10000.
     clip_cr: 10000.
-    policy_freq: 2
+    policy_freq: 10
 
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.0
+  alpha: 0.9
   beta: 0.
   max_size: 200000

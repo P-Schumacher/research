@@ -158,7 +158,7 @@ class TD3(object):
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
-    @tf.function
+    #@tf.function
     def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -183,6 +183,8 @@ class TD3(object):
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
+            current_Q1 = current_Q1 * is_weight
+            current_Q2 = current_Q2 * is_weight
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             # 6 because Q losses + L2-regul losses
@@ -201,8 +203,9 @@ class TD3(object):
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
+                actor_loss = actor_loss * is_weight
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-                actor_loss_list = tf.unstack(actor_loss)
+                mean_actor_loss = mean_actor_loss
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

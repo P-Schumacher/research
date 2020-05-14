@@ -135,7 +135,7 @@ class PriorityBuffer(ReplayBuffer):
         '''Samples batch_size indices from memory in proportional to their priority.'''
         batch_idxs = np.zeros(batch_size)
         tree_idxs = np.zeros(batch_size, dtype=np.int)
-        priorities = np.zeros(batch_size) 
+        priorities = np.zeros([batch_size, 1]) 
         self.beta = np.min([1., self.beta + self.beta_increment])
 
         for i in range(batch_size):
@@ -152,7 +152,7 @@ class PriorityBuffer(ReplayBuffer):
 
         sampling_probabilities = priorities / self.tree.total()
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
-        self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
     def update_priorities(self, errors):

@@ -203,7 +203,7 @@ class TD3(object):
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
-                actor_loss = actor_loss * is_weight
+                #actor_loss = actor_loss * is_weight
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)

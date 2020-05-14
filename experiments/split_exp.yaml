@@ -1,4 +1,4 @@
-project: whatever
+project: whatever2
 main:
   render: false
   flat_agent: true
@@ -6,10 +6,10 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'long_polfreq'
+  descriptor: 'highlow'
   c_step: 10
   seed: 25
-  model: 'TD3'
+  model: 'SplitTD3'
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 200000
@@ -66,13 +66,13 @@ agent:
     per: 1
     clip_ac: 10000.
     clip_cr: 10000.
-    policy_freq: 10
+    policy_freq: 2
 
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
 
   subgoals:

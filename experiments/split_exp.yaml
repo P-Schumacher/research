@@ -1,4 +1,4 @@
-project: whatever2
+project: control
 main:
   render: false
   flat_agent: true
@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'highlow'
+  descriptor: 'baseline_moartdcomputation'
   c_step: 10
   seed: 25
   model: 'SplitTD3'
@@ -64,9 +64,9 @@ agent:
     no_candidates: 20
   sub_model:
     per: 1
-    clip_ac: 10000.
-    clip_cr: 10000.
     policy_freq: 2
+    clip_ac: 100000.
+    clip_cr: 100000.
 
 coppeliagym:
   sim:

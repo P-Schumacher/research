@@ -5,19 +5,12 @@ from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use('GTK3Agg')
 plt.style.use('seaborn')
-#plt.figure(figsize=(10, 4)),
-plt.figure(figsize=(5, 5)),
-#plt.subplot(121)
+plt.figure(figsize=(10, 4)),
+plt.subplot(121)
 m1 = np.load('./buffer_data/m1.npy')
 m2 = np.load('./buffer_data/m2.npy')
 
 rew = np.load('./buffer_data/reward.npy')
-idx = np.where(m2 < 400)[0]
-print(idx)
-idx = np.asarray(idx, dtype=np.int32)
-print(m2[:10])
-m1 = m1[idx]
-m2 = m2[idx]
 print(m1)
 print(m2)
 
@@ -33,30 +26,20 @@ ymax = m2.max()
 X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
 positions = np.vstack([X.ravel(), Y.ravel()])
 values = np.vstack([m1, m2])
-kernel = stats.gaussian_kde(values)
+kernel = stats.gaussian_kde(values, bw_method=0.05)
 Z = np.reshape(kernel(positions).T, X.shape)
 
-plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth_r,
+plt.imshow(np.rot90(Z), cmap=plt.cm.gist_earth,
           extent=[xmin, xmax, ymin, ymax])
-plt.plot(m1, m2, 'k.', markersize=4, marker='o')
+#plt.plot(m1, m2, 'k.', markersize=4, marker='o')
 cb = plt.colorbar()
 cb.set_ticks([np.min(Z), (np.max(Z)+np.min(Z))/2, np.max(Z)])
 cb.set_ticklabels([0, 0.5, 1])
-#plt.xlim([xmin, xmax+1])
-#plt.ylim([ymin, ymax])
-plt.xlim([250, 350])
-plt.ylim([250, 350])
-plt.margins(x=0)
-loc, labels = plt.xticks()
-plt.xticks(ticks=loc, labels=np.arange(0, 140, 20))
-loc, labels = plt.yticks()
-plt.yticks(ticks=loc, labels=np.arange(0, 140, 20))
+plt.xlim([xmin, xmax+1])
+plt.ylim([ymin, ymax])
 plt.xlabel('Transition')
 plt.ylabel('High-level training iterations')
 plt.title('Transition density map')
-plt.savefig('map_n_points.pdf')
-plt.show()
-'''
 plt.subplot(122)
 plt.plot(rew[:1000])
 new_rew = []
@@ -72,5 +55,4 @@ plt.ylabel('High-level reward')
 plt.xlim([0,1000])
 plt.legend(['Original distribution', 'Broadened distribution'])
 plt.title('Reward distribution in the buffer')
-plt.savefig('multiple_dones_big.pdf')
-plt.show()'''
+plt.show()

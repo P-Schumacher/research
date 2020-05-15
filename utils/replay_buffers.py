@@ -153,7 +153,7 @@ class PriorityBuffer(ReplayBuffer):
 
         sampling_probabilities = priorities / self.tree.total()
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
-        self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
     def sample_uniformly(self, batch_size):

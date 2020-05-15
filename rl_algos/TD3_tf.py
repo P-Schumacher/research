@@ -158,7 +158,7 @@ class TD3(object):
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
-    #@tf.function
+    @tf.function
     def _train_step(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -230,7 +230,7 @@ class TD3(object):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = tf.abs(td_error)
+                error = 1/(tf.abs(td_error)+0.00001)
             elif per == 2:
                 error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
             elif per == 3:

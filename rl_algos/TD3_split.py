@@ -12,17 +12,24 @@ class SplittedTD3(TD3):
         td_error = self._train_step_critic(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward,
                                      replay_buffer)
+
         wandb.log({'td_error_as_seen_by_critic': np.mean(td_error)}, commit=False)
         if self.total_it % self.policy_freq == 0:
-            state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+            #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
             td_error_as_seen_by_actor, error_before = self._train_step_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight)
-            self._prioritized_experience_update(self._per, td_error_as_seen_by_actor, next_state, action, reward,
-                                     replay_buffer)
+            #self._prioritized_experience_update(self._per, td_error_as_seen_by_actor, next_state, action, reward,
+                                     #replay_buffer)
             wandb.log({'td_error_as_seen_by_actor': np.mean(error_before)}, commit=False)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
+
+
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        td_error = self._compute_td_errors(state, action, reward, next_state, done)
+        self._prioritized_experience_update(self._per, td_error, next_state, action, reward,
+                                     replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     def _compute_td_errors(self, state, action, reward, next_state, done):
@@ -101,6 +108,8 @@ class SplittedTD3(TD3):
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
+            current_Q1 = current_Q1 * is_weight
+            current_Q2 = current_Q2 * is_weight
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             # 6 because Q losses + L2-regul losses
@@ -124,7 +133,6 @@ class SplittedTD3(TD3):
             state_action = tf.concat([state, action], 1)
             actor_loss = self.critic.Q1(state_action)
             mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-            actor_loss_list = tf.unstack(actor_loss)
         gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
         gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
         self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

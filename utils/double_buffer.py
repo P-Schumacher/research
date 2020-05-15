@@ -20,7 +20,7 @@ class DoubleBuffer(PriorityBuffer):
         Implementation for update() to add experience to memory, expanding the memory size if necessary.
         All experiences are added with a high priority to increase the likelihood that they are sampled at least once.
         '''
-        priority = self._get_priority(error)
+        priority = self._get_priority2(error)
         self.priorities_low[self.ptr] = priority
         self.tree_low.add(priority, self.ptr)
         super().add(state, action, reward, next_state, done, state_seq, action_seq, error=100000)
@@ -45,8 +45,8 @@ class DoubleBuffer(PriorityBuffer):
             batch_idxs[-1] = self.ptr
 
         sampling_probabilities = priorities / self.tree.total()
-        self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
-        self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
+        #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
     def sample_low(self, batch_size):
@@ -67,7 +67,7 @@ class DoubleBuffer(PriorityBuffer):
         Assumes the relevant batch indices are stored in self.batch_idxs
         '''
         priorities = self._get_priority(errors)
-        priorities_low = self._get_priority(1/(errors + 0.0001))
+        priorities_low = self._get_priority2(1/(errors + 0.0001))
         assert len(priorities) == self.batch_idxs.size
         for idx, p, p_low in zip(self.batch_idxs, priorities, priorities_low):
             self.priorities[idx] = p
@@ -75,3 +75,7 @@ class DoubleBuffer(PriorityBuffer):
         for i, p, p_low in zip(self.tree_idxs, priorities, priorities_low):
             self.tree.update(i, p)
             self.tree_low.update(i, p_low)
+
+    def _get_priority2(self, error):
+        '''Takes in the error of one or more examples and returns the proportional priority'''
+        return np.power(error + self.epsilon, self.alpha).squeeze()

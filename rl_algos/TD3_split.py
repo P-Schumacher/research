@@ -26,10 +26,10 @@ class SplittedTD3(TD3):
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
 
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        td_error = self._compute_td_errors(state, action, reward, next_state, done)
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward,
-                                     replay_buffer)
+        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        #td_error = self._compute_td_errors(state, action, reward, next_state, done)
+        #self._prioritized_experience_update(self._per, td_error, next_state, action, reward,
+        #                             replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     def _compute_td_errors(self, state, action, reward, next_state, done):
@@ -108,8 +108,8 @@ class SplittedTD3(TD3):
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
-            current_Q1 = current_Q1 * is_weight
-            current_Q2 = current_Q2 * is_weight
+            #current_Q1 = current_Q1 * is_weight
+            #current_Q2 = current_Q2 * is_weight
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             # 6 because Q losses + L2-regul losses

@@ -1,4 +1,4 @@
-project: control
+project: whatever2
 main:
   render: false
   flat_agent: true
@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'baseline_moartdcomputation'
+  descriptor: 'baseline_doublebuffer_prioritbranch'
   c_step: 10
   seed: 25
   model: 'SplitTD3'
@@ -64,15 +64,12 @@ agent:
     no_candidates: 20
   sub_model:
     per: 1
-    policy_freq: 2
-    clip_ac: 100000.
-    clip_cr: 100000.
 
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:

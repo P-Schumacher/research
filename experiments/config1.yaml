@@ -1,12 +1,12 @@
-project: whatever
+project: whatever2
 main:
   render: false
   flat_agent: true
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'is_weighted_td_hiro'
+  descriptor: 'baselinesplitsamenew_new__hightds_priobuffer'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -75,5 +75,5 @@ coppeliagym:
     ej_goal: [3, 1.0]
 buffer:
   alpha: 0.9
-  beta: 1.
+  beta: 0.
   max_size: 200000

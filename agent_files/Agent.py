@@ -12,8 +12,8 @@ class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_parameters(agent_cnf, main_cnf)
         if self._per:
-            #self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
-            self._replay_buffer = DoubleBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+            self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+            #self._replay_buffer = DoubleBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         else:
             self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)

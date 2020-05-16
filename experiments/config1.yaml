@@ -1,4 +1,4 @@
-project: whatever
+project: whatever2
 main:
   render: false
   flat_agent: true
@@ -6,12 +6,12 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'notactorweightedtdper'
+  descriptor: 'master_branch_training_differentexp_update_criticTD_before_sampling_actor_samplewithoutindex'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
-  max_timesteps: 200000
+  start_timesteps: 300
+  max_timesteps: 2000000
   no_seed: true
   eval_freq: 20000
   simple_env: false
@@ -68,12 +68,12 @@ coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
 
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
   alpha: 0.9
-  beta: 1.
+  beta: 0.
   max_size: 200000

@@ -155,6 +155,41 @@ class PriorityBuffer(ReplayBuffer):
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
+    def _sample_idxs_without_index(self, batch_size):
+        '''Samples batch_size indices from memory in proportional to their priority.'''
+        batch_idxs = np.zeros(batch_size)
+        tree_idxs = np.zeros(batch_size, dtype=np.int)
+        priorities = np.zeros([batch_size, 1]) 
+        self.beta = np.min([1., self.beta + self.beta_increment])
+
+        for i in range(batch_size):
+            s = random.uniform(0, self.tree.total())
+            (tree_idx, p, idx) = self.tree.get(s)
+            batch_idxs[i] = idx
+            tree_idxs[i] = tree_idx
+            priorities[i] = p
+
+        batch_idxs = np.asarray(batch_idxs).astype(int)
+        tree_idxs = tree_idxs
+        if self.use_cer:  # add the latest sample
+            batch_idxs[-1] = self.ptr
+
+        sampling_probabilities = priorities / self.tree.total()
+        self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
+        #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        return batch_idxs
+
+    def sample_without_index(self, batch_size):
+        batch_idxs = self._sample_idxs_without_index(batch_size)
+        return (  
+        tf.convert_to_tensor(self.state[batch_idxs]),
+        tf.convert_to_tensor(self.action[batch_idxs]),
+        tf.convert_to_tensor(self.reward[batch_idxs]),
+        tf.convert_to_tensor(self.next_state[batch_idxs]),
+        tf.convert_to_tensor(self.done[batch_idxs]),
+        tf.convert_to_tensor(self.state_seq[batch_idxs]),
+        tf.convert_to_tensor(self.action_seq[batch_idxs]))
+
     def update_priorities(self, errors):
         '''
         Updates the priorities from the most recent batch

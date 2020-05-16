@@ -150,8 +150,10 @@ class TD3(object):
             reward_new = reward
         td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_without_index(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        td_error = self._compute_td_error(state, action, reward, next_state, done)
+        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
 
         if log:
@@ -159,6 +161,26 @@ class TD3(object):
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+
+    @tf.function
+    def _compute_td_error(self, state, action, reward, next_state, done):
+        state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
+        done = tf.reshape(done, [done.shape[0], 1])
+        reward = tf.reshape(reward, [reward.shape[0], 1])
+        noise = tf.random.normal(action.shape, stddev=self.policy_noise)
+        # this clip keeps the noisy action close to the original action
+        noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
+        next_action = self.actor_target(next_state) + noise
+        # this clip assures that we don't take impossible actions a > max_action
+        next_action = tf.clip_by_value(next_action, -self._max_action, self._max_action)
+        # Compute the target Q value
+        next_state_next_action = tf.concat([next_state, next_action], 1)
+        target_Q1, target_Q2 = self.critic_target(next_state_next_action)
+        target_Q = tf.math.minimum(target_Q1, target_Q2)
+        target_Q = reward + (1. - done) * self.discount * target_Q
+        # Critic Update
+        current_Q1, current_Q2 = self.critic(state_action)
+        return tf.abs(target_Q - current_Q1)
 
     @tf.function
     def _train_step(self, state, action, reward, next_state, done, log, is_weight):

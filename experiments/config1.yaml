@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'master_branch_training_differentexp_update_criticTD_before_sampling_actor_samplewithoutindex'
+  descriptor: 'doublebuffe_double_updated_td_error'
   c_step: 10
   seed: 25
   offpolicy: true

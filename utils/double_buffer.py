@@ -1,12 +1,13 @@
-
 import numpy as np
 import wandb
+import random
 import tensorflow as tf
 from pudb import set_trace
-import random
 from matplotlib import pyplot as plt
+
 from utils.replay_buffers import PriorityBuffer
 from utils.replay_buffers import SumTree
+from utils.math_fns import huber_not_reduce
 
 class DoubleBuffer(PriorityBuffer):
     def reset(self):
@@ -67,7 +68,7 @@ class DoubleBuffer(PriorityBuffer):
         Assumes the relevant batch indices are stored in self.batch_idxs
         '''
         priorities = self._get_priority(errors)
-        priorities_low = self._get_priority2(1/(errors + 0.1))
+        priorities_low = self._get_priority2(1/(tf.abs(errors)+0.00001))
         assert len(priorities) == self.batch_idxs.size
         for idx, p, p_low in zip(self.batch_idxs, priorities, priorities_low):
             self.priorities[idx] = p
@@ -78,4 +79,4 @@ class DoubleBuffer(PriorityBuffer):
 
     def _get_priority2(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
-        return np.power(error + self.epsilon, self.alpha).squeeze()
+        return np.power(error + 10., 2.).squeeze()

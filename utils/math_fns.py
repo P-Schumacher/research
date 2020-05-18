@@ -5,3 +5,7 @@ def huber(dist, delta):
 
 def euclid(dist, axis=0):
     return tf.norm(dist, axis=axis)
+
+
+def huber_not_reduce(dist, delta):
+    return tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 )

@@ -2,15 +2,15 @@ project: double_prio_tests
 main:
   render: false
   flat_agent: true
-  log: true 
-  minilog: true
+  log: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'doublebuffer_alpha2'
+  descriptor: 'doublebuffer_huber_repeaet'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 200
+  start_timesteps: 15000
   max_timesteps: 2000000
   no_seed: true
   eval_freq: 20000
@@ -76,4 +76,4 @@ coppeliagym:
 buffer:
   alpha: 0.9
   beta: 0.
-  max_size: 200000
+  max_size: 15000

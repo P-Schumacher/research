@@ -140,7 +140,7 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None):
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if self.offpolicy and self.name == 'meta': 
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
@@ -155,6 +155,7 @@ class TD3(object):
         td_error = self._compute_td_error(state, action, reward, next_state, done)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
+
 
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)

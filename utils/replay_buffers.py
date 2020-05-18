@@ -151,7 +151,7 @@ class PriorityBuffer(ReplayBuffer):
             batch_idxs[-1] = self.ptr
 
         sampling_probabilities = priorities / self.tree.total()
-        self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
+        #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
@@ -201,6 +201,13 @@ class PriorityBuffer(ReplayBuffer):
             self.priorities[idx] = p
         for p, i in zip(priorities, self.tree_idxs):
             self.tree.update(i, p)
+    
+    def get_buffer(self):
+        return (tf.convert_to_tensor(self.state[:self.size]),
+                tf.convert_to_tensor(self.action[:self.size]),
+                tf.convert_to_tensor(self.reward[:self.size]),
+                tf.convert_to_tensor(self.next_state[:self.size]),
+                tf.convert_to_tensor(self.done[:self.size]))
 
 class SumTree:
     '''

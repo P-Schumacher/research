@@ -13,6 +13,7 @@ main:
   start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
+  batch_size: 1
   eval_freq: 20000
   simple_env: false
   
@@ -36,7 +37,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
-  per: 4
+  per: 1
 
   meta_model:
     ac_hidden_layers: [300, 300]

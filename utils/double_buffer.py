@@ -68,7 +68,7 @@ class DoubleBuffer(PriorityBuffer):
         Assumes the relevant batch indices are stored in self.batch_idxs
         '''
         priorities = self._get_priority(errors)
-        priorities_low = self._get_priority2(1/(tf.abs(errors)+0.00001))
+        priorities_low = self._get_priority2(-huber_not_reduce(tf.abs(errors), delta=1.))
         assert len(priorities) == self.batch_idxs.size
         for idx, p, p_low in zip(self.batch_idxs, priorities, priorities_low):
             self.priorities[idx] = p
@@ -79,4 +79,5 @@ class DoubleBuffer(PriorityBuffer):
 
     def _get_priority2(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
-        return np.power(error + 10., 2.).squeeze()
+        return np.power(error + 10, 1.).squeeze()
+

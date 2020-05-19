@@ -1,12 +1,12 @@
-project: double_prio_tests
+project: 'buffer_control'
 main:
   render: false
   flat_agent: true
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'doublebuffer_huber_repeaet'
+  descriptor: 'doublebuffer_huber_criticuniform'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -74,6 +74,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.9
+  alpha: 0.
   beta: 0.
-  max_size: 15000
+  max_size: 200000

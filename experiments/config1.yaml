@@ -3,14 +3,14 @@ main:
   render: false
   flat_agent: true
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'doublebuffer_huber_criticuniform'
+  descriptor: 'actor_grad_prio'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 15000
+  start_timesteps: 5000
   max_timesteps: 2000000
   no_seed: true
   eval_freq: 20000
@@ -63,6 +63,12 @@ agent:
     no_candidates: 20
   sub_model:
     per: 1
+    reg_coeff_ac: 0.
+    reg_coeff_cr: 0.
+    clip_ac: 100000.
+    clip_cr: 100000.
+    policy_freq: ac1
+
 
 coppeliagym:
   sim:

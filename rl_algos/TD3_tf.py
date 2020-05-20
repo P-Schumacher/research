@@ -150,10 +150,10 @@ class TD3(object):
             reward_new = reward
         td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
-        td_error = self._compute_td_error(state, action, reward, next_state, done)
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+        actor_grad = self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        #td_error = self._compute_td_error(state, action, reward, next_state, done)
+        self._prioritized_experience_update(self._per, actor_grad, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
 
 
@@ -225,19 +225,25 @@ class TD3(object):
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
-        if self.total_it % self.policy_freq == 0:
-            # Actor update
-            with tf.GradientTape(persistent=True) as tape:
-                action = self.actor(state)
-                state_action = tf.concat([state, action], 1)
-                actor_loss = self.critic.Q1(state_action)
-                mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-            gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
-            self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
-            self.transfer_weights(self.actor, self.actor_target, self.tau)
-            self.transfer_weights(self.critic, self.critic_target, self.tau)
-            self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+        #if self.total_it % self.policy_freq == 0:
+        # Actor update
+        with tf.GradientTape(persistent=True) as tape:
+            action = self.actor(state)
+            state_action = tf.concat([state, action], 1)
+            actor_loss = self.critic.Q1(state_action)
+            mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+        batch_grad = tape.jacobian(actor_loss, self.actor.trainable_variables, parallel_iterations= 8)
+        gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+        gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)
+        self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+        self.transfer_weights(self.actor, self.actor_target, self.tau)
+        self.transfer_weights(self.critic, self.critic_target, self.tau)
+        self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+        batch_grad = [tf.reduce_mean(x, axis=-1) for x in batch_grad]
+        batch_grad = [tf.reshape(tf.reduce_mean(x, axis=-1), [128, 1]) for x in batch_grad]
+        batch_grad = tf.stack(batch_grad)
+        batch_grad = tf.reduce_mean(batch_grad, axis=0)
+        return batch_grad
 
     def _goal_regularization(self, action, reward, next_state):
         ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)

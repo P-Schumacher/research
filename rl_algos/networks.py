@@ -1,3 +1,4 @@
+import tensorflow as tf
 import tensorflow.keras.layers as kl
 import tensorflow.keras.initializers as inits
 import numpy as np

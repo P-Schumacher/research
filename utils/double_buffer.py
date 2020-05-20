@@ -62,13 +62,13 @@ class DoubleBuffer(PriorityBuffer):
         tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
         tf.convert_to_tensor(self.action_seq[self.batch_idxs]))
 
-    def update_priorities(self, errors):
+    def update_priorities(self, errors, errors2):
         '''
         Updates the priorities from the most recent batch
         Assumes the relevant batch indices are stored in self.batch_idxs
         '''
         priorities = self._get_priority(errors)
-        priorities_low = self._get_priority2(-huber_not_reduce(tf.abs(errors), delta=1.))
+        priorities_low = self._get_priority2(errors2)
         assert len(priorities) == self.batch_idxs.size
         for idx, p, p_low in zip(self.batch_idxs, priorities, priorities_low):
             self.priorities[idx] = p
@@ -79,5 +79,6 @@ class DoubleBuffer(PriorityBuffer):
 
     def _get_priority2(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
-        return np.power(error + 10, 1.).squeeze()
+        return np.power(error, self.alpha).squeeze()
+    
 

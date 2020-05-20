@@ -149,11 +149,10 @@ class TD3(object):
         else:
             reward_new = reward
         td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
-        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         actor_grad = self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
-        self._prioritized_experience_update(self._per, actor_grad, next_state, action, reward, replay_buffer)
+        self._prioritized_experience_update(self._per, td_error, actor_grad, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
 
 
@@ -220,7 +219,7 @@ class TD3(object):
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
 
-        return target_Q - current_Q1
+        return tf.abs(target_Q - current_Q1)
     
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
@@ -243,14 +242,14 @@ class TD3(object):
         batch_grad = [tf.reshape(tf.reduce_mean(x, axis=-1), [128, 1]) for x in batch_grad]
         batch_grad = tf.stack(batch_grad)
         batch_grad = tf.reduce_mean(batch_grad, axis=0)
-        return batch_grad
+        return tf.abs(batch_grad)
 
     def _goal_regularization(self, action, reward, next_state):
         ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
         return ans        
 
-    def _prioritized_experience_update(self, per, td_error, next_state, action, reward, replay_buffer):
+    def _prioritized_experience_update(self, per, td_error, actor_grad, next_state, action, reward, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.
         :params per: 
         If 1, sample based on absolute TD-error.
@@ -260,7 +259,7 @@ class TD3(object):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = tf.abs(td_error)
+                error = td_error
             elif per == 2:
                 error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
             elif per == 3:
@@ -268,7 +267,7 @@ class TD3(object):
             elif per == 4:
                 # TODO replace -1 by c * -1 * meta_rew_scale
                 error = np.where(reward == -1., 0, 1)
-            replay_buffer.update_priorities(error)
+            replay_buffer.update_priorities(error, actor_grad)
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):
         if log:

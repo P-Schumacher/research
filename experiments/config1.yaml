@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'actor_grad_prio'
+  descriptor: 'critichightd_actor_highgradnorm'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -67,7 +67,7 @@ agent:
     reg_coeff_cr: 0.
     clip_ac: 100000.
     clip_cr: 100000.
-    policy_freq: ac1
+    policy_freq: 1
 
 
 coppeliagym:
@@ -80,6 +80,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.
+  alpha: 0.9
   beta: 0.
   max_size: 200000

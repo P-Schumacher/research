@@ -1,13 +1,11 @@
 import tensorflow as tf
-import tensorflow.keras.layers as kl
-import tensorflow.keras.initializers as inits
 import numpy as np
-from tensorflow.keras.regularizers import l2
 import wandb
 from pudb import set_trace
 from utils.math_fns import euclid
 from rl_algos.networks import Actor, Critic
 from rl_algos.off_policy_correction import off_policy_correction
+
 
 
 class TD3(object):
@@ -121,8 +119,6 @@ class TD3(object):
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
-            current_Q1 = current_Q1 * is_weight
-            current_Q2 = current_Q2 * is_weight
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
             # 6 because Q losses + L2-regul losses
@@ -141,7 +137,6 @@ class TD3(object):
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
-                #actor_loss = actor_loss * is_weight
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self.clip_ac)

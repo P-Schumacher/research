@@ -150,9 +150,11 @@ class TD3(object):
             reward_new = reward
         td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        wandb.log({f'tderror of critic': tf.reduce_mean(td_error).numpy()}, commit=False)
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         td_error = self._compute_td_error(state, action, reward, next_state, done)
+        wandb.log({f'tderror of actor': tf.reduce_mean(td_error).numpy()}, commit=False)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
 

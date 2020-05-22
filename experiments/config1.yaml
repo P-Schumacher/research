@@ -3,14 +3,14 @@ main:
   render: false
   flat_agent: true
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'doublebuffer_huber_criticuniform'
+  descriptor: 'test_highlow_low_actor_alpha'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 15000
+  start_timesteps: 5000
   max_timesteps: 2000000
   no_seed: true
   eval_freq: 20000
@@ -74,6 +74,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.
+  alpha: 0.9
   beta: 0.
   max_size: 200000

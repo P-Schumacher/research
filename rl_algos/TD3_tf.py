@@ -26,7 +26,7 @@ class Actor(tf.keras.Model):
         # else the weights wont be there. Could also call the model once in the beginning to build it implicitly 
         self.build(input_shape=(None, state_dim))
 
-    @tf.function 
+    #@tf.function 
     def call(self, state):
         assert state.dtype == tf.float32
         x = self.l1(state)
@@ -53,7 +53,7 @@ class Critic(tf.keras.Model):
         self.l6 = kl.Dense(1, kernel_regularizer=l2(reg_coeff))
         self.build(input_shape=(None, state_dim+action_dim))
 
-    @tf.function
+    #@tf.function
     def call(self, state_action):
         assert state_action.dtype == tf.float32
         q1 = self.l1(state_action) # activation fcts are build-in the layer constructor
@@ -150,10 +150,10 @@ class TD3(object):
             reward_new = reward
         td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
-        td_error = self._compute_td_error(state, action, reward, next_state, done)
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        #td_error = self._compute_td_error(state, action, reward, next_state, done)
+        #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
 
 

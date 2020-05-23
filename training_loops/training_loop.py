@@ -54,6 +54,8 @@ def main(cnf):
         state = next_state
         logger.inc(t, reward)
 
+        if not t % 200:
+            agent._replay_buffer.save_data()
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
@@ -65,7 +67,6 @@ def main(cnf):
             agent.reset()
             logger.reset()
             state, done = env.reset(), False
-
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)

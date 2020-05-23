@@ -2,16 +2,16 @@ project: 'buffer_control'
 main:
   render: false
   flat_agent: true
-  log: true
-  minilog: true
-  save_model: false
+  log: false
+  minilog: false
+  save_model: true
   load_model: false
-  descriptor: 'doublebuffer_huber_criticuniform'
+  descriptor: 'save_transitions'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 15000
-  max_timesteps: 2000000
+  start_timesteps: 5000
+  max_timesteps: 1200
   no_seed: true
   eval_freq: 20000
   simple_env: false
@@ -63,6 +63,7 @@ agent:
     no_candidates: 20
   sub_model:
     per: 1
+    policy_freq: 1
 
 coppeliagym:
   sim:
@@ -74,6 +75,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.
+  alpha: 0.9
   beta: 0.
-  max_size: 200000
+  max_size: 1000

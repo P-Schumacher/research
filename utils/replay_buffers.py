@@ -127,6 +127,18 @@ class PriorityBuffer(ReplayBuffer):
         self.tree.tree = np.load(f'{directory}tree.npy')
         self.tree.indices = np.load(f'{directory}indices.npy')
 
+    def sample_uniformly(self, batch_size):
+        self.batch_idxs = np.random.uniform(0, self.size, [batch_size,])
+        self.batch_idxs = np.asarray(a=self.batch_idxs, dtype=np.int32)
+        return (  
+        tf.convert_to_tensor(self.state[self.batch_idxs]),
+        tf.convert_to_tensor(self.action[self.batch_idxs]),
+        tf.convert_to_tensor(self.reward[self.batch_idxs]),
+        tf.convert_to_tensor(self.next_state[self.batch_idxs]),
+        tf.convert_to_tensor(self.done[self.batch_idxs]),
+        tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
+        tf.convert_to_tensor(self.action_seq[self.batch_idxs]))
+
     def _get_priority(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
         return np.power(error + self.epsilon, self.alpha).squeeze()

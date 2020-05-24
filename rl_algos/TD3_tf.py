@@ -26,7 +26,7 @@ class Actor(tf.keras.Model):
         # else the weights wont be there. Could also call the model once in the beginning to build it implicitly 
         self.build(input_shape=(None, state_dim))
 
-    #@tf.function 
+    @tf.function 
     def call(self, state):
         assert state.dtype == tf.float32
         x = self.l1(state)
@@ -53,7 +53,7 @@ class Critic(tf.keras.Model):
         self.l6 = kl.Dense(1, kernel_regularizer=l2(reg_coeff))
         self.build(input_shape=(None, state_dim+action_dim))
 
-    #@tf.function
+    @tf.function
     def call(self, state_action):
         assert state_action.dtype == tf.float32
         q1 = self.l1(state_action) # activation fcts are build-in the layer constructor

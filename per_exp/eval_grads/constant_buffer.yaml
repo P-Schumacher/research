@@ -1,19 +1,20 @@
-project: 'buffer_control'
+project: whatever
 main:
   render: false
   flat_agent: true
   log: false
   minilog: false
-  save_model: true
+  save_model: false
   load_model: false
-  descriptor: 'save_transitions'
+  descriptor: 'profiler'
   c_step: 10
-  seed: 25
-  offpolicy: true
+  seed: 5
+  offpolicy: false
   start_timesteps: 5000
-  max_timesteps: 1200000
+  max_timesteps: 1000000
   no_seed: true
-  eval_freq: 200000000
+  batch_size: 128
+  eval_freq: 20000
   simple_env: false
   
   decay: false
@@ -22,12 +23,6 @@ main:
     init_step: ${main.c_step}
     min_step: 10
 
-# PER can be: 
-# false - Deactivated
-# 1 - TD Error based prio
-# 2 - Goal state distance based prio
-# 3 - proportional reward based prio
-# 4 - binary reward based prio 
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
@@ -36,14 +31,13 @@ agent:
   ri_re: false
   agent_action_regularizer: 0.00
   meta_mock: false
-  train_meta: true
-  train_sub: true
+  train_meta: false
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 1
-  goal_regul: 0.00
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -63,11 +57,12 @@ agent:
     no_candidates: 20
   sub_model:
     per: 1
-    policy_freq: 1
+    clip_ac: 1000000.
+    clip_cr: 1000000.
 
 coppeliagym:
   sim:
-    scene_file: 'coppelia_scenes/kuka.ttt'
+    scene_file: 'coppelia_scenes/kuka_tester.ttt'
   params:
     sparse_rew: true
     action_regularizer: 0.00

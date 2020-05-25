@@ -5,71 +5,9 @@ import numpy as np
 from tensorflow.keras.regularizers import l2
 import wandb
 from pudb import set_trace
-from utils.math_fns import euclid
-
-initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
-initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
-
-class Actor(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, max_action, ac_layers, reg_coeff):
-        super(Actor, self).__init__()
-
-        self.l1 = kl.Dense(ac_layers[0], activation='relu', kernel_initializer=initialize_relu,
-                          kernel_regularizer=l2(reg_coeff))
-        self.l2 = kl.Dense(ac_layers[1], activation='relu', kernel_initializer=initialize_relu,
-                          kernel_regularizer=l2(reg_coeff))
-        self.l3 = kl.Dense(action_dim, activation='tanh', kernel_initializer=initialize_tanh,
-                          kernel_regularizer=l2(reg_coeff))
-        
-        self._max_action = max_action
-        # Remember building your model before you can copy it
-        # else the weights wont be there. Could also call the model once in the beginning to build it implicitly 
-        self.build(input_shape=(None, state_dim))
-
-    @tf.function 
-    def call(self, state):
-        assert state.dtype == tf.float32
-        x = self.l1(state)
-        x = self.l2(x)
-        return self._max_action * self.l3(x)
-
-
-class Critic(tf.keras.Model):
-    def __init__(self, state_dim, action_dim, cr_layers, reg_coeff):
-        super(Critic, self).__init__()
-        # Q1 architecture 
-        self.l1 = kl.Dense(cr_layers[0], activation='relu', kernel_initializer=initialize_relu,
-                           kernel_regularizer=l2(reg_coeff))
-        self.l2 = kl.Dense(cr_layers[1], activation='relu', kernel_initializer=initialize_relu,
-                           kernel_regularizer=l2(reg_coeff))
-        self.l3 = kl.Dense(1, 
-                           kernel_regularizer=l2(reg_coeff))
-
-        # Q2 architecture
-        self.l4 = kl.Dense(cr_layers[0], activation='relu', kernel_initializer=initialize_relu,
-                           kernel_regularizer=l2(reg_coeff))
-        self.l5 = kl.Dense(cr_layers[1], activation='relu', kernel_initializer=initialize_relu,
-                           kernel_regularizer=l2(reg_coeff))
-        self.l6 = kl.Dense(1, kernel_regularizer=l2(reg_coeff))
-        self.build(input_shape=(None, state_dim+action_dim))
-
-    @tf.function
-    def call(self, state_action):
-        assert state_action.dtype == tf.float32
-        q1 = self.l1(state_action) # activation fcts are build-in the layer constructor
-        q1 = self.l2(q1) 
-        q1 = self.l3(q1)
-        
-        q2 = self.l4(state_action)
-        q2 = self.l5(q2)
-        q2 = self.l6(q2)
-        return q1, q2
-
-    def Q1(self, state_action):
-        q1 = self.l1(state_action)
-        q1 = self.l2(q1)
-        q1 = self.l3(q1)
-        return q1
+from utils.math_fns import euclid, get_norm, clip_by_global_norm
+from rl_algos.networks import Actor, Critic
+from rl_algos.offpol_correction import off_policy_correction
 
 
 class TD3(object):
@@ -148,7 +86,7 @@ class TD3(object):
             reward_new = self._goal_regularization(action, reward, next_state)
         else:
             reward_new = reward
-        td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -184,7 +122,7 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
 
     @tf.function
-    def _train_step(self, state, action, reward, next_state, done, log, is_weight):
+    def _train_critic(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
         a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
@@ -308,112 +246,6 @@ class TD3(object):
         self._per = per
         self._goal_regul = goal_regul
 
-@tf.function
-def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
-                          action_seq, zero_obs):
-    # TODO Update docstring to real dimensions
-    '''Computes the off-policy correction for the meta-agent.
-    c = candidate_nbr; t = time; i = vector coordinate (e.g. action 0 of 8 dims) 
-    Dim(candidates) = [b_size, g_dim, no_candidates+2 ]
-    Dim(state_b)     = [b_size, state_dim]
-    Dim(action_seq)    = []
-    Dim(prop_goals) = [c_step, b_size, g_dim, no_candidates]'''
-    b_size = state_b.shape[0] # Batch Size
-    g_dim = goal_b[0].shape[0] # Subgoal dimension
-    action_dim = action_seq.shape[-1] # action dimension
-    # States contains state+target. Need to take out only the state.
-    state_seq = state_seq[:,:, :-target_dim]
-    state_b = state_b[:, :-target_dim]
-    next_state_b = next_state_b[:, :-target_dim]
-    # Get the sampled candidates
-    candidates =  _get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b)
-    # Take all the possible candidates and propagate them through time using h = st + gt - st+1 cf. HIRO Paper
-    prop_goals = _multi_goal_transition(state_seq, candidates, c_step)
-    # Zero out xy for sub agent, AFTER goals have been calculated from it.
-    state_seq = tf.reshape(state_seq, [b_size * c_step, state_seq.shape[-1]])
-    if zero_obs:
-        state_seq *= tf.concat([tf.zeros([state_seq.shape[0], self._zero_obs]), tf.ones([state_seq.shape[0],
-                                                                                         state_seq.shape[1] -
-                                                                                         self._zero_obs])], axis=1)
-    best_c = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
-    return _get_corrected_goal(b_size, candidates, best_c) 
-
-def _multi_goal_transition(state_seq, candidates, c_step):
-    # Realize that the multi timestep goal transition can be vectorized to a single calculation.
-    b_size = candidates.shape[0]
-    g_dim = candidates.shape[1]
-    c_step = state_seq.shape[1] 
-    no_candidates = candidates.shape[2]
-    # In state_seq, equal batches are separated by c timesteps if we query a subogoal every c_steps 
-    prop_goals = tf.broadcast_to(tf.expand_dims(candidates, axis=1), [b_size, c_step, g_dim, no_candidates])
-    tmp = tf.broadcast_to(tf.expand_dims(state_seq[:,0,:g_dim], axis=1), [b_size, c_step, g_dim]) - state_seq[:, :, :g_dim] 
-    prop_goals += tf.broadcast_to(tf.expand_dims(tmp, axis=3), [b_size, c_step, g_dim, no_candidates]) 
-    return prop_goals 
-
-def _get_goal_candidates(b_size, g_dim, no_candidates, subgoal_ranges, state_b, next_state_b, goal_b):
-    # Original Goal
-    orig_goal = tf.expand_dims(goal_b[:, :g_dim], axis=2)
-    # Goal between the states s_t+1 - s_t
-    diff_goal = tf.expand_dims(next_state_b[:, :g_dim] - state_b[:, :g_dim], axis=2)
-    goal_mean = tf.broadcast_to(diff_goal, [b_size, g_dim, no_candidates])
-    # Broadcast the subgoal_ranges to [b_size, g_dim, no_candidates] for use as clipping and as std
-    clip_tensor = tf.expand_dims(tf.broadcast_to(subgoal_ranges, [b_size, subgoal_ranges.shape[0]]), axis=2)
-    clip_tensor = tf.broadcast_to(clip_tensor, [b_size, subgoal_ranges.shape[0], no_candidates+2])
-    goal_std = 0.25 * clip_tensor # cf. HIRO Paper
-    candidates = tf.random.normal([b_size, g_dim, no_candidates], goal_mean, goal_std[:, :, :no_candidates])
-    candidates = tf.concat([orig_goal, diff_goal, candidates], axis=2)
-    candidates = tf.clip_by_value(candidates, -clip_tensor, clip_tensor)
-    return candidates
-
-def _get_corrected_goal(b_size, candidates, best_c): 
-    corrected_goals = tf.TensorArray(dtype=tf.float32, size=b_size)
-    for b in tf.range(b_size):
-        corrected_goals = corrected_goals.write(b, candidates[b, :, best_c[b]])
-    return corrected_goals.stack() 
-
-def _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi):
-    # Compute the logpropabilities for different subgoal candidates
-    max_logprob = tf.constant(-1e9, shape=[b_size,])
-    best_c = tf.zeros([b_size,], dtype=tf.int32) # In Graph mode, elements need to be defined BEFORE the loop
-    action_seq = tf.reshape(action_seq, [b_size * c_step, action_dim])
-    for c in tf.range(no_candidates):
-        goals = prop_goals[:, :, :, c]  # Pick one candidate 
-        # Change dimension of goals so that it can be computed in one batch in the network [b_size * c_step, g_dim]
-        goals = tf.reshape(goals, [b_size * c_step, g_dim])
-        state_action = tf.concat([state_seq, goals], axis=1)
-        pred_action =  pi(state_action)
-        diff = action_seq - pred_action
-        # Have padded the sequences where len(seq)<c_step to the max(c_step) with np.inf
-        # This results in nan in the computed action differences. These are now set to 0
-        # as 0 does not influence the sum over all actions that happens later.
-        diff = tf.where(tf.math.is_nan(diff), 0., diff)
-        # This reshape only works when rehaping consecutive dimension (e.g. [2560,8] to [256,10,8] or vice versa. 
-        # Else elements will be thrown around.
-        diffn = tf.reshape(diff, [b_size, c_step, action_dim])
-        # cf. HIRO Paper
-        logprob = - 0.5 * tf.reduce_sum(tf.square(tf.norm(diffn, axis=2)), axis=1)
-        best_c = tf.where(logprob > max_logprob, c, best_c)
-        max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
-    return best_c
-
-def clip_by_global_norm(t_list, clip_norm):
-    '''Clips the tensors in the list of tensors *t_list* globally by their norm. This preserves the 
-    relative weights of gradients if used on gradients. The inbuilt clip_norm argument of 
-    keras optimizers does NOT do this. Global norm clipping is the correct way of implementing
-    gradient clipping. The function *tf.clip_by_global_norm()* changes the structure of the passed tensor
-    sometimes. This is why I decided not to use it.
-    :param t_list: List of tensors to be clipped.
-    :param clip_norm: Norm over which the tensors should be clipped.
-    :return t_list: List of clipped tensors. 
-    :return norm: New norm after clipping.'''
-    norm = get_norm(t_list)
-    if norm > clip_norm:
-        t_list = [tf.scalar_mul(clip_norm / norm, t) for t in t_list]
-        norm = clip_norm
-    return t_list, norm
-
-def get_norm(t_list):
-    return tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
 
 if __name__ == '__main__':
  pass

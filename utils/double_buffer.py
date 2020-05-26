@@ -79,5 +79,5 @@ class DoubleBuffer(PriorityBuffer):
 
     def _get_priority2(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
-        return np.power(error, 0.3).squeeze()
+        return np.power(error, 0.9).squeeze()
 

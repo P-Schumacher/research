@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'test_highlow_low_actor_alpha'
+  descriptor: 'test_highlow_low'
   c_step: 10
   seed: 25
   offpolicy: true

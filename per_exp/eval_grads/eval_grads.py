@@ -96,7 +96,7 @@ def main(cnf):
         for i in range(SAMPLES):
             approx_critic = copy.deepcopy(untrained)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
-            print('Update Buffer NOT')
+            print('Update Buffer')
             update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
             state, *_ = buff.sample_uniformly(batch_size)

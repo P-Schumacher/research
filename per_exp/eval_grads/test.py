@@ -13,7 +13,7 @@ batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 6
 plt.plot(batch_range, a)
 plt.plot(batch_range, b)
 plt.plot(batch_range, c)
-plt.xlim([0, 1500])
+plt.xlim([0, 1000])
 plt.legend(['lowtd','uniform', 'hightd'])
 #plt.ylim([0, 1.3])
 plt.show()

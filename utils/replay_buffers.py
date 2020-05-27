@@ -165,10 +165,12 @@ class PriorityBuffer(ReplayBuffer):
         sampling_probabilities = priorities / self.tree.total()
         #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        set_trace()
         return batch_idxs
 
     def _sample_idxs_without_index(self, batch_size):
-        '''Samples batch_size indices from memory in proportional to their priority.'''
+        '''Samples batch_size indices from memory in proportional to their priority, but without
+        modifying the class state, such that we do not update priorities in subsequent steps.'''
         batch_idxs = np.zeros(batch_size)
         tree_idxs = np.zeros(batch_size, dtype=np.int)
         priorities = np.zeros([batch_size, 1]) 
@@ -188,7 +190,7 @@ class PriorityBuffer(ReplayBuffer):
 
         sampling_probabilities = priorities / self.tree.total()
         self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
-        #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
 
     def sample_without_index(self, batch_size):

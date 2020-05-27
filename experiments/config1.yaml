@@ -10,7 +10,7 @@ main:
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 100
+  start_timesteps: 1000
   max_timesteps: 1200000
   no_seed: true
   eval_freq: 200000000
@@ -77,4 +77,4 @@ coppeliagym:
 buffer:
   alpha: 0.9
   beta: 0.
-  max_size: 1000000
+  max_size: 200000

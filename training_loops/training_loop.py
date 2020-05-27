@@ -54,8 +54,6 @@ def main(cnf):
         state = next_state
         logger.inc(t, reward)
 
-        if not t % 10000:
-            agent._replay_buffer.save_data()
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier

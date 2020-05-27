@@ -61,7 +61,6 @@ def main(cnf):
                 agent.train(t, logger.episode_timesteps)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
-
             agent.reset()
             logger.reset()
             state, done = env.reset(), False

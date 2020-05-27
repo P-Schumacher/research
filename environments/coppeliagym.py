@@ -99,14 +99,21 @@ class CoppeliaEnv(gym.Env):
         self._sim.step()
 
     def _prepare_shapes(self, render, flat_agent):
-        self._target = Shape('target')
         self._table = Shape('customizableTable')
+        self._target = Shape('target')
         self._ep_target_pos = self._target.get_position()
         self._target_init_pose = self._target.get_pose()
+        if self.n_buttons == 2:
+            self._target2 = Shape('target1')
+            self._ep_target_pos2 = self._target2.get_position()
+            self._target_init_pose2 = self._target2.get_pose()
         self._gym_cam = None
         self._target.set_renderable(True)
         self._target.set_dynamic(False)
         self._target.set_respondable(False)
+        self._target2.set_renderable(True)
+        self._target2.set_dynamic(False)
+        self._target2.set_respondable(False)
         if render and not flat_agent and not self._init:
             self._init = True
             print("RENDER")
@@ -149,7 +156,8 @@ class CoppeliaEnv(gym.Env):
                            gripper_range,
                            distance_function,
                            spherical_coord,
-                           flat_agent):
+                           flat_agent,
+                           n_buttons):
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
@@ -170,6 +178,10 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = False
         self._init = False
         self.success = 0
+        self.n_buttons = n_buttons
+        self._button1 = False
+        self._button2 = False
+        
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Return the maximal subgoal ranges. In this case:
@@ -276,15 +288,29 @@ class CoppeliaEnv(gym.Env):
             observation = np.concatenate([qpos, qvel])
         # TODO refactor HIRO code to take obs dict. Nicer to work with
         #observation = {'obs': observation, 'target':self._ep_target_pos}
-        return np.array(np.concatenate([observation, self._ep_target_pos[:-1]]), dtype=np.float32)
+        if self.n_buttons == 1:
+            target = self._ep_target_pos[:-1]
+        else:
+            target = np.concatenate([self._ep_target_pos[:-1], self._ep_target_pos2[:-1]], axis=0)
+        return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):
         pose = self._target_init_pose
+        if self.n_buttons == 2:
+            pose2 = self._target_init_pose2
         if self._random_target and not evalmode or evalmode and self._random_eval_target:
             x, y = self._sample_in_circular_reach()
             pose[:2] = [x, y]
             self._target.set_pose(pose)
-        return np.array(self._target.get_position(), dtype=np.float32)
+            if self.n_buttons == 2:
+                x, y = self._sample_in_circular_reach()
+                pose2[:2] = [x, y]
+                self._target2.set_pose(pose2)
+        if self.n_buttons == 1:
+            return np.array(self._target.get_position(), dtype=np.float32), None
+        else:
+            return np.array(self._target.get_position(), dtype=np.float32), np.array(self._target2.get_position(),
+                                                                                        dtype=np.float32)
 
     def _get_info(self):
         return ''
@@ -297,7 +323,10 @@ class CoppeliaEnv(gym.Env):
         # explode and destabilize the simulation.
         #self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
         #self._robot.set_position(self._init_pos)
-        self._ep_target_pos = self._reset_target(evalmode)
+        target1, target2 = self._reset_target(evalmode)
+        set_trace()
+        self._ep_target_pos = target1
+        self._ep_target_pos2 = target2
         self._sim.step()
         self.needs_reset = False
         self._timestep = 0

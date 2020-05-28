@@ -52,9 +52,9 @@ def update_buffer(replay_buffer, agent):
 
 
 N = 1000000
-N_TRAIN_CRITIC = 50
-N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 20
+N_TRAIN_CRITIC = 10
+N_TRAIN_TRUE_CRITIC = 10000
+SAMPLES = 3
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
@@ -88,29 +88,32 @@ def main(cnf):
     gradients_true = accum.get_grad() 
 
     # TODO AVERAGE OVER BATCHES
-    batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 6000, 1000)], axis=0)
+    batch_range = np.array([1, 64, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
     simil_list = []
     for batch_size in batch_range:
         print(f'Batch {batch_size}')
         accum.reset()
+        sims_collect = 0
         for i in range(SAMPLES):
             approx_critic = copy.deepcopy(untrained)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
             print('Update Buffer')
             update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
-            state, *_ = buff.sample_uniformly(batch_size)
+            state, *_ = buff.sample(batch_size)
             with tf.GradientTape() as tape:
                 action = trained_actor(state)
                 q_value, _  = approx_critic(tf.concat([state, action], axis=1))
                 actor_loss = -tf.reduce_mean(q_value)
             gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
             gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
-            accum.accumulate(gradients_sample)
-        gradients_sample = accum.get_grad() 
-        sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
-        sims = tf.reduce_mean(sims)
-        simil_list.append(sims.numpy())
+            sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
+            sims = tf.reduce_mean(sims)
+            set_trace()
+            sims_collect += sims.numpy()
+        sims_collect /= SAMPLES
+        simil_list.append(sims_collect)
+        print(simil_list)
     print(simil_list)
     np.save('simil_list.npy', simil_list)
 

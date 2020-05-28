@@ -7,6 +7,14 @@ from scipy import stats
 from utils.utils import create_world
 from matplotlib import pyplot as plt
 
+def update_buffer(replay_buffer, agent):
+    state, action, reward, next_state, done = replay_buffer.get_buffer()
+    td_error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)
+    replay_buffer.batch_idxs = np.arange(0, N, 1)
+    replay_buffer.tree_idxs = replay_buffer.batch_idxs + replay_buffer.tree.capacity - 1
+    replay_buffer.update_priorities(td_error)
+    return td_error
+
 N = 1000
 def main(cnf):
     env, agent = create_world(cnf)
@@ -36,9 +44,10 @@ def main(cnf):
 
     counter = 0
     idxs = np.zeros([N, N])
-
+    init_error = update_buffer(buff, agent)
     errors = np.zeros([N, N])
-    for t in range(N):
+    errors[0] = init_error[:,0]
+    for t in range(1, N):
         #print(f'train {t} of 10000')
         agent._meta_agent.train(buff, 10, t, False, None)
         #print(buff.batch_idxs)

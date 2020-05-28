@@ -192,7 +192,7 @@ class TD3(object):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = tf.abs(td_error)
+                error = 1/(tf.abs(td_error)+0.000001)
             elif per == 2:
                 error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
             elif per == 3:

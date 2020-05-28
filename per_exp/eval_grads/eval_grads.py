@@ -39,7 +39,6 @@ def create_random_weight_list():
 
 def train_the_critic(untrained_agent, replay_buffer, iterations):
     for it in range(iterations):
-        print(f'Critic trained {it} of {iterations}')
         state, action, reward, next_state, done, *_ = replay_buffer.sample_uniformly(128)
         untrained_agent._policy._train_critic(state, action, reward, next_state, done, False, None)
 
@@ -54,7 +53,7 @@ def update_buffer(replay_buffer, agent):
 N = 1000000
 N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 10000
-SAMPLES = 3
+SAMPLES = 10
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
@@ -74,6 +73,7 @@ def main(cnf):
     print('Compute true gradient of true critic')
     # True gradient of true critic 
     for i in range(SAMPLES):
+        print(f'sample {i} of {SAMPLES} Highqualitycritic')
         true_critic_sample = copy.deepcopy(untrained)
         train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC)
         true_critic_sample = true_critic_sample._policy.critic
@@ -95,6 +95,7 @@ def main(cnf):
         accum.reset()
         sims_collect = 0
         for i in range(SAMPLES):
+            print(f'sample {i} of {SAMPLES} lowqualitycritic')
             approx_critic = copy.deepcopy(untrained)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
             print('Update Buffer')

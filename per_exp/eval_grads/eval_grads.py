@@ -51,9 +51,9 @@ def update_buffer(replay_buffer, agent):
 
 
 N = 1000000
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 10000
-SAMPLES = 10
+N_TRAIN_CRITIC = 100000
+N_TRAIN_TRUE_CRITIC = 10
+SAMPLES = 1
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
@@ -110,7 +110,6 @@ def main(cnf):
             gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
             sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
             sims = tf.reduce_mean(sims)
-            set_trace()
             sims_collect += sims.numpy()
         sims_collect /= SAMPLES
         simil_list.append(sims_collect)

@@ -231,27 +231,35 @@ class CoppeliaEnv(gym.Env):
         :param done: Bool that indicates a termination of the environment
         :param action: The action proposed by the agent.
         :return: The reward obtained for the proposed action given the next state.'''
+        # TODO MAKE BUTTONS VARIABLE
         if self._sparse_rew:
-            if self.success:
-                return 0
-            return -1 
+            rew = -1.
+            if self._get_distance(self._ep_target_pos) < 0.08 and not self._button1:
+                rew += 1.
+                self._button1 = True
+            if self._get_distance(self._ep_target_pos2) < 0.08 and not self._button2:
+                rew += 1.
+                self._button2 = True
+            if self._button2 and not self._button1:
+                self._mega_reward = False
+            if (self._button1 and self._button2) and self._mega_reward:
+                rew += 50
+            return rew
+
         return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
     
     def _get_done(self):
         self.needs_reset = True
-        if self._get_distance() < 0.08:
+        if self._button1 and self._button2:
             print("Success")
-            self.success = 1
         elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:
             self.needs_reset = False
-            self.success = 0
         return self.needs_reset
-    
-    def _get_distance(self):
+
+    def _get_distance(self, target_pos):
         grip_pos = np.array(self._robot.get_ee_position(), dtype=np.float32)
-        target_pos = self._ep_target_pos
         return self._distance_fn(grip_pos, target_pos)
     
     def _get_distance_fn(self, func_string):

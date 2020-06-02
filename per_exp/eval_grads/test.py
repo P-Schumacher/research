@@ -21,7 +21,7 @@ plt.plot(batch_range, per_mean, color='r')
 plt.fill_between(batch_range, per_mean - per_std, per_mean + per_std,
    color='r', alpha=0.2)
 plt.legend(['Uniform Prio.', 'Small TD Prio.'])
-plt.ylim([-0.1, 1.])
+#plt.ylim([-0.1, 1.])
 plt.xlabel('Batch Size')
 plt.ylabel('Avg. Cos. Sim. with Hlgh-Quality Grad.')
 plt.xticks(batch_range, batch_range)

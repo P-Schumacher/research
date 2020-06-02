@@ -10,9 +10,9 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 N = 1000000
-N_TRAIN_CRITIC = 100000
-N_TRAIN_TRUE_CRITIC = 10
-SAMPLES = 5
+N_TRAIN_CRITIC = 10
+N_TRAIN_TRUE_CRITIC = 1000000
+SAMPLES = 1
 
 class Accumulator:
     def __init__(self):
@@ -62,7 +62,7 @@ def main(cnf):
     cnf = cnf.main
     agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/')
     #state = env.reset()
-    #for i in range(1000):
+    #for i in range(10000):
     #    action = env.action_space.sample()
     #    next_state, reward, done, _ = env.step(action)
     #    agent.replay_add(state, action, reward, next_state, done, done)

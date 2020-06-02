@@ -9,6 +9,11 @@ from utils.utils import create_world
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
+N = 1000000
+N_TRAIN_CRITIC = 100000
+N_TRAIN_TRUE_CRITIC = 10
+SAMPLES = 5
+
 class Accumulator:
     def __init__(self):
         self.init = False
@@ -45,24 +50,34 @@ def train_the_critic(untrained_agent, replay_buffer, iterations):
 def update_buffer(replay_buffer, agent):
     state, action, reward, next_state, done = replay_buffer.get_buffer()
     td_error = agent._policy._compute_td_error(state, action, reward, next_state, done)
-    replay_buffer.batch_idxs = np.arange(0, N, 1)
-    replay_buffer.tree_idxs = replay_buffer.batch_idxs + replay_buffer.tree.capacity - 1
-    replay_buffer.update_priorities(td_error)
+    replay_buffer.ptr = 0
+    replay_buffer.tree.write = 0
+    for x in td_error:
+        replay_buffer.add_just_priority(x)
+        replay_buffer.ptr += 1
 
 
-N = 1000000
-N_TRAIN_CRITIC = 100000
-N_TRAIN_TRUE_CRITIC = 10
-SAMPLES = 1
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
     agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/')
+    #state = env.reset()
+    #for i in range(1000):
+    #    action = env.action_space.sample()
+    #    next_state, reward, done, _ = env.step(action)
+    #    agent.replay_add(state, action, reward, next_state, done, done)
+    #    state = next_state
+    #    if done:
+    #        env.reset()
+
+
+
     accum = Accumulator()
 
     buff = agent._replay_buffer
     buff.size = N 
-    buff.ptr = N
+    buff.ptr = 0
+    buff.tree.write = 0
     buff.max_size = N
     buff.tree.n_entries = N
     untrained = copy.deepcopy(agent)
@@ -88,12 +103,13 @@ def main(cnf):
     gradients_true = accum.get_grad() 
 
     # TODO AVERAGE OVER BATCHES
-    batch_range = np.array([1, 64, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
-    simil_list = []
+    batch_range = np.array([1, 10, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
+    simil_mean = []
+    simil_std = []
     for batch_size in batch_range:
         print(f'Batch {batch_size}')
         accum.reset()
-        sims_collect = 0
+        sims_collect = []
         for i in range(SAMPLES):
             print(f'sample {i} of {SAMPLES} lowqualitycritic')
             approx_critic = copy.deepcopy(untrained)
@@ -110,12 +126,13 @@ def main(cnf):
             gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
             sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
             sims = tf.reduce_mean(sims)
-            sims_collect += sims.numpy()
-        sims_collect /= SAMPLES
-        simil_list.append(sims_collect)
-        print(simil_list)
-    print(simil_list)
-    np.save('simil_list.npy', simil_list)
+            sims_collect.append(sims.numpy())
+        simil_mean.append(np.mean(sims_collect))
+        simil_std.append(np.std(sims_collect))
+        print(simil_mean)
+    print(simil_mean)
+    np.save('simil_mean.npy', simil_mean)
+    np.save('simil_std.npy', simil_std)
 
 
 

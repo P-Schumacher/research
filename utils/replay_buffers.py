@@ -113,6 +113,11 @@ class PriorityBuffer(ReplayBuffer):
         # otherwise the priorities won't match the transitions
         super().add(state, action, reward, next_state, done, state_seq, action_seq)
 
+    def add_just_priority(self, error=100000):
+        priority = self._get_priority(error)
+        self.priorities[self.ptr] = priority
+        self.tree.add(priority, self.ptr)
+
     def save_data(self):
         '''Saves the buffer data to the disk. Only useful for analyzing them.'''
         super().save_data()
@@ -123,9 +128,9 @@ class PriorityBuffer(ReplayBuffer):
     def load_data(self, directory):
         '''Loads buffer data from the disk. Remember to set the size and ptr manually.'''
         super().load_data(directory)
-        self.priorities = np.load(f'{directory}priorities.npy')
-        self.tree.tree = np.load(f'{directory}tree.npy')
-        self.tree.indices = np.load(f'{directory}indices.npy')
+        #self.priorities = np.load(f'{directory}priorities.npy')
+        #self.tree.tree = np.load(f'{directory}tree.npy')
+        #self.tree.indices = np.load(f'{directory}indices.npy')
 
     def sample_uniformly(self, batch_size):
         self.batch_idxs = np.random.uniform(0, self.size, [batch_size,])

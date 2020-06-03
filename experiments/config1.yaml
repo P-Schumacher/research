@@ -1,12 +1,12 @@
 project: 'buffer_control'
 main:
-  render: true
+  render: false
   flat_agent: true
-  log: false
+  log: true
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'save_transitions'
+  descriptor: '2buttonsflat'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -72,6 +72,7 @@ coppeliagym:
   params:
     sparse_rew: true
     action_regularizer: 0.00
+    time_limit: 600
     n_buttons: 2
 
   subgoals:

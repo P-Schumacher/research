@@ -165,7 +165,6 @@ class PriorityBuffer(ReplayBuffer):
         sampling_probabilities = priorities / self.tree.total()
         #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
-        set_trace()
         return batch_idxs
 
     def _sample_idxs_without_index(self, batch_size):

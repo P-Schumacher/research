@@ -34,9 +34,9 @@ class CoppeliaEnv(gym.Env):
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
         self._sim.step()
-        observation = self._get_observation()
+        reward = self._get_rew(action)
         done = self._get_done()
-        reward = self._get_rew(done, action)
+        observation = self._get_observation()
         info = self._get_info()
         self._timestep += 1
         return observation, reward, done, info
@@ -45,10 +45,15 @@ class CoppeliaEnv(gym.Env):
         '''Resets the environment to its initial state by setting all the object positions 
         explicitly.
         :param evalmode: If True the target on the table will stay in a specific position.'''
+        # This resets the gripper to its initial state, even if it broke during table touches
         self._sim.set_configuration_tree(self._initial_arm_conftree)
         self._sim.set_configuration_tree(self._initial_gripper_conftree)
         state = self._reset(evalmode)
-        # This resets the gripper to its initial state, even if it broke during table touches
+        # Control flow for task success
+        self.success = False
+        self._button1 = 0
+        self._button2 = 0
+        self._mega_reward = True
         return state
 
     def render(self, mode='human'):
@@ -158,6 +163,7 @@ class CoppeliaEnv(gym.Env):
                            spherical_coord,
                            flat_agent,
                            n_buttons):
+        # Config settings
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
@@ -174,13 +180,14 @@ class CoppeliaEnv(gym.Env):
         self._action_regularizer = action_regularizer
         self._distance_fn = self._get_distance_fn(distance_function)
         self._flat_agent = flat_agent
-        self._timestep = 0
-        self.needs_reset = False
-        self._init = False
-        self.success = 0
         self.n_buttons = n_buttons
-        self._button1 = False
-        self._button2 = False
+        # Control flow
+        self._timestep = 0
+        self.needs_reset = True
+        self._init = False
+        # Need these before reset to get observation.shape
+        self._button1 = 0
+        self._button2 = 0
         
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
@@ -223,11 +230,12 @@ class CoppeliaEnv(gym.Env):
         # Gripper not in force mode ever.
         self._robot.actuate(action[-1])
 
-    def _get_rew(self, done, action):
+    def _get_rew(self, action):
         '''Computes the reward for the environment. This is at the moment a certain distance between the *target* and the end-effector.
         If *sparse_rew* the agent only gets sparse binary rewards. This function also computes an action space regularization reward 
         which incentivizes small (more stable) actions. In the HIRO application, this reward is internally computed for the sub-agent,
         NOT the meta-agent. The prefactor should consequently be set to zero in this class via the cnf files.
+        This function cannot be called repeatedly in two button mode because it alters the state of the buttons.
         :param done: Bool that indicates a termination of the environment
         :param action: The action proposed by the agent.
         :return: The reward obtained for the proposed action given the next state.'''
@@ -236,14 +244,17 @@ class CoppeliaEnv(gym.Env):
             rew = -1.
             if self._get_distance(self._ep_target_pos) < 0.08 and not self._button1:
                 rew += 1.
-                self._button1 = True
+                self._button1 = 1
+                print('button 1 pressed')
             if self._get_distance(self._ep_target_pos2) < 0.08 and not self._button2:
                 rew += 1.
-                self._button2 = True
+                self._button2 = 1
+                print('button 2 pressed')
             if self._button2 and not self._button1:
                 self._mega_reward = False
             if (self._button1 and self._button2) and self._mega_reward:
                 rew += 50
+                print('MEGA reward')
             return rew
 
         return - self._get_distance() - self._action_regularizer * tf.square(tf.norm(action))
@@ -252,6 +263,7 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = True
         if self._button1 and self._button2:
             print("Success")
+            self.success = True
         elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:
@@ -299,7 +311,8 @@ class CoppeliaEnv(gym.Env):
         if self.n_buttons == 1:
             target = self._ep_target_pos[:-1]
         else:
-            target = np.concatenate([self._ep_target_pos[:-1], self._ep_target_pos2[:-1]], axis=0)
+            target = np.concatenate([self._ep_target_pos[:-1], [self._button1], self._ep_target_pos2[:-1],
+                                     [self._button2]], axis=0)
         return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):
@@ -332,7 +345,6 @@ class CoppeliaEnv(gym.Env):
         #self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
         #self._robot.set_position(self._init_pos)
         target1, target2 = self._reset_target(evalmode)
-        set_trace()
         self._ep_target_pos = target1
         self._ep_target_pos2 = target2
         self._sim.step()

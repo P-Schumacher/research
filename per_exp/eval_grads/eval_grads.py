@@ -10,9 +10,9 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 N = 1000000
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 1000000
-SAMPLES = 1
+N_TRAIN_CRITIC = 50
+N_TRAIN_TRUE_CRITIC = 100000
+SAMPLES = 5
 
 class Accumulator:
     def __init__(self):
@@ -44,6 +44,7 @@ def create_random_weight_list():
 
 def train_the_critic(untrained_agent, replay_buffer, iterations):
     for it in range(iterations):
+        print(f'{it} of {iterations} training')
         state, action, reward, next_state, done, *_ = replay_buffer.sample_uniformly(128)
         untrained_agent._policy._train_critic(state, action, reward, next_state, done, False, None)
 
@@ -56,11 +57,15 @@ def update_buffer(replay_buffer, agent):
         replay_buffer.add_just_priority(x)
         replay_buffer.ptr += 1
 
+def set_seeds(seed):
+    tf.random.set_seed(seed)
+    np.random.seed(seed)
+
 
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
-    agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/')
+    agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/', N)
     #state = env.reset()
     #for i in range(10000):
     #    action = env.action_space.sample()
@@ -88,6 +93,7 @@ def main(cnf):
     print('Compute true gradient of true critic')
     # True gradient of true critic 
     for i in range(SAMPLES):
+        set_seeds(i)
         print(f'sample {i} of {SAMPLES} Highqualitycritic')
         true_critic_sample = copy.deepcopy(untrained)
         train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC)
@@ -103,7 +109,7 @@ def main(cnf):
     gradients_true = accum.get_grad() 
 
     # TODO AVERAGE OVER BATCHES
-    batch_range = np.array([1, 10, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
+    batch_range = np.array([1, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
     simil_mean = []
     simil_std = []
     for batch_size in batch_range:
@@ -111,13 +117,14 @@ def main(cnf):
         accum.reset()
         sims_collect = []
         for i in range(SAMPLES):
+            set_seeds(i+SAMPLES)
             print(f'sample {i} of {SAMPLES} lowqualitycritic')
             approx_critic = copy.deepcopy(untrained)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
             print('Update Buffer')
-            update_buffer(buff, approx_critic)
+            #update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
-            state, *_ = buff.sample(batch_size)
+            state, *_ = buff.sample_uniformly(batch_size)
             with tf.GradientTape() as tape:
                 action = trained_actor(state)
                 q_value, _  = approx_critic(tf.concat([state, action], axis=1))

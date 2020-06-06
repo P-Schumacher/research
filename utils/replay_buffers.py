@@ -41,10 +41,10 @@ class ReplayBuffer(object):
         for field in self.data_fields:
             np.save(f'{field}.npy', getattr(self, field))
 
-    def load_data(self, directory):
+    def load_data(self, directory, size):
         '''Loads buffer data from the disk. Remember to set the size and ptr manually.'''
         for field in self.data_fields:
-            setattr(self, field, np.load(f'{directory}{field}.npy'))
+            setattr(self, field, np.load(f'{directory}{field}.npy')[:size])
 
     def reset(self):
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
@@ -125,9 +125,9 @@ class PriorityBuffer(ReplayBuffer):
         np.save('tree.npy', self.tree.tree)        
         np.save('indices.npy', self.tree.indices)        
 
-    def load_data(self, directory):
+    def load_data(self, directory, size):
         '''Loads buffer data from the disk. Remember to set the size and ptr manually.'''
-        super().load_data(directory)
+        super().load_data(directory, size)
         #self.priorities = np.load(f'{directory}priorities.npy')
         #self.tree.tree = np.load(f'{directory}tree.npy')
         #self.tree.indices = np.load(f'{directory}indices.npy')

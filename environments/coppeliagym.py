@@ -243,11 +243,11 @@ class CoppeliaEnv(gym.Env):
         if self._sparse_rew:
             rew = -1.
             if self._get_distance(self._ep_target_pos) < 0.08 and not self._button1:
-                rew += 1.
+                #rew += 1.
                 self._button1 = 1
                 print('button 1 pressed')
             if self._get_distance(self._ep_target_pos2) < 0.08 and not self._button2:
-                rew += 1.
+                #rew += 1.
                 self._button2 = 1
                 print('button 2 pressed')
             if self._button2 and not self._button1:

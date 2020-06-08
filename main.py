@@ -4,9 +4,13 @@ import wandb
 import sys
 import os
 from pudb import set_trace
+from mpi4py import MPI
 os.environ['CUDA_VISIBLE_DEVICES']='-1'
 ant_env = False
 vrep = True
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
 
 name = [sys.argv[1] if len(sys.argv) == 2 else None][0]
 if vrep:
@@ -28,6 +32,8 @@ if ant_env:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
+
+cnf.seed = rank
 if vrep:
     config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
 else:

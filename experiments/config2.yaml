@@ -3,7 +3,7 @@ main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
   descriptor: '2buttons_hiro'
@@ -11,7 +11,7 @@ main:
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 1000000
+  max_timesteps: 10000000
   no_seed: true
   eval_freq: 20000
   simple_env: false

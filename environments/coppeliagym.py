@@ -253,7 +253,7 @@ class CoppeliaEnv(gym.Env):
             if self._button2 and not self._button1:
                 self._mega_reward = False
             if (self._button1 and self._button2) and self._mega_reward:
-                rew += 50
+                #rew += 50
                 print('MEGA reward')
             return rew
 

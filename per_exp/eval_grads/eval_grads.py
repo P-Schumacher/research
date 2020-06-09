@@ -10,10 +10,12 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 N = 1000000
-N_TRAIN_CRITIC = 2
+N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 10000
-SAMPLES = 30
+SAMPLES = 70
+BATCHES = 70
 
+    
 class Accumulator:
     def __init__(self):
         self.init = False
@@ -36,17 +38,31 @@ class Accumulator:
         self.grad = None
         self.counter = 0
 
+class Acc_Value(Accumulator):
+    def accumulate(self, grad):
+        if not self.init:
+            self.grad = grad
+            self.counter += 1
+            self.init = True
+        else:
+            self.grad = self.grad + grad
+            self.counter += 1
+
+    def get_grad(self):
+        return self.grad / self.counter
+
 def create_random_weight_list():
     weights = []
     for i in range(6):
         weights.append(tf.random.uniform([20, 300], -2, 2))
     return weights
 
-def train_the_critic(untrained_agent, replay_buffer, iterations):
+def train_the_critic(untrained_agent, replay_buffer, iterations, batchsize):
     for it in range(iterations):
         print(f'{it} of {iterations} training')
-        state, action, reward, next_state, done, *_ = replay_buffer.sample_uniformly(128)
+        state, action, reward, next_state, done, *_ = replay_buffer.sample_uniformly(batchsize)
         td_error = untrained_agent._policy._train_critic(state, action, reward, next_state, done, False, None)
+        #wandb.log({'tderror': tf.reduce_mean(tf.abs(td_error)).numpy()})
 
 def update_buffer(replay_buffer, agent):
     state, action, reward, next_state, done = replay_buffer.get_buffer()
@@ -96,7 +112,7 @@ def main(cnf):
         set_seeds(i)
         print(f'sample {i} of {SAMPLES} Highqualitycritic')
         true_critic_sample = copy.deepcopy(untrained)
-        train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC)
+        train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC, 128)
         true_critic_sample = true_critic_sample._policy.critic
         state, *_ = buff.get_buffer()
         with tf.GradientTape() as tape:
@@ -109,6 +125,7 @@ def main(cnf):
     gradients_true = accum.get_grad() 
 
     # TODO AVERAGE OVER BATCHES
+    accu_val = Acc_Value()
     batch_range = np.array([1, 128, 256, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
     simil_mean = []
     simil_std = []
@@ -117,23 +134,27 @@ def main(cnf):
         accum.reset()
         sims_collect = []
         for i in range(SAMPLES):
-            set_seeds(i+SAMPLES)
+            set_seeds(i+SAMPLES+5)
             print(f'sample {i} of {SAMPLES} lowqualitycritic')
             approx_critic = copy.deepcopy(untrained)
-            train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
+            train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
             print('Update Buffer')
             #update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
-            state, *_ = buff.sample_uniformly(batch_size)
-            with tf.GradientTape() as tape:
-                action = trained_actor(state)
-                q_value, _  = approx_critic(tf.concat([state, action], axis=1))
-                actor_loss = -tf.reduce_mean(q_value)
-            gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
-            gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
-            sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
-            sims = tf.reduce_mean(sims)
-            sims_collect.append(sims.numpy())
+
+            accu_val.reset()
+            for i in range(BATCHES):
+                state, *_ = buff.sample_uniformly(batch_size)
+                with tf.GradientTape() as tape:
+                    action = trained_actor(state)
+                    q_value, _  = approx_critic(tf.concat([state, action], axis=1))
+                    actor_loss = -tf.reduce_mean(q_value)
+                gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
+                gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
+                sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
+                accu_val.accumulate(tf.reduce_mean(sims))
+            sims = accu_val.get_grad()
+            sims_collect.append(sims)
         simil_mean.append(np.mean(sims_collect))
         simil_std.append(np.std(sims_collect))
         print(simil_mean)

@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 N = 1000000
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 10000
-SAMPLES = 70
-BATCHES = 70
+N_TRAIN_CRITIC = 5
+N_TRAIN_TRUE_CRITIC = 10
+SAMPLES = 10
+BATCHES = 10
 
     
 class Accumulator:

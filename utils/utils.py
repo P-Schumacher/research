@@ -108,7 +108,7 @@ def assert_sanity_check(cnf):
         assert not (cnf.agent.add_multiple_dones and (cnf.agent.per == 3 or cnf.agent.per == 4))
         assert isinstance(cnf.agent.per, int)  
         assert not (cnf.main.flat_agent and cnf.agent.per == 2)
-        if cnf.coppeliagym.params.n_buttons > 1:
+        if cnf.coppeliagym.params.double_buttons:
             assert cnf.coppeliagym.sim.scene_file == 'coppelia_scenes/kuka_double.ttt' 
 
 

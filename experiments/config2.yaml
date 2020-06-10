@@ -72,7 +72,7 @@ coppeliagym:
     sparse_rew: true
     action_regularizer: 0.00
     time_limit: 600
-    n_buttons: 2
+    double_buttons: true
 
   subgoals:
     ej_goal: [3, 1.0]

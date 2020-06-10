@@ -2,10 +2,10 @@ import tensorflow as tf
 import numpy as np
 import wandb
 from pudb import set_trace
-from utils.math_fns import euclid
+from utils.math_fns import euclid, get_norm, clip_by_global_norm
 from rl_algos.networks import Actor, Critic
-from rl_algos.off_policy_correction import off_policy_correction
-
+from rl_algos.offpol_correction import off_policy_correction
+>>>>>>> two_button_task
 
 
 class TD3(object):
@@ -84,18 +84,43 @@ class TD3(object):
             reward_new = self._goal_regularization(action, reward, next_state)
         else:
             reward_new = reward
-        td_error = self._train_step(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
+        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        #td_error = self._compute_td_error(state, action, reward, next_state, done)
+        #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
+
 
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     @tf.function
-    def _train_step(self, state, action, reward, next_state, done, log, is_weight):
+    def _compute_td_error(self, state, action, reward, next_state, done):
+        state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
+        done = tf.reshape(done, [done.shape[0], 1])
+        reward = tf.reshape(reward, [reward.shape[0], 1])
+        noise = tf.random.normal(action.shape, stddev=self.policy_noise)
+        # this clip keeps the noisy action close to the original action
+        noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
+        next_action = self.actor_target(next_state) + noise
+        # this clip assures that we don't take impossible actions a > max_action
+        next_action = tf.clip_by_value(next_action, -self._max_action, self._max_action)
+        # Compute the target Q value
+        next_state_next_action = tf.concat([next_state, next_action], 1)
+        target_Q1, target_Q2 = self.critic_target(next_state_next_action)
+        target_Q = tf.math.minimum(target_Q1, target_Q2)
+        target_Q = reward + (1. - done) * self.discount * target_Q
+        # Critic Update
+        current_Q1, current_Q2 = self.critic(state_action)
+        return tf.abs(target_Q - current_Q1)
+
+    @tf.function
+    def _train_critic(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
         a time limit. The norm and std of the updated gradients, as well as the losses are assigned to state objects of the class. 
@@ -130,6 +155,11 @@ class TD3(object):
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
+
+        return target_Q - current_Q1
+    
+    @tf.function
+    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
         if self.total_it % self.policy_freq == 0:
             # Actor update
@@ -144,8 +174,6 @@ class TD3(object):
             self.transfer_weights(self.actor, self.actor_target, self.tau)
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
-
-        return target_Q - current_Q1
 
     def _goal_regularization(self, action, reward, next_state):
         ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
@@ -216,25 +244,6 @@ class TD3(object):
         self._per = per
         self._goal_regul = goal_regul
 
-
-def clip_by_global_norm(t_list, clip_norm):
-    '''Clips the tensors in the list of tensors *t_list* globally by their norm. This preserves the 
-    relative weights of gradients if used on gradients. The inbuilt clip_norm argument of 
-    keras optimizers does NOT do this. Global norm clipping is the correct way of implementing
-    gradient clipping. The function *tf.clip_by_global_norm()* changes the structure of the passed tensor
-    sometimes. This is why I decided not to use it.
-    :param t_list: List of tensors to be clipped.
-    :param clip_norm: Norm over which the tensors should be clipped.
-    :return t_list: List of clipped tensors. 
-    :return norm: New norm after clipping.'''
-    norm = get_norm(t_list)
-    if norm > clip_norm:
-        t_list = [tf.scalar_mul(clip_norm / norm, t) for t in t_list]
-        norm = clip_norm
-    return t_list, norm
-
-def get_norm(t_list):
-    return tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
 
 if __name__ == '__main__':
  pass

@@ -26,6 +26,7 @@ coppeliagym:
     distance_function: euclid
     spherical_coord: ${agent.spherical_coord}
     flat_agent: ${main.flat_agent}
+    double_buttons: false
 
   subgoals:
     ee_goal: 5.

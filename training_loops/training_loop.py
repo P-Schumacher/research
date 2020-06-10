@@ -49,6 +49,8 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
+        if success_cd:
+            print(next_state)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
@@ -61,11 +63,9 @@ def main(cnf):
                 agent.train(t, logger.episode_timesteps)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
-
             agent.reset()
             logger.reset()
             state, done = env.reset(), False
-
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
             avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)

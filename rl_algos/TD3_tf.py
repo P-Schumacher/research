@@ -85,7 +85,8 @@ class TD3(object):
         else:
             reward_new = reward
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
-        self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        if self._per:
+            self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)

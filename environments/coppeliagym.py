@@ -247,16 +247,21 @@ class CoppeliaEnv(gym.Env):
             if self._double_buttons:
                 # 2 button touch task
                 if self._get_distance(self._ep_target_pos) < 0.08 and not self._button1:
+                    rew += 50
                     self._button1 = True
                     print('button 1 pressed')
                 if self._get_distance(self._ep_target_pos2) < 0.08 and not self._button2:
+                    rew += 50
                     self._button2 = True
                     print('button 2 pressed')
                 if self._button2 and not self._button1:
                     self._mega_reward = False
                 if (self._button1 and self._button2) and self._mega_reward:
-                    rew += 50
+                    #rew += 50
                     print('MEGA reward')
+                if (self._button1 and self._button2) and not self._mega_reward:
+                    #rew -= 10000
+                    print('FAILURE Punishment')
                 return rew
             else:
                 # One button touch task

@@ -1,12 +1,12 @@
-project: 'buffer_control'
+project: 'goal_regul_new'
 main:
   render: false
   flat_agent: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: '2buttons_hiro'
+  descriptor: '2buttons_hiro_goal_regul'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -43,7 +43,7 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 1
-  goal_regul: 0.00
+  goal_regul: 0.0001
 
   meta_model:
     ac_hidden_layers: [300, 300]

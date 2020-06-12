@@ -5,8 +5,6 @@ from pudb import set_trace
 from utils.math_fns import euclid, get_norm, clip_by_global_norm
 from rl_algos.networks import Actor, Critic
 from rl_algos.offpol_correction import off_policy_correction
->>>>>>> two_button_task
-
 
 class TD3(object):
     def __init__(
@@ -77,7 +75,7 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        if self.offpolicy and self.name == 'meta': 
+        if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
@@ -177,7 +175,7 @@ class TD3(object):
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
     def _goal_regularization(self, action, reward, next_state):
-        ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
+        #ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
         return ans        
 

@@ -49,8 +49,6 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        if success_cd:
-            print(next_state)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state

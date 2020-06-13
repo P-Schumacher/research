@@ -2,17 +2,15 @@ import numpy as np
 import tensorflow as tf
 from rl_algos.TD3_tf import Actor
 import wandb
-from pudb import set_trace
-from scipy import stats
 import copy
 from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
-N = 100000
-N_TRAIN_CRITIC = 100
+N = 1000000
+N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 5
+SAMPLES = 50
 BATCHES = 10
 
 class Accumulator:
@@ -89,14 +87,13 @@ def main(cnf):
         gradients_true = tf.concat(gradients_true, axis=0)
         accum.accumulate(gradients_true)
     grad_mean, grad_std = accum.get_grad() 
-    batch_range = np.array([1, 10, 20, 50, 128, 1000])#, np.arange(1000, 6000, 1000)], axis=0)
-    simil_mean = []
-    simil_std = []
+    batch_range = np.array([1, 32, 64, 128, 256, 512, 1024, 2048])
+    simil_values= []
 
     accum2 = Accumulator()
     for batch_size in batch_range:
         print(f'Batch {batch_size}')
-        sims_collect = []
+        similarity_samples = []
         for i in range(SAMPLES):
             accum.reset()
             set_seeds(i+SAMPLES)
@@ -104,12 +101,12 @@ def main(cnf):
             approx_critic = create_agent(cnf, env)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
             print('Update Buffer')
-            update_buffer(buff, approx_critic)
+            #update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
 
             for i in range(BATCHES):
                 accum2.reset()
-                state, *_ = buff.sample(batch_size)
+                state, *_ = buff.sample_uniformly(batch_size)
                 with tf.GradientTape() as tape:
                     action = trained_actor(state)
                     q_value, _  = approx_critic(tf.concat([state, action], axis=1))
@@ -118,15 +115,14 @@ def main(cnf):
                 gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
                 gradients_sample = tf.concat(gradients_sample, axis=0)
                 accum2.accumulate(gradients_sample)
+            # averaged over batches
             avg_grad, _ = accum2.get_grad()
-            accum.accumulate(avg_grad)
-        avg_grad, std_grad = accum.get_grad()
-        sims = -simil_metric(avg_grad, grad_mean).numpy()
-        simil_mean.append(sims)
-        print(simil_mean)
-    print(simil_mean)
-    np.save('simil_mean.npy', simil_mean)
-    #np.save('simil_std.npy', simil_std)
+            sample_similarity = -simil_metric(avg_grad, grad_mean)
+            similarity_samples.append(sample_similarity)
+        simil_values.append(similarity_samples)
+        print(np.mean(simil_values[-1]))
+    print(np.mean(simil_values[-1]))
+    np.save('simils_unif.npy', simil_values)
 
 
 

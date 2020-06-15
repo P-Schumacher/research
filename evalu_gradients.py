@@ -1,4 +1,5 @@
 from per_exp.eval_grads.eval_grads import main
+from per_exp.eval_grads.scatter_plot import main as main_scatter
 #from per_exp.eval_grads.train_critic import main
 #from per_exp.eval_grads.train_actor import main
 from omegaconf import OmegaConf
@@ -29,4 +30,4 @@ else:
 
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
-main(cnf)
+main_scatter(cnf)

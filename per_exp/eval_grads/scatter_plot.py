@@ -6,11 +6,12 @@ import copy
 from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
+from pudb import set_trace
 
-N = 1000000
+N = 100
 N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 50
+N_TRAIN_TRUE_CRITIC = 100
+SAMPLES = 5
 BATCHES = 10
 
 class Accumulator:
@@ -87,12 +88,12 @@ def main(cnf):
         gradients_true = tf.concat(gradients_true, axis=0)
         accum.accumulate(gradients_true)
     grad_mean, grad_std = accum.get_grad() 
-    batch_range = np.array([1, 32, 64, 128, 256, 512, 1024, 2048])
-    simil_values= []
 
-    accum2 = Accumulator()
-    for batch_size in batch_range:
-        print(f'Batch {batch_size}')
+    scatter_metric = []
+    scatter_td_error = []
+    for idx, state in enumerate(buff.state):
+        print(f' {idx} of {N}')
+        state = tf.reshape(state, [1, state.shape[0]])
         similarity_samples = []
         for i in range(SAMPLES):
             accum.reset()
@@ -103,26 +104,19 @@ def main(cnf):
             print('Update Buffer')
             update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
-
-            for i in range(BATCHES):
-                accum2.reset()
-                state, *_ = buff.sample(batch_size)
-                with tf.GradientTape() as tape:
-                    action = trained_actor(state)
-                    q_value, _  = approx_critic(tf.concat([state, action], axis=1))
-                    actor_loss = -tf.reduce_mean(q_value)
-                gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
-                gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
-                gradients_sample = tf.concat(gradients_sample, axis=0)
-                accum2.accumulate(gradients_sample)
-            # averaged over batches
-            avg_grad, _ = accum2.get_grad()
-            sample_similarity = -simil_metric(avg_grad, grad_mean)
+            with tf.GradientTape() as tape:
+                action = trained_actor(state)
+                q_value, _  = approx_critic(tf.concat([state, action], axis=1))
+                actor_loss = -tf.reduce_mean(q_value)
+            gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
+            gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
+            gradients_sample = tf.concat(gradients_sample, axis=0)
+            sample_similarity = -simil_metric(gradients_sample, grad_mean)
             similarity_samples.append(sample_similarity)
-        simil_values.append(similarity_samples)
-        print(np.mean(simil_values[-1]))
-    print(np.mean(simil_values[-1]))
-    np.save('simils_high.npy', simil_values)
+        scatter_metric.append(np.mean(similarity_samples))
+        scatter_td_error.append(buff.priorities[idx])
+    np.save('scatter_metric.npy', scatter_metric)
+    np.save('scatter_td_error.npy', scatter_td_error)
 
 
 

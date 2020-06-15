@@ -66,10 +66,10 @@ def main(cnf):
             state, done = env.reset(), False
         # Evaluate episode
         if (t + 1) % cnf.eval_freq == 0:
-            avg_ep_rew, avg_intr_rew, success_rate = agent.evaluation(env)
+            avg_ep_rew, avg_intr_rew, success_rate, rate_correct_solves = agent.evaluation(env)
             state, done = env.reset(), False
             agent.reset()
             logger.reset(post_eval=True)
-            logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate)
+            logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate, rate_correct_solves)
             if cnf.save_model: agent.save_model(f'./experiments/models/{agent._file_name}')
 

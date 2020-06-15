@@ -48,7 +48,7 @@ class CoppeliaEnv(gym.Env):
         state = self._reset(evalmode)
         # Control flow for task success
         self.success = False
-        self._mega_reward = True
+        self.mega_reward = True
         self._button1 = False
         self._button2 = False
         if not self._double_buttons:
@@ -255,11 +255,11 @@ class CoppeliaEnv(gym.Env):
                     self._button2 = True
                     print('button 2 pressed')
                 if self._button2 and not self._button1:
-                    self._mega_reward = False
-                if (self._button1 and self._button2) and self._mega_reward:
+                    self.mega_reward = False
+                if (self._button1 and self._button2) and self.mega_reward:
                     #rew += 50
                     print('MEGA reward')
-                if (self._button1 and self._button2) and not self._mega_reward:
+                if (self._button1 and self._button2) and not self.mega_reward:
                     #rew -= 10000
                     print('FAILURE Punishment')
                 return rew

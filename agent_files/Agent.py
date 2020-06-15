@@ -25,10 +25,10 @@ class Agent:
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
         #tf.random.set_seed(self._seed)
         env.reset()
-        avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self._seed,
+        avg_reward, avg_intr_reward, success_rate, rate_correct_solves =  self._eval_policy(env, self._seed,
                                                                        self._visit)
         self.reset()
-        return avg_reward, avg_intr_reward, success_rate
+        return avg_reward, avg_intr_reward, success_rate, rate_correct_solves
 
     def select_action(self, state, noise_bool=False):
         state = np.array(state)
@@ -102,6 +102,7 @@ class Agent:
         env.seed(seed + 100)
         avg_ep_reward = []
         success_rate = 0
+        rate_correct_solves = 0
         for episode_nbr in range(self._num_eval_episodes):
             print(f"eval number: {episode_nbr} of {self._num_eval_episodes}")
             step = 0
@@ -115,10 +116,14 @@ class Agent:
                 step += 1
                 if done and step < env.max_episode_steps:
                     success_rate += 1
+                    if env._double_buttons:
+                        if env.mega_reward:
+                            rate_correct_solves += 1
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         success_rate = success_rate / self._num_eval_episodes
+        rate_correct_solves = rate_correct_solves / self._num_eval_episodes
         print("---------------------------------------")
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
-        return avg_ep_reward, 0, success_rate
+        return avg_ep_reward, 0, success_rate, rate_correct_solves

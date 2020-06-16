@@ -11,7 +11,7 @@ from pudb import set_trace
 N = 100
 N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 100
-SAMPLES = 5
+SAMPLES = 50
 BATCHES = 10
 
 class Accumulator:
@@ -91,19 +91,19 @@ def main(cnf):
 
     scatter_metric = []
     scatter_td_error = []
-    for idx, state in enumerate(buff.state):
-        print(f' {idx} of {N}')
-        state = tf.reshape(state, [1, state.shape[0]])
+    for i in range(SAMPLES):
+        set_seeds(i+SAMPLES)
+        print(f'sample {i} of {SAMPLES} lowqualitycritic')
+        approx_critic = create_agent(cnf, env)
+        train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
+        print('Update Buffer')
+        update_buffer(buff, approx_critic)
+        approx_critic = approx_critic._policy.critic
         similarity_samples = []
-        for i in range(SAMPLES):
+        for idx, state in enumerate(buff.state):
+            print(f' {idx} of {N}')
+            state = tf.reshape(state, [1, state.shape[0]])
             accum.reset()
-            set_seeds(i+SAMPLES)
-            print(f'sample {i} of {SAMPLES} lowqualitycritic')
-            approx_critic = create_agent(cnf, env)
-            train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
-            print('Update Buffer')
-            update_buffer(buff, approx_critic)
-            approx_critic = approx_critic._policy.critic
             with tf.GradientTape() as tape:
                 action = trained_actor(state)
                 q_value, _  = approx_critic(tf.concat([state, action], axis=1))
@@ -113,8 +113,13 @@ def main(cnf):
             gradients_sample = tf.concat(gradients_sample, axis=0)
             sample_similarity = -simil_metric(gradients_sample, grad_mean)
             similarity_samples.append(sample_similarity)
-        scatter_metric.append(np.mean(similarity_samples))
-        scatter_td_error.append(buff.priorities[idx])
+        scatter_metric.append(similarity_samples)
+        scatter_td_error.append(buff.priorities)
+    scatter_metric = np.stack(scatter_metric)
+    scatter_metric = np.mean(scatter_metric, axis=0)
+    scatter_td_error= np.stack(scatter_td_error)
+    scatter_td_error= np.mean(scatter_td_error, axis=0)
+
     np.save('scatter_metric.npy', scatter_metric)
     np.save('scatter_td_error.npy', scatter_td_error)
 

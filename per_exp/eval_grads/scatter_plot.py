@@ -8,10 +8,10 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 from pudb import set_trace
 
-N = 100
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 100
-SAMPLES = 50
+N = 1000
+N_TRAIN_CRITIC = 100
+N_TRAIN_TRUE_CRITIC = 1000
+SAMPLES = 20
 BATCHES = 10
 
 class Accumulator:
@@ -112,13 +112,8 @@ def main(cnf):
             gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
             gradients_sample = tf.concat(gradients_sample, axis=0)
             sample_similarity = -simil_metric(gradients_sample, grad_mean)
-            similarity_samples.append(sample_similarity)
-        scatter_metric.append(similarity_samples)
-        scatter_td_error.append(buff.priorities)
-    scatter_metric = np.stack(scatter_metric)
-    scatter_metric = np.mean(scatter_metric, axis=0)
-    scatter_td_error= np.stack(scatter_td_error)
-    scatter_td_error= np.mean(scatter_td_error, axis=0)
+            scatter_metric.append(sample_similarity)
+            scatter_td_error.append(buff.priorities[idx])
 
     np.save('scatter_metric.npy', scatter_metric)
     np.save('scatter_td_error.npy', scatter_td_error)

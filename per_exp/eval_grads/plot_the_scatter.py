@@ -40,12 +40,23 @@ y = np.load('scatter_metric.npy')
 x = np.load('scatter_td_error.npy')
 x = x[:, 0]
 
-idx = np.argsort(x)
-x = np.sort(x)
-y = y[idx]
+xmin = x.min()
+xmax = x.max()
+ymin = y.min()
+ymax = y.max()
+X, Y = np.mgrid[xmin:xmax:100j, ymin:ymax:100j]
+positions = np.vstack([X.ravel(), Y.ravel()])
+values = np.vstack([x, y])
+kernel = stats.gaussian_kde(values)
+Z = np.reshape(kernel(positions).T, X.shape)
+#plt.imshow(np.rot90(Z), cmap=plt.cm.hot,
+#          extent=[xmin, xmax, ymin, ymax])
+#plt.plot(x, y, 'k.', markersize=1, marker='o')
+#cb = plt.colorbar()
+#cb.set_ticks([np.min(Z), (np.max(Z)+np.min(Z))/2, np.max(Z)])
+#cb.set_ticklabels([0, 0.5, 1])
 
-print(f'larger: {np.where(y>0.0)[0].shape[0]}')
-print(f'smaller: {np.where(y<0.0)[0].shape[0]}')
+
 # fit a curve to the data using a least squares 1st order polynomial fit
 z = np.polyfit(x,y,1)
 p = np.poly1d(z)
@@ -86,7 +97,7 @@ plt.xlabel('TD-error')
 plt.ylabel('Cos. Sim. with hq-critic')
 plt.title('Linear regression and confidence limits')
 # plot sample data
-plt.plot(x,y,'bo', label='Sample observations')
+plt.plot(x,y,'bo', label='Sample observations', markersize=4)
 # plot line of best fit
 plt.plot(p_x, p_y, 'r--', label='P(x) = ax + b')
 plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95%')# label='Lower confidence limit (95%)')
@@ -104,12 +115,5 @@ print(p)
 print(lo)
 print(hi)
 plt.show()
-'''
-plt.scatter(x, y)
-x_sorted = np.sort(x)
-scala = np.linspace(x_sorted[0], x_sorted[-1], 100)
 
-plt.plot(scala, r* scala)
-plt.fill_between(scala, lo*scala, hi*scala, alpha=0.2)
-plt.show()
-'''
+

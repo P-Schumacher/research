@@ -51,4 +51,4 @@ class Logger:
         :return: None'''
         if self.logging:
             wandb.log({'eval/eval_ep_rew': eval_rew, 'eval/eval_intr_rew': eval_intr_rew,
-                       'eval/success_rate': eval_success, 'rate_correct_solves':rate_correct_solves}, step = t)
+                       'eval/success_rate': eval_success, 'eval/rate_correct_solves':rate_correct_solves}, step = t)

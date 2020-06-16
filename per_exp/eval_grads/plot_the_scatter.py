@@ -39,13 +39,8 @@ def pearsonr_ci(x,y,alpha=0.05):
 y = np.load('scatter_metric.npy')
 x = np.load('scatter_td_error.npy')
 x = x[:, 0]
+print(x.shape)
 
-idx = np.argsort(x)
-x = np.sort(x)
-y = y[idx]
-
-print(f'larger: {np.where(y>0.0)[0].shape[0]}')
-print(f'smaller: {np.where(y<0.0)[0].shape[0]}')
 # fit a curve to the data using a least squares 1st order polynomial fit
 z = np.polyfit(x,y,1)
 p = np.poly1d(z)

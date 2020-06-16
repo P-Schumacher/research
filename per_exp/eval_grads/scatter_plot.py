@@ -8,10 +8,10 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 from pudb import set_trace
 
-N = 100
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 100
-SAMPLES = 50
+N = 1000
+N_TRAIN_CRITIC = 100
+N_TRAIN_TRUE_CRITIC = 1000
+SAMPLES = 60
 BATCHES = 10
 
 class Accumulator:

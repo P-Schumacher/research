@@ -27,6 +27,8 @@ coppeliagym:
     spherical_coord: ${agent.spherical_coord}
     flat_agent: ${main.flat_agent}
     double_buttons: false
+    reversal_time: 100000000
+    touch_distance: 0.08
 
   subgoals:
     ee_goal: 5.

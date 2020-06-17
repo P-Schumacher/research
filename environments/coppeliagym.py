@@ -1,4 +1,5 @@
 import gym
+from pudb import set_trace
 import tensorflow as tf
 import numpy as np
 from os.path import dirname, join, abspath
@@ -12,6 +13,7 @@ from . import robot
 
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
+        self.reversal = False
         # Allows us to restart sim in different force_mode without recreating sim threads
         if not init:
             self._sim = self._start_sim(**cnf.sim)
@@ -34,6 +36,10 @@ class CoppeliaEnv(gym.Env):
         observation = self._get_observation()
         info = self._get_info()
         self._timestep += 1
+        self._total_it +=1 
+        if not self.reversal and (self._total_it >= self._reversal_time):
+            self._target, self._target2= self._target2, self._target
+            self.reversal = True
         return observation, reward, done, info
 
     def reset(self, evalmode=False):
@@ -168,7 +174,9 @@ class CoppeliaEnv(gym.Env):
                            distance_function,
                            spherical_coord,
                            flat_agent,
-                           double_buttons):
+                           double_buttons,
+                           reversal_time,
+                           touch_distance):
         # Config settings
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
@@ -187,10 +195,13 @@ class CoppeliaEnv(gym.Env):
         self._distance_fn = self._get_distance_fn(distance_function)
         self._flat_agent = flat_agent
         self._double_buttons = double_buttons
+        self._reversal_time = reversal_time
+        self._touch_distance = touch_distance
         # Control flow
         self._timestep = 0
         self.needs_reset = True
         self._init = False
+        self._total_it = 0
         # Need these before reset to get observation.shape
         self._button1 = False
         self._button2 = False
@@ -246,18 +257,19 @@ class CoppeliaEnv(gym.Env):
             rew = -1.
             if self._double_buttons:
                 # 2 button touch task
-                if self._get_distance(self._ep_target_pos) < 0.08 and not self._button1:
-                    rew += 50
+                if self._get_distance(self._ep_target_pos) < self._touch_distance and not self._button1:
+                    #rew += 50
                     self._button1 = True
                     print('button 1 pressed')
-                if self._get_distance(self._ep_target_pos2) < 0.08 and not self._button2:
-                    rew += 50
+                if self._get_distance(self._ep_target_pos2) < self._touch_distance and not self._button2:
+                    #rew += 50
                     self._button2 = True
                     print('button 2 pressed')
                 if self._button2 and not self._button1:
                     self.mega_reward = False
+                    #rew -= 50
                 if (self._button1 and self._button2) and self.mega_reward:
-                    #rew += 50
+                    rew += 50
                     print('MEGA reward')
                 if (self._button1 and self._button2) and not self.mega_reward:
                     #rew -= 10000
@@ -265,7 +277,7 @@ class CoppeliaEnv(gym.Env):
                 return rew
             else:
                 # One button touch task
-                if self._get_distance(self._ep_target_pos) < 0.08:
+                if self._get_distance(self._ep_target_pos) < self._touch_distance:
                     rew += 1
                     self._button1 = True
                     return rew
@@ -339,16 +351,20 @@ class CoppeliaEnv(gym.Env):
         return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):
-        pose = self._target_init_pose
+        pose = self._target_init_pose.copy()
         if self._double_buttons:
-            pose2 = self._target_init_pose2
-        if self._random_target and not evalmode or evalmode and self._random_eval_target:
+            pose2 = self._target_init_pose2.copy()
+        if self._random_target and not evalmode or self._random_eval_target and evalmode:
             x, y = self._sample_in_circular_reach()
             pose[:2] = [x, y]
             self._target.set_pose(pose)
             if self._double_buttons:
                 x, y = self._sample_in_circular_reach()
                 pose2[:2] = [x, y]
+                self._target2.set_pose(pose2)
+        else:
+            self._target.set_pose(pose)
+            if self._double_buttons:
                 self._target2.set_pose(pose2)
         if not self._double_buttons:
             return np.array(self._target.get_position(), dtype=np.float32), None

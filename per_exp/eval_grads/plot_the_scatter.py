@@ -9,7 +9,11 @@ import scipy.stats, numpy
 
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rc
+rc('font',**{'family':'serif','serif':['Palatino']})
+rc('text', usetex=True)
 plt.style.use('seaborn')
+plt.figure(figsize=[5,5])
 def pearsonr_ci(x,y,alpha=0.05):
     ''' calculate Pearson correlation along with the confidence interval using scipy and numpy
     Parameters
@@ -36,10 +40,24 @@ def pearsonr_ci(x,y,alpha=0.05):
     lo, hi = np.tanh((lo_z, hi_z))
     return r, p, lo, hi
 
-y = np.load('scatter_metric.npy')
-x = np.load('scatter_td_error.npy')
-x = x[:, 0]
-print(x.shape)
+x_samples = np.load('scatter_td_error_100_1000.npy')
+y_samples = np.load('scatter_metric_100_1000.npy')
+
+x = []
+for x1 in x_samples:
+    for x2 in x1:
+        x.append(x2) 
+y = []
+for y1 in y_samples:
+    for y2 in y1:
+        y.append(y2) 
+x, y = np.asarray(x), np.asarray(y)
+    
+r, p, lo, hi = pearsonr_ci(x, y)
+print(r)
+print(p)
+print(lo)
+print(hi)
 
 # fit a curve to the data using a least squares 1st order polynomial fit
 z = np.polyfit(x,y,1)
@@ -75,36 +93,19 @@ p_y = z[0] * p_x + z[1]
 lower = p_y - abs(confs)
 upper = p_y + abs(confs)
 
-# set-up the plot
-#plt.axes().set_aspect('equal')
+for i in range(x_samples.shape[0]):
+    plt.plot(x_samples[i, :], y_samples[i, :], 'o', markersize=5, label=f'Seed {i}')
+plt.plot(p_x, p_y, 'r--', label='P(x) = ax + b')
+plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95%')
+
 plt.xlabel('TD-error')
 plt.ylabel('Cos. Sim. with hq-critic')
-plt.title('Linear regression and confidence limits')
-# plot sample data
-plt.plot(x,y,'bo', label='Sample observations')
-# plot line of best fit
-plt.plot(p_x, p_y, 'r--', label='P(x) = ax + b')
-plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95%')# label='Lower confidence limit (95%)')
 plt.xlim([np.min(x), np.max(x)])
 # configure legend
-plt.legend(loc=0)
+plt.legend(loc=0, frameon=True)
 leg = plt.gca().get_legend()
 ltext = leg.get_texts()
 plt.setp(ltext, fontsize=10)
-
-# show the plot
-r, p, lo, hi = pearsonr_ci(x, y)
-print(r)
-print(p)
-print(lo)
-print(hi)
+plt.title('$N_{\mathrm{lq-critic}}$/$N_{\mathrm{hq-critic}}$: 0.1')
+plt.savefig('scatterplot_100_1000.pdf')
 plt.show()
-'''
-plt.scatter(x, y)
-x_sorted = np.sort(x)
-scala = np.linspace(x_sorted[0], x_sorted[-1], 100)
-
-plt.plot(scala, r* scala)
-plt.fill_between(scala, lo*scala, hi*scala, alpha=0.2)
-plt.show()
-'''

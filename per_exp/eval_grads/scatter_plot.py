@@ -9,9 +9,10 @@ simil_metric = tf.keras.losses.CosineSimilarity()
 from pudb import set_trace
 
 N = 1000
-N_TRAIN_CRITIC = 100
+N_TRAIN_CRITIC = 0
 N_TRAIN_TRUE_CRITIC = 1000
-SAMPLES = 60
+SAMPLES = 4
+SAMPLES_TRUE_CRITIC = 50
 BATCHES = 10
 
 class Accumulator:
@@ -57,6 +58,7 @@ def set_seeds(seed):
 def main(cnf):
     env, agent = create_world(cnf)
     agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/', N)
+    set_trace()
 
     accum = Accumulator()
     buff = agent._replay_buffer
@@ -72,9 +74,9 @@ def main(cnf):
     print('Successfully loaded')
     print('Compute true gradient of true critic')
     # True gradient of true critic 
-    for i in range(SAMPLES):
+    for i in range(SAMPLES_TRUE_CRITIC):
         set_seeds(i)
-        print(f'sample {i} of {SAMPLES} Highqualitycritic')
+        print(f'sample {i} of {SAMPLES_TRUE_CRITIC} Highqualitycritic')
         true_critic_sample = create_agent(cnf, env)
         train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC, 128)
         true_critic_sample = true_critic_sample._policy.critic
@@ -114,11 +116,10 @@ def main(cnf):
             sample_similarity = -simil_metric(gradients_sample, grad_mean)
             similarity_samples.append(sample_similarity)
         scatter_metric.append(similarity_samples)
-        scatter_td_error.append(buff.priorities)
+        scatter_td_error.append(np.array(buff.priorities[:, 0], copy=True))
     scatter_metric = np.stack(scatter_metric)
-    scatter_metric = np.mean(scatter_metric, axis=0)
     scatter_td_error= np.stack(scatter_td_error)
-    scatter_td_error= np.mean(scatter_td_error, axis=0)
+    print(scatter_td_error)
 
     np.save('scatter_metric.npy', scatter_metric)
     np.save('scatter_td_error.npy', scatter_td_error)

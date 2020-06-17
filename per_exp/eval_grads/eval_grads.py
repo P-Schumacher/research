@@ -10,7 +10,8 @@ simil_metric = tf.keras.losses.CosineSimilarity()
 N = 1000000
 N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 50
+SAMPLES = 20
+SAMPLES_TRUE_CRIT = 50
 BATCHES = 10
 
 class Accumulator:
@@ -71,7 +72,7 @@ def main(cnf):
     print('Successfully loaded')
     print('Compute true gradient of true critic')
     # True gradient of true critic 
-    for i in range(SAMPLES):
+    for i in range(SAMPLES_TRUE_CRIT):
         set_seeds(i)
         print(f'sample {i} of {SAMPLES} Highqualitycritic')
         true_critic_sample = create_agent(cnf, env)
@@ -87,7 +88,7 @@ def main(cnf):
         gradients_true = tf.concat(gradients_true, axis=0)
         accum.accumulate(gradients_true)
     grad_mean, grad_std = accum.get_grad() 
-    batch_range = np.array([1, 32, 64, 128, 256, 512, 1024, 2048])
+    batch_range = np.array([1, 32, 64, 128, 256, 512, 1024])
     simil_values= []
 
     accum2 = Accumulator()

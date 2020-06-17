@@ -3,7 +3,7 @@ main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
   descriptor: 'button_sequence_hiro_reversal_easy_hiro'

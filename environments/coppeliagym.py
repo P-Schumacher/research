@@ -26,7 +26,7 @@ class CoppeliaEnv(gym.Env):
             raise Exception(f'Decide on your state space! ee_pos:{cnf.params.ee_pos} ee_j_pos:{cnf.params.ee_j_pos}')
 
     def step(self, action):
-        if self.needs_reset:
+        if self._needs_reset:
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
         self._sim.step()
@@ -198,7 +198,7 @@ class CoppeliaEnv(gym.Env):
         self._touch_distance = touch_distance
         # Control flow
         self._timestep = 0
-        self.needs_reset = True
+        self._needs_reset = True
         self._init = False
         self._total_it = 0
         self._reversal = False
@@ -258,16 +258,13 @@ class CoppeliaEnv(gym.Env):
             if self._double_buttons:
                 # 2 button touch task
                 if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
-                    #rew += 50
                     self._button1 = True
                     print('button 1 pressed')
                 if self._distance_query_switcher(0) < self._touch_distance and not self._button2:
-                    #rew += 50
                     self._button2 = True
                     print('button 2 pressed')
                 if self._button2 and not self._button1:
                     self.mega_reward = False
-                    #rew -= 50
                 if (self._button1 and self._button2) and self.mega_reward:
                     rew += 50
                     print('MEGA reward')
@@ -303,15 +300,15 @@ class CoppeliaEnv(gym.Env):
         *done* to indicate that an episode should be reset and *success* to indicate if 
         the value of a terminal state should be set to zero. Alternatively, one could
         add the timestep to the state. cf. Time Limits in Reinforcement Learning, Pardo et al.'''
-        self.needs_reset = True
+        self._needs_reset = True
         if self._button1 and self._button2:
             print("Success")
             self.success = True
         elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:
-            self.needs_reset = False
-        return self.needs_reset
+            self._needs_reset = False
+        return self._needs_reset
 
     def _get_distance(self, target_pos):
         grip_pos = np.array(self._robot.get_ee_position(), dtype=np.float32)
@@ -399,7 +396,7 @@ class CoppeliaEnv(gym.Env):
         self._ep_target_pos = target1
         self._ep_target_pos2 = target2
         self._sim.step()
-        self.needs_reset = False
+        self._needs_reset = False
         self._timestep = 0
         return self._get_observation()
     

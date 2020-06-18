@@ -13,7 +13,6 @@ from . import robot
 
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
-        self.reversal = False
         # Allows us to restart sim in different force_mode without recreating sim threads
         if not init:
             self._sim = self._start_sim(**cnf.sim)
@@ -37,9 +36,9 @@ class CoppeliaEnv(gym.Env):
         info = self._get_info()
         self._timestep += 1
         self._total_it +=1 
-        if not self.reversal and (self._total_it >= self._reversal_time):
-            self._target, self._target2= self._target2, self._target
-            self.reversal = True
+        if not self._reversal and (self._total_it >= self._reversal_time):
+            self._reversal = True
+            print('REVERSAL')
         return observation, reward, done, info
 
     def reset(self, evalmode=False):
@@ -202,6 +201,7 @@ class CoppeliaEnv(gym.Env):
         self.needs_reset = True
         self._init = False
         self._total_it = 0
+        self._reversal = False
         # Need these before reset to get observation.shape
         self._button1 = False
         self._button2 = False
@@ -257,11 +257,11 @@ class CoppeliaEnv(gym.Env):
             rew = -1.
             if self._double_buttons:
                 # 2 button touch task
-                if self._get_distance(self._ep_target_pos) < self._touch_distance and not self._button1:
+                if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
                     #rew += 50
                     self._button1 = True
                     print('button 1 pressed')
-                if self._get_distance(self._ep_target_pos2) < self._touch_distance and not self._button2:
+                if self._distance_query_switcher(0) < self._touch_distance and not self._button2:
                     #rew += 50
                     self._button2 = True
                     print('button 2 pressed')
@@ -283,6 +283,18 @@ class CoppeliaEnv(gym.Env):
                     return rew
         # dense reaching task
         return - self._get_distance(self._ep_target_pos) - self._action_regularizer * tf.square(tf.norm(action))
+
+    def _distance_query_switcher(self, box):
+        if not self._reversal:
+            if box == 1:
+                return self._get_distance(self._ep_target_pos)
+            else:
+                return self._get_distance(self._ep_target_pos2)
+        else:
+            if box == 1:
+                return self._get_distance(self._ep_target_pos2)
+            else:
+                return self._get_distance(self._ep_target_pos)
     
     def _get_done(self):
         '''Compute a *done* which is returned and a *success* variable, which is internally saved.

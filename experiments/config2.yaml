@@ -1,8 +1,8 @@
 project: 'buffer_control'
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false 
   minilog: true
   save_model: false
   load_model: false
@@ -73,9 +73,9 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: True
+    random_target: false
     random_eval_target: false
-    reversal_time: 500000
+    reversal_time: 3000
     touch_distance: 0.5
 
   subgoals:

@@ -58,7 +58,6 @@ def set_seeds(seed):
 def main(cnf):
     env, agent = create_world(cnf)
     agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/', N)
-    set_trace()
 
     accum = Accumulator()
     buff = agent._replay_buffer

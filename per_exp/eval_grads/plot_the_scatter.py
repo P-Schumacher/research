@@ -40,8 +40,8 @@ def pearsonr_ci(x,y,alpha=0.05):
     lo, hi = np.tanh((lo_z, hi_z))
     return r, p, lo, hi
 
-x_samples = np.load('scatter_td_error_100_1000.npy')
-y_samples = np.load('scatter_metric_100_1000.npy')
+x_samples = np.load('scatter_td_error_0_1000.npy')
+y_samples = np.load('scatter_metric_0_1000.npy')
 
 x = []
 for x1 in x_samples:
@@ -99,13 +99,14 @@ plt.plot(p_x, p_y, 'r--', label='P(x) = ax + b')
 plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95%')
 
 plt.xlabel('TD-error')
-plt.ylabel('Cos. Sim. with hq-critic')
+#plt.ylabel('Cos. Sim. with hq-critic')
+plt.ylabel('d$_{\cos}(G_{\mathrm{lq}}, G_{\mathrm{hq}})$')
 plt.xlim([np.min(x), np.max(x)])
 # configure legend
 plt.legend(loc=0, frameon=True)
 leg = plt.gca().get_legend()
 ltext = leg.get_texts()
 plt.setp(ltext, fontsize=10)
-plt.title('$N_{\mathrm{lq-critic}}$/$N_{\mathrm{hq-critic}}$: 0.1')
-plt.savefig('scatterplot_100_1000.pdf')
+plt.title('$k\' / k$: 0')
+plt.savefig('scatterplot_0_1000.pdf')
 plt.show()

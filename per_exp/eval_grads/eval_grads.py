@@ -123,7 +123,7 @@ def main(cnf):
         simil_values.append(similarity_samples)
         print(np.mean(simil_values[-1]))
     print(np.mean(simil_values[-1]))
-    np.save('simils_high.npy', simil_values)
+    np.save('simils_low.npy', simil_values)
 
 
 

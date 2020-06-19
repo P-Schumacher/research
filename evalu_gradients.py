@@ -32,3 +32,4 @@ if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 #main_scatter(cnf)
 main(cnf)
+

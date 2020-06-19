@@ -70,7 +70,7 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.9
+  alpha: 1.
   beta: 0.
   epsilon: 0.0001
-  max_size: 1000000
+  max_size: 1000

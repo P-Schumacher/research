@@ -9,7 +9,8 @@ api = wandb.Api()
 project = sys.argv[1]
 runs = api.runs('rlpractitioner/'+project)
 
-keys = ['_step', 'eval/eval_ep_rew', 'eval/eval_intr_rew', 'eval/success_rate', 'c_step', 'ep_rew']
+keys = ['_step', 'eval/eval_ep_rew', 'eval/eval_intr_rew', 'eval/success_rate', 'c_step', 'ep_rew',
+        'eval/rate_correct_solves']
 
 name_list = []
 config_list = []

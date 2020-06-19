@@ -40,24 +40,20 @@ def pearsonr_ci(x,y,alpha=0.05):
     lo, hi = np.tanh((lo_z, hi_z))
     return r, p, lo, hi
 
-x_samples = np.load('scatter_td_error_0_1000.npy')
-y_samples = np.load('scatter_metric_0_1000.npy')
+x_samples = np.load('scatter_td_error_1000_1000.npy')
+y_samples = np.load('scatter_metric_1000_1000.npy')
 
-x = []
-for x1 in x_samples:
-    for x2 in x1:
-        x.append(x2) 
-y = []
-for y1 in y_samples:
-    for y2 in y1:
-        y.append(y2) 
-x, y = np.asarray(x), np.asarray(y)
-    
-r, p, lo, hi = pearsonr_ci(x, y)
-print(r)
-print(p)
-print(lo)
-print(hi)
+x, y = np.asarray(x_samples), np.asarray(y_samples)
+
+
+x = np.reshape(x, [-1])
+y = np.reshape(y, [-1])
+print(x.shape)
+#r, p, lo, hi = pearsonr_ci(x, y)
+#print(r)
+#print(p)
+#print(lo)
+#print(hi)
 
 # fit a curve to the data using a least squares 1st order polynomial fit
 z = np.polyfit(x,y,1)
@@ -93,20 +89,22 @@ p_y = z[0] * p_x + z[1]
 lower = p_y - abs(confs)
 upper = p_y + abs(confs)
 
-for i in range(x_samples.shape[0]):
-    plt.plot(x_samples[i, :], y_samples[i, :], 'o', markersize=5, label=f'Seed {i}')
+plt.plot(x_samples, y_samples, 'bo', markersize=5, label='Samples')
 plt.plot(p_x, p_y, 'r--', label='P(x) = ax + b')
-plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95%')
+plt.fill_between(p_x, lower, upper, color='r', alpha=0.2, label='CI 95\%')
 
 plt.xlabel('TD-error')
 #plt.ylabel('Cos. Sim. with hq-critic')
 plt.ylabel('d$_{\cos}(G_{\mathrm{lq}}, G_{\mathrm{hq}})$')
 plt.xlim([np.min(x), np.max(x)])
+plt.ylim([-1.1, 1.02])
 # configure legend
-plt.legend(loc=0, frameon=True)
+plt.legend(loc=4, frameon=True)
 leg = plt.gca().get_legend()
 ltext = leg.get_texts()
 plt.setp(ltext, fontsize=10)
-plt.title('$k\' / k$: 0')
-plt.savefig('scatterplot_0_1000.pdf')
+plt.title('$k\' / k$: 1')
+plt.tight_layout()
+plt.savefig('scatterplot_1000_1000.pdf')
+
 plt.show()

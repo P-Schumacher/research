@@ -1,12 +1,12 @@
-project: 'buffer_control'
+project: 'reversal_task'
 main:
-  render: true
+  render: false 
   flat_agent: false
-  log: false 
+  log: true 
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'button_sequence_hiro_reversal_easy_hiro'
+  descriptor: 'button_sequence_hiro_random_easy_minmaldist'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -73,13 +73,15 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
-    reversal_time: 3000
-    touch_distance: 0.5
+    random_target: true
+    random_eval_target: true
+    reversal_time: 10000000
+    touch_distance: 0.4
+    minimum_dist: 1.
 
   subgoals:
     ej_goal: [3, 1.0]
+
 buffer:
   alpha: 0.9
   beta: 0.

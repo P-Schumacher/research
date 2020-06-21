@@ -175,7 +175,8 @@ class CoppeliaEnv(gym.Env):
                            flat_agent,
                            double_buttons,
                            reversal_time,
-                           touch_distance):
+                           touch_distance,
+                           minimum_dist):
         # Config settings
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
@@ -196,6 +197,7 @@ class CoppeliaEnv(gym.Env):
         self._double_buttons = double_buttons
         self._reversal_time = reversal_time
         self._touch_distance = touch_distance
+        self._minimum_dist = minimum_dist
         # Control flow
         self._timestep = 0
         self._needs_reset = True
@@ -368,8 +370,7 @@ class CoppeliaEnv(gym.Env):
             pose[:2] = [x, y]
             self._target.set_pose(pose)
             if self._double_buttons:
-                x, y = self._sample_in_circular_reach()
-                pose2[:2] = [x, y]
+                self._set_double_target(pose, pose2)
                 self._target2.set_pose(pose2)
         else:
             self._target.set_pose(pose)
@@ -380,6 +381,17 @@ class CoppeliaEnv(gym.Env):
         else:
             return np.array(self._target.get_position(), dtype=np.float32), np.array(self._target2.get_position(),
                                                                                         dtype=np.float32)
+    def _set_double_target(self, pose, pose2):
+        iterations = 0
+        while True:
+            iterations += 1
+            x, y = self._sample_in_circular_reach()
+            pose2[:2] = [x, y]
+            if euclid(pose[:2] - pose2[:2]) >= self._minimum_dist:
+                      break
+            if iterations >= 10000:
+                print('Limit exceeded for target setup. Look at *_reset_target()*')
+                break
 
     def _get_info(self):
         return ''

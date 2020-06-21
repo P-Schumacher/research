@@ -29,6 +29,7 @@ coppeliagym:
     double_buttons: false
     reversal_time: 100000000
     touch_distance: 0.08
+    minimum_dist: 0.
 
   subgoals:
     ee_goal: 5.

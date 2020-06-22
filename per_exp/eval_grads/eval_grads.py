@@ -7,8 +7,8 @@ from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
-N = 1000000
-N_TRAIN_CRITIC = 10
+N = 100000
+N_TRAIN_CRITIC = 10000
 N_TRAIN_TRUE_CRITIC = 100000
 SAMPLES = 20
 SAMPLES_TRUE_CRIT = 50
@@ -123,7 +123,7 @@ def main(cnf):
         simil_values.append(similarity_samples)
         print(np.mean(simil_values[-1]))
     print(np.mean(simil_values[-1]))
-    np.save('simils_low.npy', simil_values)
+    np.save('simils_high.npy', simil_values)
 
 
 

@@ -65,7 +65,6 @@ def main(cnf):
     buff.tree.write = 0
     buff.max_size = N
     buff.tree.n_entries = N
-    untrained = copy.deepcopy(agent)
     agent._policy.actor.load_weights('./per_exp/eval_grads/model/converged_actor')
 
     trained_actor = agent._policy.actor
@@ -102,12 +101,12 @@ def main(cnf):
             approx_critic = create_agent(cnf, env)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
             print('Update Buffer')
-            update_buffer(buff, approx_critic)
+            #update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
 
             for i in range(BATCHES):
                 accum2.reset()
-                state, *_ = buff.sample(batch_size)
+                state, *_ = buff.sample_uniformly(batch_size)
                 with tf.GradientTape() as tape:
                     action = trained_actor(state)
                     q_value, _  = approx_critic(tf.concat([state, action], axis=1))
@@ -123,7 +122,7 @@ def main(cnf):
         simil_values.append(similarity_samples)
         print(np.mean(simil_values[-1]))
     print(np.mean(simil_values[-1]))
-    np.save('simils_high.npy', simil_values)
+    np.save('simils_unif.npy', simil_values)
 
 
 

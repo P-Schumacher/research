@@ -219,7 +219,10 @@ class CoppeliaEnv(gym.Env):
             self.subgoal_ranges = [ej_goal[1] for x in range(ej_goal[0])]
         else:
             self.subgoal_ranges = [j_goal for x in range(7)]
-        self.target_dim = self._ep_target_pos.shape[0] - 1
+        if not self._double_buttons:
+            self.target_dim = self._ep_target_pos.shape[0] - 1
+        else:
+            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2
         self.subgoal_dim = len(self.subgoal_ranges)
 
     def _apply_action(self, action):

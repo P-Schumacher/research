@@ -123,7 +123,8 @@ class HierarchicalAgent(Agent):
                                            self._batch_size, 
                                            timestep, 
                                            (self._log and not self._minilog), 
-                                           self._sub_agent.actor)
+                                           self._sub_agent.actor,
+                                           self._sub_agent)
         return metrics 
 
     def _maybe_apply_action_clipnoise(self, action, noise_bool):

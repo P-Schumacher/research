@@ -5,6 +5,7 @@ from pudb import set_trace
 from utils.math_fns import euclid, get_norm, clip_by_global_norm
 from rl_algos.networks import Actor, Critic
 from rl_algos.offpol_correction import off_policy_correction
+from utils.math_fns import euclid
 
 class TD3(object):
     def __init__(
@@ -73,13 +74,13 @@ class TD3(object):
             target_W[idx] = tf.math.scalar_mul(tau, W[idx]) + tf.math.scalar_mul((1 - tau), target_W[idx])
             target_model.weights[idx].assign(target_W[idx])
      
-    def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None):
+    def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
-            reward_new = self._goal_regularization(action, reward, next_state)
+            reward_new = self._goal_regularization(self._goal_regul, action, reward, next_state, state_seq, done, sub_agent)
         else:
             reward_new = reward
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -174,10 +175,55 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
-    def _goal_regularization(self, action, reward, next_state):
+    def _goal_regularization(self, goal_regul, action, reward, next_state, state_seq, done, sub_agent):
         #ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
-        ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-        return ans        
+        #ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+        low_state = self._find_best_state_from_state_seq(state_seq, done) 
+        lower_state = tf.concat([low_state, action], 1)
+        low_action = sub_agent.actor(lower_state)
+        low_next_state = tf.concat([next_state[:, :-self.target_dim], self.actor(next_state)],1)
+        rew = self._compute_intr_rew(action, lower_state, next_state)
+        error = self._compute_td_error_copy(sub_agent, lower_state, low_action, rew, low_next_state, done) 
+        #return ans     
+        return reward - goal_regul * tf.abs(error)
+
+    def _get_error(self, state_seq, goal, sub_agent, next_state, done)
+        pass
+
+    def _compute_intr_rew(self, goal, lower_state, next_state):
+        dim = goal.shape[1]
+        rew = -euclid(lower_state[:, :dim] + goal - next_state[:, :dim], axis=1)
+        return rew
+
+    def _find_best_state_from_state_seq(self, state_seq, done):
+        ret_states = []
+        for states in state_seq:
+            for i in range(states.shape[0]):
+                if tf.reduce_any(tf.math.is_inf(states[i])):
+                    i -= 1
+                    break
+            ret_states.append(states[i, :-self.target_dim])
+        return ret_states
+
+    @tf.function
+    def _compute_td_error_copy(self, sub_agent, state, action, reward, next_state, done):
+        state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
+        done = tf.reshape(done, [done.shape[0], 1])
+        reward = tf.reshape(reward, [reward.shape[0], 1])
+        noise = tf.random.normal(action.shape, stddev=self.policy_noise)
+        # this clip keeps the noisy action close to the original action
+        noise = tf.clip_by_value(noise, -sub_agent.noise_clip, sub_agent.noise_clip)
+        next_action = sub_agent.actor_target(next_state) + noise
+        # this clip assures that we don't take impossible actions a > max_action
+        next_action = tf.clip_by_value(next_action, -sub_agent._max_action, sub_agent._max_action)
+        # Compute the target Q value
+        next_state_next_action = tf.concat([next_state, next_action], 1)
+        target_Q1, target_Q2 = sub_agent.critic_target(next_state_next_action)
+        target_Q = tf.math.minimum(target_Q1, target_Q2)
+        target_Q = reward + (1. - done) * self.discount * target_Q
+        # Critic Update
+        current_Q1, current_Q2 = sub_agent.critic(state_action)
+        return tf.abs(target_Q - current_Q1)
 
     def _prioritized_experience_update(self, per, td_error, next_state, action, reward, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.

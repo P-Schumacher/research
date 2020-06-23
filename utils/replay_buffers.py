@@ -14,6 +14,8 @@ class ReplayBuffer(object):
         self.reset()
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+        if tf.reduce_any(tf.math.is_inf(state)):
+            set_trace()
         self.state[self.ptr] = state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
@@ -141,6 +143,8 @@ class PriorityBuffer(ReplayBuffer):
 
     def _get_priority(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
+        #if np.isnan(np.power(error + self.epsilon, self.alpha)):
+        #    set_trace()
         return np.power(error + self.epsilon, self.alpha).squeeze()
 
     def _sample_idxs(self, batch_size):
@@ -162,7 +166,7 @@ class PriorityBuffer(ReplayBuffer):
         if self.use_cer:  # add the latest sample
             batch_idxs[-1] = self.ptr
 
-        sampling_probabilities = priorities / self.tree.total()
+        #sampling_probabilities = priorities / self.tree.total()
         #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
@@ -224,6 +228,7 @@ class PriorityBuffer(ReplayBuffer):
 
 class SumTree:
     '''
+    Taken from 'Foundations of deep reinforcement learning' Book:
     Helper class for PrioritizedReplay
     This implementation is, with minor adaptations, Jaromír Janisch's. The license is reproduced below.
     For more information see his excellent blog series "Let's make a DQN" https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
@@ -238,7 +243,7 @@ class SumTree:
     
     In this implementation, a conventional FIFO buffer holds the data, while the tree 
     only holds the indices and the corresponding priorities.
-
+    P.Schumacher:
     N.B. A full binary tree has 2*N - 1 nodes for N leaves. (c.f. Gaussian Summation Formula)
     '''
     write = 0

@@ -6,13 +6,13 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sparserew_hiro_easygoalregul001'
+  descriptor: 'sparserew_hiro_easygoalregul_1.'
   c_step: 10
-  seed: 25
+  seed: 1
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: false
+  no_seed: true
   eval_freq: 20000
   simple_env: false
   
@@ -43,7 +43,7 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 1
-  goal_regul: 0.01
+  goal_regul: 1.
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]

@@ -14,7 +14,7 @@ from utils.utils import create_world, exponential_decay
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
-            if agent.meta_time and cnf.render:
+            if cnf.render:
                 if agent._smooth_goal:
                     goal = agent._prev_goal
                 else:
@@ -31,7 +31,6 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
         agent._c_step = c_step
         agent._meta_agent.c_step = c_step
     return c_step
-
 
 def main(cnf):
     env, agent = create_world(cnf)

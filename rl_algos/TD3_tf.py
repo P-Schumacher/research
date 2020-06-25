@@ -181,7 +181,7 @@ class TD3(object):
         #ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
         errors = []
         for idx, x in enumerate(state_seq):
-            to_append = self._get_error(x, action[idx], sub_agent)
+            to_append = self._get_error(x, action[idx], reward[idx], sub_agent)
             errors.append(to_append)
         errors = tf.reshape(errors, [len(errors), 1])
         #return ans     
@@ -191,7 +191,7 @@ class TD3(object):
         dim = goal.shape[0]
         return state[:dim] + goal - state[:dim]
 
-    def _get_error(self, state_stack, goal, sub_agent):
+    def _get_error(self, state_stack, goal, sumrew, sub_agent):
         goal = tf.reshape(goal, [1, goal.shape[0]])
         sum_of_td_errors = tf.constant(0.0, shape=[1,1])
         for i in range(state_stack.shape[0] - 1):
@@ -205,6 +205,7 @@ class TD3(object):
             next_state = tf.reshape(next_state, [1, next_state.shape[0]])
             next_state = tf.concat([next_state, goal], axis=1)
             intr_reward = self._compute_intr_rew(goal, state_stack[i], state_stack[i+1])  
+            intr_reward = sumrew / self.c_step
             low_action = sub_agent.actor(state)
             error = self._compute_td_error_copy(sub_agent, state, low_action, intr_reward, next_state)
             sum_of_td_errors += error

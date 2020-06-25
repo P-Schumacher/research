@@ -1,18 +1,18 @@
 project: 'reversal_task'
 main:
-  render: false 
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sparserew_hiro_easygoalregul_1.'
+  descriptor: 'sequence_goal_every_step_hard_notrandom'
   c_step: 10
   seed: 1
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: true
+  no_seed: false
   eval_freq: 20000
   simple_env: false
   
@@ -43,7 +43,8 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 1
-  goal_regul: 1.
+  goal_regul: 0.
+  goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -72,10 +73,10 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 10000000
-    touch_distance: 0.5
+    touch_distance: 0.08
     minimum_dist: 0.
 
   subgoals:

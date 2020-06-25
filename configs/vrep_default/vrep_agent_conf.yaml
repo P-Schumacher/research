@@ -43,6 +43,7 @@ agent:
   goal_regul: false
   seed: ${main.seed}
   c_step: ${main.c_step}
+  goal_every_iteration: false
 
   meta_model:
     ac_hidden_layers: [300, 300]

@@ -221,7 +221,7 @@ class TransitBuffer(ReplayBuffer):
         self._ptr = 0
 
     def _prepare_buffers(self, buffer_cnf, sub_state_dim, meta_state_dim, action_dim):
-        assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
+        #assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
         self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, buffer_cnf)
         if not self._per:
             self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, buffer_cnf)

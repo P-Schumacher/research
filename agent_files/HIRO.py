@@ -81,35 +81,6 @@ class HierarchicalAgent(Agent):
         if self._smooth_goal:
             self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
 
-    def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
-        '''Unpacks the parameters from the config files to state variables.'''
-        # Env specs
-        self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
-        self._target_dim = env_spec['target_dim']
-        self._action_dim = env_spec['action_dim']
-        self._subgoal_dim = subgoal_dim
-        # Main cnf
-        self._minilog = main_cnf.minilog
-        self._batch_size = main_cnf.batch_size
-        self._c_step = main_cnf.c_step
-        self._seed = main_cnf.seed
-        self._log = main_cnf.log
-        self._gradient_steps = main_cnf.gradient_steps
-        self._visit = main_cnf.visit
-        # Agent cnf
-        self._center_meta_goal = agent_cnf.center_meta_goal
-        self._spherical_coord = agent_cnf.spherical_coord
-        self._num_eval_episodes = agent_cnf.num_eval_episodes
-        self._meta_mock = agent_cnf.meta_mock
-        self._sub_mock = agent_cnf.sub_mock
-        self._meta_noise = agent_cnf.meta_noise
-        self._sub_noise = agent_cnf.sub_noise
-        self._zero_obs = agent_cnf.zero_obs
-        self._train_meta = agent_cnf.train_meta
-        self._train_sub = agent_cnf.train_sub
-        self.goal_type = agent_cnf.goal_type
-        self._smooth_goal = agent_cnf.smooth_goal
-        self._smooth_factor = agent_cnf.smooth_factor
 
     def _train_sub_agent(self, timestep, train_index):
         *metrics, = self._sub_agent.train(self.sub_replay_buffer, 
@@ -159,6 +130,8 @@ class HierarchicalAgent(Agent):
                            f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
     def _maybe_goal_smoothing(self):
+        '''Changes the goal such that it's a linear interpolation between the previous goal
+        and the newly proposed goal.'''
         if self._smooth_goal:
             if not self._init:
                 self._init = True
@@ -287,6 +260,8 @@ class HierarchicalAgent(Agent):
             self._goal_counter = 0
             self._prev_state = state
             self.goal = self._meta_agent.select_action(state)
+        if self._goal_every_iteration:
+            self.goal = self._meta_agent.select_action(state)
     
     def _eval_policy(self, env, seed, visit):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
@@ -336,6 +311,37 @@ class HierarchicalAgent(Agent):
         state and actions.'''
         # TODO implement
         return 0
+
+    def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
+        '''Unpacks the parameters from the config files to state variables.'''
+        # Env specs
+        self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
+        self._target_dim = env_spec['target_dim']
+        self._action_dim = env_spec['action_dim']
+        self._subgoal_dim = subgoal_dim
+        # Main cnf
+        self._minilog = main_cnf.minilog
+        self._batch_size = main_cnf.batch_size
+        self._c_step = main_cnf.c_step
+        self._seed = main_cnf.seed
+        self._log = main_cnf.log
+        self._gradient_steps = main_cnf.gradient_steps
+        self._visit = main_cnf.visit
+        # Agent cnf
+        self._center_meta_goal = agent_cnf.center_meta_goal
+        self._spherical_coord = agent_cnf.spherical_coord
+        self._num_eval_episodes = agent_cnf.num_eval_episodes
+        self._meta_mock = agent_cnf.meta_mock
+        self._sub_mock = agent_cnf.sub_mock
+        self._meta_noise = agent_cnf.meta_noise
+        self._sub_noise = agent_cnf.sub_noise
+        self._zero_obs = agent_cnf.zero_obs
+        self._train_meta = agent_cnf.train_meta
+        self._train_sub = agent_cnf.train_sub
+        self.goal_type = agent_cnf.goal_type
+        self._smooth_goal = agent_cnf.smooth_goal
+        self._smooth_factor = agent_cnf.smooth_factor
+        self._goal_every_iteration = agent_cnf.goal_every_iteration
 
     @property
     def goal(self):

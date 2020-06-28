@@ -6,11 +6,11 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'dense_hiro'
+  descriptor: 'dense_hiro_sparseintrreward_c20'
   c_step: 20
   seed: 25
   offpolicy: true
-  start_timesteps: 200
+  start_timesteps: 5000
   max_timesteps: 10000000
   no_seed: false
   eval_freq: 20000

@@ -54,7 +54,7 @@ class TD3(object):
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                                  c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                                 goal_regul)
+                                 goal_regul, distance_goal_regul)
 
         self._create_persistent_tf_variables()
 
@@ -80,7 +80,7 @@ class TD3(object):
         if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
-        if self.name == 'meta' and self._goal_regul:
+        if self.name == 'meta' and (self._goal_regul or self._distance_goal_regul):
             reward_new = self._goal_regularization(action, reward, next_state, state_seq, sub_agent)
         else:
             reward_new = reward
@@ -283,7 +283,7 @@ class TD3(object):
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                             c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                            goal_regul):
+                            goal_regul, distance_goal_regul):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy

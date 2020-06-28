@@ -65,7 +65,6 @@ def main(cnf):
     buff.tree.write = 0
     buff.max_size = N
     buff.tree.n_entries = N
-    untrained = copy.deepcopy(agent)
     agent._policy.actor.load_weights('./per_exp/eval_grads/model/converged_actor')
 
     trained_actor = agent._policy.actor
@@ -123,7 +122,7 @@ def main(cnf):
         simil_values.append(similarity_samples)
         print(np.mean(simil_values[-1]))
     print(np.mean(simil_values[-1]))
-    np.save('simils_low.npy', simil_values)
+    np.save('simils_unif.npy', simil_values)
 
 
 

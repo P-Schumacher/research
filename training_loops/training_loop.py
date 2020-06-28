@@ -19,7 +19,7 @@ def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
                     goal = agent._prev_goal
                 else:
                     goal = agent.goal
-                if agent.goal_type == 'Direction':
+                if agent.goal_type == 'Direction' or agent.goal_type == 'Sparse':
                     env.set_goal(state[:3] + goal[:3])
                 else:
                     env.set_goal(goal[:3])

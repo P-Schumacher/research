@@ -1,18 +1,18 @@
 project: 'new_goal_regul'
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'dense_hiro_sparseintrreward_c20'
+  descriptor: 'dense_hiro_directionreward_distance_'
   c_step: 20
   seed: 25
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: false
+  no_seed: true
   eval_freq: 20000
   simple_env: false
   
@@ -33,7 +33,7 @@ agent:
   meta_rew_scale: 0.1
   meta_noise: 0.6442
   #sub_noise: 0.0 
-  goal_type: Sparse
+  goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.00
   meta_mock: false
@@ -46,7 +46,7 @@ agent:
   per: 0
   sub_per: 0
   goal_regul: 0.0
-  distance_goal_regul: 0.0
+  distance_goal_regul: 0.001
   goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]

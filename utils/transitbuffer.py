@@ -63,6 +63,7 @@ class TransitBuffer(ReplayBuffer):
                 rew = -1
         else:
             raise Exception("Goal type has to be Absolute or Direction")
+        print(rew)
         return rew - self._action_reg * tf.square(tf.norm(action))
     
     def reset(self):

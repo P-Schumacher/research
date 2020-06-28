@@ -226,11 +226,11 @@ class HierarchicalAgent(Agent):
         mode, this is just the identity.'''
         if self.goal_type == "Absolute" or self.goal_type == "Huber":
             return goal
-        elif self.goal_type == "Direction":
+        elif self.goal_type == "Direction" or self.goal_type == 'Sparse':
             dim = self._subgoal_dim
             return previous_state[:dim] + goal - state[:dim]
         else:
-            raise Exception("Enter a valid type for the goal, Absolute or Direction.")
+            raise Exception("Enter a valid type for the goal, Absolute, Direction or Sparse.")
     
     def _check_inner_done(self, next_state):
         '''Checks how close the sub-agent has gotten to the proposed subgoal and plots it.'''

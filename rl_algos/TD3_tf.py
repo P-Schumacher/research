@@ -24,6 +24,7 @@ class TD3(object):
         zero_obs,
         per,
         goal_regul,
+        distance_goal_regul,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -80,7 +81,7 @@ class TD3(object):
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and self._goal_regul:
-            reward_new = self._goal_regularization(self._goal_regul, action, reward, next_state, state_seq, sub_agent)
+            reward_new = self._goal_regularization(action, reward, next_state, state_seq, sub_agent)
         else:
             reward_new = reward
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -176,7 +177,7 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
-    def _goal_regularization(self, goal_regul, action, reward, next_state, state_seq, sub_agent):
+    def _goal_regularization(self, action, reward, next_state, state_seq, sub_agent):
         #ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         #ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
         errors = []
@@ -184,8 +185,8 @@ class TD3(object):
             to_append = self._get_error(x, action[idx], reward[idx], sub_agent)
             errors.append(to_append)
         errors = tf.reshape(errors, [len(errors), 1])
-        #return ans     
-        return reward - goal_regul * tf.abs(errors)
+        return reward - self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+
 
     def _goal_transit_fn(self, goal, state, next_state):
         dim = goal.shape[0]
@@ -200,12 +201,11 @@ class TD3(object):
             state = state_stack[i,:-self.target_dim]
             state = tf.reshape(state, [1, state.shape[0]])
             state = tf.concat([state, goal], axis=1)
-            goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
+            #goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
             next_state = state_stack[i+1,:-self.target_dim]
             next_state = tf.reshape(next_state, [1, next_state.shape[0]])
             next_state = tf.concat([next_state, goal], axis=1)
             intr_reward = self._compute_intr_rew(goal, state_stack[i], state_stack[i+1])  
-            intr_reward = sumrew / self.c_step
             low_action = sub_agent.actor(state)
             error = self._compute_td_error_copy(sub_agent, state, low_action, intr_reward, next_state)
             sum_of_td_errors += error
@@ -215,7 +215,8 @@ class TD3(object):
         state = tf.reshape(state, [1, state.shape[0]])
         next_state = tf.reshape(next_state, [1, next_state.shape[0]])
         dim = goal.shape[1]
-        rew = -euclid(state[:, :dim] + goal - next_state[:, :dim], axis=1)
+        #rew = -euclid(state[:, :dim] + goal - next_state[:, :dim], axis=1)
+        rew = -euclid(goal - next_state[:, :dim], axis=1)
         return rew
 
     @tf.function
@@ -301,6 +302,7 @@ class TD3(object):
         self._zero_obs = zero_obs
         self._per = per
         self._goal_regul = goal_regul
+        self._distance_goal_regul = distance_goal_regul
 
 
 if __name__ == '__main__':

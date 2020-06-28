@@ -7,10 +7,10 @@ from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
-N = 100000
-N_TRAIN_CRITIC = 10000
-N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 20
+N = 1000
+N_TRAIN_CRITIC = 100
+N_TRAIN_TRUE_CRITIC = 1000
+SAMPLES = 50
 SAMPLES_TRUE_CRIT = 50
 BATCHES = 10
 
@@ -102,12 +102,12 @@ def main(cnf):
             approx_critic = create_agent(cnf, env)
             train_the_critic(approx_critic, buff, N_TRAIN_CRITIC, 128)
             print('Update Buffer')
-            update_buffer(buff, approx_critic)
+            #update_buffer(buff, approx_critic)
             approx_critic = approx_critic._policy.critic
 
             for i in range(BATCHES):
                 accum2.reset()
-                state, *_ = buff.sample(batch_size)
+                state, *_ = buff.sample_uniformly(batch_size)
                 with tf.GradientTape() as tape:
                     action = trained_actor(state)
                     q_value, _  = approx_critic(tf.concat([state, action], axis=1))
@@ -123,7 +123,7 @@ def main(cnf):
         simil_values.append(similarity_samples)
         print(np.mean(simil_values[-1]))
     print(np.mean(simil_values[-1]))
-    np.save('simils_high.npy', simil_values)
+    np.save('simils_low.npy', simil_values)
 
 
 

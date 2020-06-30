@@ -39,6 +39,11 @@ class CoppeliaEnv(gym.Env):
         if not self._reversal and (self._total_it >= self._reversal_time):
             self._reversal = True
             print('REVERSAL')
+        if self._render and self._double_buttons:
+            if self._button1:
+                self._target.set_color([1, 0, 0])
+            if self._button2:
+                self._target2.set_color([1, 0, 0])
         return observation, reward, done, info
 
     def reset(self, evalmode=False):
@@ -59,6 +64,9 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
             self._button2 = True
+        if self._render and self._double_buttons:
+            self._target.set_color([0, 0, 1])
+            self._target2.set_color([0.5, 0.5, 0.5])
         return state
 
     def render(self, mode='human'):
@@ -222,8 +230,8 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             self.target_dim = self._ep_target_pos.shape[0] - 1
         else:
-            #self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2
-            self.target_dim = self._ep_target_pos.shape[0] - 1
+            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2
+            #self.target_dim = self._ep_target_pos.shape[0] - 1
         self.subgoal_dim = len(self.subgoal_ranges)
 
     def _apply_action(self, action):

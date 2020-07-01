@@ -14,12 +14,9 @@ class ReplayBuffer(object):
         self.reset()
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
-        if tf.reduce_any(tf.math.is_inf(state)):
-            set_trace()
         self.state[self.ptr] = state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
-        set_trace()
         self.reward[self.ptr] = reward
         self.done[self.ptr] = float(done)
         self.state_seq[self.ptr] = state_seq
@@ -101,7 +98,6 @@ class nstepbuffer(ReplayBuffer):
         if self.n_counter == self.nstep or done:
             self.rewards += reward
             reward = tf.constant(self.rewards, shape=[1,])
-            set_trace()
             super().add(self.states[0], self.actions[0], self.rewards, next_state, done, 0, 0)
             self._internal_reset()
         else:

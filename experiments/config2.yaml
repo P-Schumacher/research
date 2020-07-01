@@ -1,20 +1,20 @@
-project: 'pendulum'
+project: 'reversal_task'
 main:
-  render: false
-  flat_agent: true
-  log: true
+  render: true
+  flat_agent: false
+  log: false
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'pendulum_nstep_5'
+  descriptor: 'sequence_hiro_hard_random_episodedoesntendatfailure'
   c_step: 10
-  seed: 25
+  seed: 10
   offpolicy: true
-  start_timesteps: 1000
+  start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: true
-  eval_freq: 20000000
-  simple_env: true
+  no_seed: false
+  eval_freq: 20000
+  simple_env: false
   
   decay: false
   step_decayer:
@@ -43,10 +43,10 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 0
+  per: 1
   sub_per: 0
-  goal_regul: 0.01
-  distance_goal_regul: 0.001
+  goal_regul: 0.000
+  distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -70,17 +70,17 @@ agent:
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
-    render_scene_file: 'coppelia_scenes/kuka_double.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 300
-    double_buttons: false
-    random_target: false
-    random_eval_target: false
+    time_limit: 600
+    double_buttons: true
+    random_target: true
+    random_eval_target: true
     reversal_time: 10000000
-    touch_distance: 0.08
-    minimum_dist: 0.
+    touch_distance: 0.5
+    minimum_dist: 0.0
 
   subgoals:
     ej_goal: [3, 1.0]

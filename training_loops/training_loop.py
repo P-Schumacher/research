@@ -47,13 +47,11 @@ def main(cnf):
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
-        #success_cd = [done if env.success else 0][0]
-        success_cd = done
+        success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier

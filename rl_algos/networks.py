@@ -4,7 +4,6 @@ import tensorflow.keras.initializers as inits
 import numpy as np
 from tensorflow.keras.regularizers import l2
 
-
 initialize_relu = inits.VarianceScaling(scale=1./3., mode="fan_in", distribution="uniform")  # this conserves std for layers with relu activation 
 initialize_tanh = inits.GlorotUniform()  # This is the standard tf.keras.layers.Dense initializer, it conserves std for layers with tanh activation
 

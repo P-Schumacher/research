@@ -81,35 +81,6 @@ class HierarchicalAgent(Agent):
         if self._smooth_goal:
             self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
 
-    def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
-        '''Unpacks the parameters from the config files to state variables.'''
-        # Env specs
-        self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
-        self._target_dim = env_spec['target_dim']
-        self._action_dim = env_spec['action_dim']
-        self._subgoal_dim = subgoal_dim
-        # Main cnf
-        self._minilog = main_cnf.minilog
-        self._batch_size = main_cnf.batch_size
-        self._c_step = main_cnf.c_step
-        self._seed = main_cnf.seed
-        self._log = main_cnf.log
-        self._gradient_steps = main_cnf.gradient_steps
-        self._visit = main_cnf.visit
-        # Agent cnf
-        self._center_meta_goal = agent_cnf.center_meta_goal
-        self._spherical_coord = agent_cnf.spherical_coord
-        self._num_eval_episodes = agent_cnf.num_eval_episodes
-        self._meta_mock = agent_cnf.meta_mock
-        self._sub_mock = agent_cnf.sub_mock
-        self._meta_noise = agent_cnf.meta_noise
-        self._sub_noise = agent_cnf.sub_noise
-        self._zero_obs = agent_cnf.zero_obs
-        self._train_meta = agent_cnf.train_meta
-        self._train_sub = agent_cnf.train_sub
-        self.goal_type = agent_cnf.goal_type
-        self._smooth_goal = agent_cnf.smooth_goal
-        self._smooth_factor = agent_cnf.smooth_factor
 
     def _train_sub_agent(self, timestep, train_index):
         *metrics, = self._sub_agent.train(self.sub_replay_buffer, 
@@ -123,7 +94,8 @@ class HierarchicalAgent(Agent):
                                            self._batch_size, 
                                            timestep, 
                                            (self._log and not self._minilog), 
-                                           self._sub_agent.actor)
+                                           self._sub_agent.actor,
+                                           self._sub_agent)
         return metrics 
 
     def _maybe_apply_action_clipnoise(self, action, noise_bool):
@@ -158,6 +130,8 @@ class HierarchicalAgent(Agent):
                            f'{name}/critic_gradstd': avg[5]}, step = timestep)
 
     def _maybe_goal_smoothing(self):
+        '''Changes the goal such that it's a linear interpolation between the previous goal
+        and the newly proposed goal.'''
         if self._smooth_goal:
             if not self._init:
                 self._init = True
@@ -252,11 +226,11 @@ class HierarchicalAgent(Agent):
         mode, this is just the identity.'''
         if self.goal_type == "Absolute" or self.goal_type == "Huber":
             return goal
-        elif self.goal_type == "Direction":
+        elif self.goal_type == "Direction" or self.goal_type == 'Sparse':
             dim = self._subgoal_dim
             return previous_state[:dim] + goal - state[:dim]
         else:
-            raise Exception("Enter a valid type for the goal, Absolute or Direction.")
+            raise Exception("Enter a valid type for the goal, Absolute, Direction or Sparse.")
     
     def _check_inner_done(self, next_state):
         '''Checks how close the sub-agent has gotten to the proposed subgoal and plots it.'''
@@ -286,6 +260,8 @@ class HierarchicalAgent(Agent):
             self._goal_counter = 0
             self._prev_state = state
             self.goal = self._meta_agent.select_action(state)
+        if self._goal_every_iteration:
+            self.goal = self._meta_agent.select_action(state)
     
     def _eval_policy(self, env, seed, visit):
         '''Runs policy for X episodes and returns average reward, average intrinsic reward and success rate.
@@ -295,6 +271,7 @@ class HierarchicalAgent(Agent):
         env.seed(self._seed + 100)
         avg_ep_reward = []
         avg_intr_reward = []
+        rate_correct_solves = 0
         success_rate = 0
         visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
         for episode_nbr in range(self._num_eval_episodes):
@@ -313,23 +290,58 @@ class HierarchicalAgent(Agent):
                 step += 1
                 if done and step < env.max_episode_steps:
                     success_rate += 1
+                    if env._double_buttons:
+                        if env.mega_reward:
+                            rate_correct_solves += 1
             if visit:
                 np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes
         success_rate = success_rate / self._num_eval_episodes
+        rate_correct_solves = rate_correct_solves / self._num_eval_episodes
         print("---------------------------------------")
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
         self._evals += 1
-        return avg_ep_reward, avg_intr_reward, success_rate
+        return avg_ep_reward, avg_intr_reward, success_rate, rate_correct_solves
 
     def _average_q_value(self):
         '''Compute the average Q value by doing multivariate Monte Carlo Integration over
         state and actions.'''
         # TODO implement
         return 0
+
+    def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
+        '''Unpacks the parameters from the config files to state variables.'''
+        # Env specs
+        self._subgoal_ranges = np.array(env_spec['subgoal_ranges'], dtype=np.float32)
+        self._target_dim = env_spec['target_dim']
+        self._action_dim = env_spec['action_dim']
+        self._subgoal_dim = subgoal_dim
+        # Main cnf
+        self._minilog = main_cnf.minilog
+        self._batch_size = main_cnf.batch_size
+        self._c_step = main_cnf.c_step
+        self._seed = main_cnf.seed
+        self._log = main_cnf.log
+        self._gradient_steps = main_cnf.gradient_steps
+        self._visit = main_cnf.visit
+        # Agent cnf
+        self._center_meta_goal = agent_cnf.center_meta_goal
+        self._spherical_coord = agent_cnf.spherical_coord
+        self._num_eval_episodes = agent_cnf.num_eval_episodes
+        self._meta_mock = agent_cnf.meta_mock
+        self._sub_mock = agent_cnf.sub_mock
+        self._meta_noise = agent_cnf.meta_noise
+        self._sub_noise = agent_cnf.sub_noise
+        self._zero_obs = agent_cnf.zero_obs
+        self._train_meta = agent_cnf.train_meta
+        self._train_sub = agent_cnf.train_sub
+        self.goal_type = agent_cnf.goal_type
+        self._smooth_goal = agent_cnf.smooth_goal
+        self._smooth_factor = agent_cnf.smooth_factor
+        self._goal_every_iteration = agent_cnf.goal_every_iteration
 
     @property
     def goal(self):

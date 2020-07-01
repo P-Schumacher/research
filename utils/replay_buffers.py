@@ -14,9 +14,12 @@ class ReplayBuffer(object):
         self.reset()
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+        if tf.reduce_any(tf.math.is_inf(state)):
+            set_trace()
         self.state[self.ptr] = state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
+        set_trace()
         self.reward[self.ptr] = reward
         self.done[self.ptr] = float(done)
         self.state_seq[self.ptr] = state_seq
@@ -80,6 +83,49 @@ class ReplayBuffer(object):
         self.is_weight = 1
         self.data_fields = ['state', 'action', 'next_state', 'reward', 'done', 'state_seq', 'action_seq']
 
+class nstepbuffer(ReplayBuffer):
+    def __init__(self, state_dim, action_dim, buffer_cnf, nstep=5):
+        super().__init__(state_dim, action_dim, buffer_cnf)
+        self.states = []
+        self.actions = []
+        self.rewards = 0
+        self.next_states = []
+        self.dones = []
+        self.n_counter = 0
+        self.nstep = nstep
+
+    def sample(self, batch_size):
+        return super().sample(batch_size)
+
+    def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+        if self.n_counter == self.nstep or done:
+            self.rewards += reward
+            reward = tf.constant(self.rewards, shape=[1,])
+            set_trace()
+            super().add(self.states[0], self.actions[0], self.rewards, next_state, done, 0, 0)
+            self._internal_reset()
+        else:
+            self.states.append(state)
+            self.actions.append(action)
+            self.rewards += reward
+            self.next_states.append(next_state)
+            self.dones.append(done)
+            self.n_counter += 1
+
+    def _internal_reset(self):
+        self.states = []
+        self.actions = []
+        self.rewards = 0
+        self.next_states = []
+        self.dones = []
+        self.n_counter = 0
+
+
+
+
+
+
+        
 class PriorityBuffer(ReplayBuffer):
     '''
     Prioritized Experience Replay
@@ -127,8 +173,22 @@ class PriorityBuffer(ReplayBuffer):
         self.tree.tree = np.load(f'{directory}tree.npy')
         self.tree.indices = np.load(f'{directory}indices.npy')
 
+    def sample_uniformly(self, batch_size):
+        self.batch_idxs = np.random.uniform(0, self.size, [batch_size,])
+        self.batch_idxs = np.asarray(a=self.batch_idxs, dtype=np.int32)
+        return (  
+        tf.convert_to_tensor(self.state[self.batch_idxs]),
+        tf.convert_to_tensor(self.action[self.batch_idxs]),
+        tf.convert_to_tensor(self.reward[self.batch_idxs]),
+        tf.convert_to_tensor(self.next_state[self.batch_idxs]),
+        tf.convert_to_tensor(self.done[self.batch_idxs]),
+        tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
+        tf.convert_to_tensor(self.action_seq[self.batch_idxs]))
+
     def _get_priority(self, error):
         '''Takes in the error of one or more examples and returns the proportional priority'''
+        #if np.isnan(np.power(error + self.epsilon, self.alpha)):
+        #    set_trace()
         return np.power(error + self.epsilon, self.alpha).squeeze()
 
     def _sample_idxs(self, batch_size):
@@ -150,10 +210,46 @@ class PriorityBuffer(ReplayBuffer):
         if self.use_cer:  # add the latest sample
             batch_idxs[-1] = self.ptr
 
-        sampling_probabilities = priorities / self.tree.total()
-        self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
+        #sampling_probabilities = priorities / self.tree.total()
+        #self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
         #self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
         return batch_idxs
+
+    def _sample_idxs_without_index(self, batch_size):
+        '''Samples batch_size indices from memory in proportional to their priority, but without
+        modifying the class state, such that we do not update priorities in subsequent steps.'''
+        batch_idxs = np.zeros(batch_size)
+        tree_idxs = np.zeros(batch_size, dtype=np.int)
+        priorities = np.zeros([batch_size, 1]) 
+        self.beta = np.min([1., self.beta + self.beta_increment])
+
+        for i in range(batch_size):
+            s = random.uniform(0, self.tree.total())
+            (tree_idx, p, idx) = self.tree.get(s)
+            batch_idxs[i] = idx
+            tree_idxs[i] = tree_idx
+            priorities[i] = p
+
+        batch_idxs = np.asarray(batch_idxs).astype(int)
+        tree_idxs = tree_idxs
+        if self.use_cer:  # add the latest sample
+            batch_idxs[-1] = self.ptr
+
+        sampling_probabilities = priorities / self.tree.total()
+        self.is_weight.assign(np.power(self.tree.n_entries * sampling_probabilities, - self.beta))
+        self.is_weight.assign(self.is_weight /  tf.reduce_max(self.is_weight))
+        return batch_idxs
+
+    def sample_without_index(self, batch_size):
+        batch_idxs = self._sample_idxs_without_index(batch_size)
+        return (  
+        tf.convert_to_tensor(self.state[batch_idxs]),
+        tf.convert_to_tensor(self.action[batch_idxs]),
+        tf.convert_to_tensor(self.reward[batch_idxs]),
+        tf.convert_to_tensor(self.next_state[batch_idxs]),
+        tf.convert_to_tensor(self.done[batch_idxs]),
+        tf.convert_to_tensor(self.state_seq[batch_idxs]),
+        tf.convert_to_tensor(self.action_seq[batch_idxs]))
 
     def update_priorities(self, errors):
         '''
@@ -166,9 +262,17 @@ class PriorityBuffer(ReplayBuffer):
             self.priorities[idx] = p
         for p, i in zip(priorities, self.tree_idxs):
             self.tree.update(i, p)
+    
+    def get_buffer(self):
+        return (tf.convert_to_tensor(self.state[:self.size]),
+                tf.convert_to_tensor(self.action[:self.size]),
+                tf.convert_to_tensor(self.reward[:self.size]),
+                tf.convert_to_tensor(self.next_state[:self.size]),
+                tf.convert_to_tensor(self.done[:self.size]))
 
 class SumTree:
     '''
+    Taken from 'Foundations of deep reinforcement learning' Book:
     Helper class for PrioritizedReplay
     This implementation is, with minor adaptations, Jaromír Janisch's. The license is reproduced below.
     For more information see his excellent blog series "Let's make a DQN" https://jaromiru.com/2016/09/27/lets-make-a-dqn-theory/
@@ -183,7 +287,7 @@ class SumTree:
     
     In this implementation, a conventional FIFO buffer holds the data, while the tree 
     only holds the indices and the corresponding priorities.
-
+    P.Schumacher:
     N.B. A full binary tree has 2*N - 1 nodes for N leaves. (c.f. Gaussian Summation Formula)
     '''
     write = 0

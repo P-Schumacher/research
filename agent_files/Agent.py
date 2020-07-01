@@ -4,16 +4,19 @@ import numpy as np
 import gym
 import tensorflow as tf
 from pudb import set_trace
-from utils.replay_buffers import ReplayBuffer, PriorityBuffer
+from utils.replay_buffers import ReplayBuffer, PriorityBuffer, nstepbuffer
+from utils.double_buffer import DoubleBuffer
 import wandb 
 
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
         self._prepare_parameters(agent_cnf, main_cnf)
         if self._per:
+            #self._replay_buffer = DoubleBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
             self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         else:
-            self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+            #self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+            self._replay_buffer = nstepbuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
         
@@ -23,10 +26,10 @@ class Agent:
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
         #tf.random.set_seed(self._seed)
         env.reset()
-        avg_reward, avg_intr_reward, success_rate =  self._eval_policy(env, self._seed,
+        avg_reward, avg_intr_reward, success_rate, rate_correct_solves =  self._eval_policy(env, self._seed,
                                                                        self._visit)
         self.reset()
-        return avg_reward, avg_intr_reward, success_rate
+        return avg_reward, avg_intr_reward, success_rate, rate_correct_solves
 
     def select_action(self, state, noise_bool=False):
         state = np.array(state)
@@ -100,6 +103,7 @@ class Agent:
         env.seed(seed + 100)
         avg_ep_reward = []
         success_rate = 0
+        rate_correct_solves = 0
         for episode_nbr in range(self._num_eval_episodes):
             print(f"eval number: {episode_nbr} of {self._num_eval_episodes}")
             step = 0
@@ -113,10 +117,14 @@ class Agent:
                 step += 1
                 if done and step < env.max_episode_steps:
                     success_rate += 1
+                    if env._double_buttons:
+                        if env.mega_reward:
+                            rate_correct_solves += 1
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         success_rate = success_rate / self._num_eval_episodes
+        rate_correct_solves = rate_correct_solves / self._num_eval_episodes
         print("---------------------------------------")
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
-        return avg_ep_reward, 0, success_rate
+        return avg_ep_reward, 0, success_rate, rate_correct_solves

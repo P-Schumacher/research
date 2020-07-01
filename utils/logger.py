@@ -42,7 +42,7 @@ class Logger:
         if self.logging:
             wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew, 'c_step': c_step}, step = t)
 
-    def log_eval(self, t, eval_rew, eval_intr_rew, eval_success):
+    def log_eval(self, t, eval_rew, eval_intr_rew, eval_success, rate_correct_solves):
         '''Log the evaluation metrics.
         :param t: The current timestep.
         :param eval_rew: The average episode reward of the evaluative episods.
@@ -51,4 +51,4 @@ class Logger:
         :return: None'''
         if self.logging:
             wandb.log({'eval/eval_ep_rew': eval_rew, 'eval/eval_intr_rew': eval_intr_rew,
-                  'eval/success_rate': eval_success}, step = t)
+                       'eval/success_rate': eval_success, 'eval/rate_correct_solves':rate_correct_solves}, step = t)

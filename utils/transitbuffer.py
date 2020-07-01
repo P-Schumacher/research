@@ -56,6 +56,11 @@ class TransitBuffer(ReplayBuffer):
             rew =  - euclid(state[:dim] + goal - next_state[:dim])  
         elif self.goal_type == "Huber":
             rew =  - huber(state[:dim] - next_state[:dim], 1.)  
+        elif self.goal_type == "Sparse":
+            if euclid(state[:dim] + goal - next_state[:dim]) < 0.1: 
+                rew = 0
+            else:
+                rew = -1
         else:
             raise Exception("Goal type has to be Absolute or Direction")
         return rew - self._action_reg * tf.square(tf.norm(action))
@@ -221,8 +226,14 @@ class TransitBuffer(ReplayBuffer):
         self._ptr = 0
 
     def _prepare_buffers(self, buffer_cnf, sub_state_dim, meta_state_dim, action_dim):
-        assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
-        self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, buffer_cnf)
+        '''Create simple replay buffers for higher and lower level agent separately.
+        Can also use prioritized experience replay.'''
+        #assert sub_state_dim == meta_state_dim - self._target_dim + self._subgoal_dim
+        if not self._sub_per:
+            self._sub_replay_buffer = ReplayBuffer(sub_state_dim, action_dim, buffer_cnf)
+        else:
+            self._sub_replay_buffer = PriorityBuffer(sub_state_dim, action_dim, buffer_cnf)
+
         if not self._per:
             self._meta_replay_buffer = ReplayBuffer(meta_state_dim, self._subgoal_dim, buffer_cnf)
         else:
@@ -246,3 +257,4 @@ class TransitBuffer(ReplayBuffer):
         self._action_reg = agent_cnf.agent_action_regularizer
         self._add_multiple_dones = agent_cnf.add_multiple_dones
         self._per = agent_cnf.per
+        self._sub_per = agent_cnf.sub_per

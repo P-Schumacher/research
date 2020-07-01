@@ -87,3 +87,4 @@ def _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, st
         best_c = tf.where(logprob > max_logprob, c, best_c)
         max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
     return best_c
+

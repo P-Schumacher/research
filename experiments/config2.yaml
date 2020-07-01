@@ -1,8 +1,8 @@
 project: 'reversal_task'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: false
   save_model: false
   load_model: false
@@ -79,7 +79,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 10000000
-    touch_distance: 0.5
+    touch_distance: 0.08
     minimum_dist: 0.0
 
   subgoals:

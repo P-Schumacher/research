@@ -5,14 +5,14 @@ main:
   log: false
   minilog: true
   save_model: false
-  load_model: true
-  descriptor: 'sequence_hiro_hard_random_fixedbottomstate'
+  load_model: false
+  descriptor: 'sequence_hiro_hard_random_bonusforlowertderror_0.001'
   c_step: 10
-  seed: 2
+  seed: 10
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: true
+  no_seed: false
   eval_freq: 20000
   simple_env: false
   
@@ -31,8 +31,8 @@ main:
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.0 #0.6442
-  sub_noise: 0.0 
+  meta_noise: 0.6442
+  #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.00
@@ -45,7 +45,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
-  goal_regul: 0.0
+  goal_regul: 0.000
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -70,7 +70,7 @@ agent:
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
-    render_scene_file: 'coppelia_scenes/kuka_double.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
     sparse_rew: true
     action_regularizer: 0.00
@@ -79,7 +79,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 10000000
-    touch_distance: 0.08
+    touch_distance: 0.5
     minimum_dist: 0.
 
   subgoals:

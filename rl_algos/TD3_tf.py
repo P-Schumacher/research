@@ -185,7 +185,7 @@ class TD3(object):
             to_append = self._get_error(x, action[idx], reward[idx], sub_agent)
             errors.append(to_append)
         errors = tf.reshape(errors, [len(errors), 1])
-        return reward - self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+        return reward + self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
 
 
     def _goal_transit_fn(self, goal, state, next_state):
@@ -201,7 +201,7 @@ class TD3(object):
             state = state_stack[i,:-self.target_dim]
             state = tf.reshape(state, [1, state.shape[0]])
             state = tf.concat([state, goal], axis=1)
-            #goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
+            goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
             next_state = state_stack[i+1,:-self.target_dim]
             next_state = tf.reshape(next_state, [1, next_state.shape[0]])
             next_state = tf.concat([next_state, goal], axis=1)
@@ -215,8 +215,8 @@ class TD3(object):
         state = tf.reshape(state, [1, state.shape[0]])
         next_state = tf.reshape(next_state, [1, next_state.shape[0]])
         dim = goal.shape[1]
-        #rew = -euclid(state[:, :dim] + goal - next_state[:, :dim], axis=1)
-        rew = -euclid(goal - next_state[:, :dim], axis=1)
+        rew = -euclid(state[:, :dim] + goal - next_state[:, :dim], axis=1)
+        #rew = -euclid(goal - next_state[:, :dim], axis=1)
         return rew
 
     @tf.function

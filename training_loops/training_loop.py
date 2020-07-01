@@ -52,9 +52,6 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-        if not t % 1000:
-            np.save('distance_first_button.npy', env.distance_first_button)
-            np.save('distance_second_button.npy', env.distance_second_button)
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier

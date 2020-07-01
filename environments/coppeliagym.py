@@ -65,9 +65,9 @@ class CoppeliaEnv(gym.Env):
             # this ignores the second button in the *get_done()* fct.
             self._button2 = True
         if self._render and self._double_buttons:
-            self._target.set_color([0, 0, 1])
-            self._target2.set_color([1, 0, 0])
+            self._reset_button_colors()
         return state
+
 
     def render(self, mode='human'):
         '''gym render function. To render the simulator during simulation, call render(mode='human') once.
@@ -290,14 +290,16 @@ class CoppeliaEnv(gym.Env):
                     print('MEGA reward')
                     if self._record_touches:
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                    if self._record_touches:
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                 if (self._button1 and self._button2) and not self.mega_reward:
-                    #rew -= 10000
                     print('FAILURE Punishment')
+                    self._button1 = False
+                    self._button2 = False
+                    self.mega_reward = True
+                    if self._render:
+                        self._reset_button_colors()
                     if self._record_touches:
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                    if self._record_touches:
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                 return rew
             else:
@@ -419,6 +421,9 @@ class CoppeliaEnv(gym.Env):
                 print('Limit exceeded for target setup. Look at *_reset_target()*')
                 break
 
+    def _reset_button_colors(self):
+        self._target.set_color([0, 0, 1])
+        self._target2.set_color([1, 0, 0])
     def _get_info(self):
         return ''
     

@@ -1,6 +1,6 @@
 project: 'reversal_task_reversal'
 main:
-  render: false
+  render: true
   flat_agent: false
   log: false
   minilog: true
@@ -81,7 +81,7 @@ coppeliagym:
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.
-    record_touches: true
+    record_touches: false
 
   subgoals:
     ej_goal: [3, 1.0]

@@ -2,15 +2,15 @@ project: 'reversal_task_reversal'
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: true
-  save_model: true
-  load_model: false
+  save_model: false
+  load_model: true
   descriptor: 'fixed_original_hiro_recording'
   c_step: 10
   seed: 2
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 100000
   max_timesteps: 10000000
   no_seed: true
   eval_freq: 20000
@@ -35,7 +35,7 @@ agent:
   #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.01
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -70,7 +70,7 @@ agent:
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
-    render_scene_file: 'coppelia_scenes/kuka_double.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
     sparse_rew: true
     action_regularizer: 0.00
@@ -81,6 +81,7 @@ coppeliagym:
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.
+    record_touches: true
 
   subgoals:
     ej_goal: [3, 1.0]

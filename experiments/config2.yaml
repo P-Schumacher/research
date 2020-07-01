@@ -1,11 +1,11 @@
 project: 'reversal_task'
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
-  load_model: false
+  load_model: true
   descriptor: 'sequence_hiro_hard_random_fixedbottomstate'
   c_step: 10
   seed: 2
@@ -31,8 +31,8 @@ main:
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.6442
-  #sub_noise: 0.0 
+  meta_noise: 0.0 #0.6442
+  sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.00

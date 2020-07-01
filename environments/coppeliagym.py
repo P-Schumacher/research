@@ -41,9 +41,9 @@ class CoppeliaEnv(gym.Env):
             print('REVERSAL')
         if self._render and self._double_buttons:
             if self._button1:
-                self._target.set_color([1, 0, 0])
+                self._target.set_color([1, 0, 1])
             if self._button2:
-                self._target2.set_color([1, 0, 0])
+                self._target2.set_color([1, 0, 1])
         return observation, reward, done, info
 
     def reset(self, evalmode=False):
@@ -66,7 +66,7 @@ class CoppeliaEnv(gym.Env):
             self._button2 = True
         if self._render and self._double_buttons:
             self._target.set_color([0, 0, 1])
-            self._target2.set_color([0.5, 0.5, 0.5])
+            self._target2.set_color([1, 0, 0])
         return state
 
     def render(self, mode='human'):
@@ -184,7 +184,8 @@ class CoppeliaEnv(gym.Env):
                            double_buttons,
                            reversal_time,
                            touch_distance,
-                           minimum_dist):
+                           minimum_dist,
+                           record_touches):
         # Config settings
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
@@ -206,6 +207,7 @@ class CoppeliaEnv(gym.Env):
         self._reversal_time = reversal_time
         self._touch_distance = touch_distance
         self._minimum_dist = minimum_dist
+        self._record_touches = record_touches
         # Control flow
         self._timestep = 0
         self._needs_reset = True
@@ -215,6 +217,10 @@ class CoppeliaEnv(gym.Env):
         # Need these before reset to get observation.shape
         self._button1 = False
         self._button2 = False
+        self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
+        if self._record_touches:
+            self.distance_first_button = []
+            self.distance_second_button = []
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Generate subgoal ranges that the HIRO uses to determine its subgoal dimensions.  Not useful
@@ -282,9 +288,17 @@ class CoppeliaEnv(gym.Env):
                 if (self._button1 and self._button2) and self.mega_reward:
                     rew += 50
                     print('MEGA reward')
+                    if self._record_touches:
+                        self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                    if self._record_touches:
+                        self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                 if (self._button1 and self._button2) and not self.mega_reward:
                     #rew -= 10000
                     print('FAILURE Punishment')
+                    if self._record_touches:
+                        self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
+                    if self._record_touches:
+                        self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                 return rew
             else:
                 # One button touch task

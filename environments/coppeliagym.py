@@ -293,6 +293,7 @@ class CoppeliaEnv(gym.Env):
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                 if (self._button1 and self._button2) and not self.mega_reward:
+                    print('failure')
                     if self._record_touches:
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
@@ -327,10 +328,8 @@ class CoppeliaEnv(gym.Env):
         add the timestep to the state. cf. Time Limits in Reinforcement Learning, Pardo et al.'''
         self._needs_reset = True
         if self._button1 and self._button2:
-	    print("Success")
-	    self.success = True
-            else:
-                self._needs_reset = False
+            print("Success")
+            self.success = True
         elif self._timestep >= self.max_episode_steps - 1:
             pass
         else:

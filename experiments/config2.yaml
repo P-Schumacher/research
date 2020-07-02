@@ -3,10 +3,10 @@ main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sequence_hiro_hard_random_episodedoesntendatfailure'
+  descriptor: 'sequence_hiro_hard_not_random_tdbonus0.001_noper'
   c_step: 10
   seed: 10
   offpolicy: true
@@ -33,7 +33,7 @@ agent:
   meta_rew_scale: 0.1
   meta_noise: 0.6442
   #sub_noise: 0.0 
-  goal_type: Sparse
+  goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.00
   meta_mock: false
@@ -43,9 +43,9 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
-  goal_regul: 0.000
+  goal_regul: 0.001
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -76,8 +76,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.0
@@ -86,6 +86,6 @@ coppeliagym:
     ej_goal: [3, 1.0]
 
 buffer:
-  alpha: 0.9
+  alpha: 0.
   beta: 0.
   max_size: 200000

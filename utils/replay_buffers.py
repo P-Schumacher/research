@@ -81,7 +81,7 @@ class ReplayBuffer(object):
         self.data_fields = ['state', 'action', 'next_state', 'reward', 'done', 'state_seq', 'action_seq']
 
 class nstepbuffer(ReplayBuffer):
-    def __init__(self, state_dim, action_dim, buffer_cnf, nstep=5):
+    def __init__(self, state_dim, action_dim, buffer_cnf, nstep=1):
         super().__init__(state_dim, action_dim, buffer_cnf)
         self.states = []
         self.actions = []

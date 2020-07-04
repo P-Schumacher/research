@@ -62,7 +62,6 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
   sub_model:
-    per: 1
     policy_freq: 1
 
 coppeliagym:

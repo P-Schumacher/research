@@ -57,7 +57,7 @@ class TransitBuffer(ReplayBuffer):
         elif self.goal_type == "Huber":
             rew =  - huber(state[:dim] - next_state[:dim], 1.)  
         elif self.goal_type == "Sparse":
-            if euclid(next_state[:dim] - goal) < 0.5: 
+            if euclid(state[:dim] + goal - next_state[:dim]) < 0.1: 
                 rew = 0
             else:
                 rew = -1

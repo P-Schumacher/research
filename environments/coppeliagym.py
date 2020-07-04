@@ -66,6 +66,7 @@ class CoppeliaEnv(gym.Env):
             self._button2 = True
         if self._render and self._double_buttons:
             self._reset_button_colors()
+        self.stop_ending = False
         return state
 
 

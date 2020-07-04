@@ -43,7 +43,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.001
   distance_goal_regul: 0.000
@@ -80,12 +80,12 @@ coppeliagym:
     random_eval_target: false
     reversal_time: 10000000
     touch_distance: 0.08
-    minimum_dist: 0.
+    minimum_dist: 0.0
 
   subgoals:
     ej_goal: [3, 1.0]
 
 buffer:
-  alpha: 0.9
+  alpha: 0.
   beta: 0.
   max_size: 200000

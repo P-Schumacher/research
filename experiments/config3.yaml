@@ -79,7 +79,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 10000000
-    touch_distance: 0.08
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
 

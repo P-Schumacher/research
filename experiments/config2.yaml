@@ -1,19 +1,19 @@
-project: 'reversal_task'
+project: 'tdgoalregulexp'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sequence_hiro_hard_random_bonusforlowertderror_0.001'
+  descriptor: 'sequence_hiro_hard_notrandom_goal_regulbonus1.'
   c_step: 10
   seed: 10
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
-  no_seed: false
-  eval_freq: 20000
+  no_seed: true
+  eval_freq: 100
   simple_env: false
   
   decay: false
@@ -45,7 +45,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
-  goal_regul: 0.000
+  goal_regul: 0.001
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -76,10 +76,10 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 10000000
-    touch_distance: 0.5
+    touch_distance: 0.08
     minimum_dist: 0.
 
   subgoals:

@@ -14,8 +14,6 @@ class ReplayBuffer(object):
         self.reset()
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
-        if tf.reduce_any(tf.math.is_inf(state)):
-            set_trace()
         self.state[self.ptr] = state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
@@ -82,6 +80,48 @@ class ReplayBuffer(object):
         self.is_weight = 1
         self.data_fields = ['state', 'action', 'next_state', 'reward', 'done', 'state_seq', 'action_seq']
 
+class nstepbuffer(ReplayBuffer):
+    def __init__(self, state_dim, action_dim, buffer_cnf, nstep=5):
+        super().__init__(state_dim, action_dim, buffer_cnf)
+        self.states = []
+        self.actions = []
+        self.rewards = 0
+        self.next_states = []
+        self.dones = []
+        self.n_counter = 0
+        self.nstep = nstep
+
+    def sample(self, batch_size):
+        return super().sample(batch_size)
+
+    def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+        if self.n_counter == self.nstep or done:
+            self.rewards += reward
+            reward = tf.constant(self.rewards, shape=[1,])
+            super().add(self.states[0], self.actions[0], self.rewards, next_state, done, 0, 0)
+            self._internal_reset()
+        else:
+            self.states.append(state)
+            self.actions.append(action)
+            self.rewards += reward
+            self.next_states.append(next_state)
+            self.dones.append(done)
+            self.n_counter += 1
+
+    def _internal_reset(self):
+        self.states = []
+        self.actions = []
+        self.rewards = 0
+        self.next_states = []
+        self.dones = []
+        self.n_counter = 0
+
+
+
+
+
+
+        
 class PriorityBuffer(ReplayBuffer):
     '''
     Prioritized Experience Replay

@@ -7,9 +7,9 @@ from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
-N = 1000000
+N = 1000
 N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 100000
+N_TRAIN_TRUE_CRITIC = 1000
 SAMPLES = 50
 BATCHES = 10
 

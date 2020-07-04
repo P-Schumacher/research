@@ -54,6 +54,7 @@ class EnvWithGoal(object):
   def reset(self, evalmode=False, hard_reset=False):
     self.step_count = 0
     obs = self.base_env.reset()
+    self.success = False
     if not evalmode:
         self.goal = self.goal_sample_fn()
     else:
@@ -83,6 +84,7 @@ class EnvWithGoal(object):
     cd2_success = success_fn(reward)
     if cd2_success:
       print("Success, Goal was: ({},{})".format(self.goal[0],self.goal[1]))
+      self.success = True
     if cd1_end_of_episode or cd2_success:
       done = True
     reward = reward if not done else 0

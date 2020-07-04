@@ -1,4 +1,4 @@
-project: ant_maze
+project: ant_maze_new
 main:
   log: true
   minilog: true
@@ -8,4 +8,4 @@ main:
 agent:
  goal_type: Direction
  meta_model:
-   no_candidates: 100
+   no_candidates: 20

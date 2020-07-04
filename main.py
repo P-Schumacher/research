@@ -4,9 +4,9 @@ import wandb
 import sys
 import os
 from pudb import set_trace
-#os.environ['CUDA_VISIBLE_DEVICES']='-1'
-ant_env = False
-vrep = True
+os.environ['CUDA_VISIBLE_DEVICES']='-1'
+ant_env = True
+vrep = False
 
 
 name = [sys.argv[1] if len(sys.argv) == 2 else None][0]

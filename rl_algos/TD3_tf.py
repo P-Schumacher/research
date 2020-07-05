@@ -81,7 +81,7 @@ class TD3(object):
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and (self._goal_regul or self._distance_goal_regul):
-            reward_new = self._goal_regularization(action, reward, next_state, state_seq, sub_agent)
+            reward_new = self._goal_regularization(action, reward, next_state, state_seq, action_seq, sub_agent)
         else:
             reward_new = reward
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -92,8 +92,6 @@ class TD3(object):
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
-
-
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
@@ -177,12 +175,13 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
-    def _goal_regularization(self, action, reward, next_state, state_seq, sub_agent):
+    def _goal_regularization(self, action, reward, next_state, state_seq, action_seq, sub_agent):
         #ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
         #ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
         errors = []
         for idx, x in enumerate(state_seq):
-            to_append = self._get_error(x, action[idx], reward[idx], sub_agent)
+            y = action_seq[idx]
+            to_append = self._get_error(x, y, action[idx], reward[idx], sub_agent)
             errors.append(to_append)
         errors = tf.reshape(errors, [len(errors), 1])
         return reward + self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
@@ -192,7 +191,7 @@ class TD3(object):
         dim = goal.shape[0]
         return state[:dim] + goal - state[:dim]
 
-    def _get_error(self, state_stack, goal, sumrew, sub_agent):
+    def _get_error(self, state_stack, action_stack, goal, sumrew, sub_agent):
         goal = tf.reshape(goal, [1, goal.shape[0]])
         sum_of_td_errors = tf.constant(0.0, shape=[1,1])
         for i in range(state_stack.shape[0] - 1):
@@ -201,12 +200,15 @@ class TD3(object):
             state = state_stack[i,:-self.target_dim]
             state = tf.reshape(state, [1, state.shape[0]])
             state = tf.concat([state, goal], axis=1)
+            low_action = action_stack[i,:]
+            low_action = tf.reshape(low_action, [1, low_action.shape[0]])
             goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
             next_state = state_stack[i+1,:-self.target_dim]
             next_state = tf.reshape(next_state, [1, next_state.shape[0]])
             next_state = tf.concat([next_state, goal], axis=1)
             intr_reward = self._compute_intr_rew(goal, state_stack[i], state_stack[i+1])  
-            low_action = sub_agent.actor(state)
+            #low_action = sub_agent.actor(state)
+            #low_action = low_action + tf.random.normal(shape=low_action.shape, mean=0, stddev=1.4)
             error = self._compute_td_error_copy(sub_agent, state, low_action, intr_reward, next_state)
             sum_of_td_errors += error
         return sum_of_td_errors

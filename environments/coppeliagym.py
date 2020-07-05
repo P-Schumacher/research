@@ -293,7 +293,7 @@ class CoppeliaEnv(gym.Env):
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                 if (self._button1 and self._button2) and not self.mega_reward:
-                    print('failure')
+                    print('FAILURE Punishment')
                     if self._record_touches:
                         self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                         self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))

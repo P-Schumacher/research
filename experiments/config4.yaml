@@ -6,7 +6,7 @@ main:
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'n1'
+  descriptor: 'n5'
   c_step: 10
   seed: 2
   offpolicy: true

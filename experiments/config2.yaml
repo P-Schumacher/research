@@ -1,4 +1,4 @@
-project: 'nstepflat'
+project: 'doublebuttons_reset_with_timeout'
 main:
   render: false
   flat_agent: true
@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sequence_flat_hard_random_nstep3'
+  descriptor: 'timeresetpunish0_timestep_onlyfor_sub'
   c_step: 10
   seed: 10
   offpolicy: true
@@ -35,7 +35,7 @@ agent:
   #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.000
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -45,7 +45,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
-  goal_regul: 0.001
+  goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -81,6 +81,7 @@ coppeliagym:
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.0
+    reset_on_wrong_sequence: false
 
   subgoals:
     ej_goal: [3, 1.0]

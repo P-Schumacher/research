@@ -1,4 +1,4 @@
-project: 'tdgoalregulexp'
+project: 'doublebuttons_reset_with_timeout'
 main:
   render: false
   flat_agent: false
@@ -6,14 +6,14 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sequence_hiro_hard_notrandom_goal_regulbonus1.'
+  descriptor: 'timeresetpunish0_timestep_onlyfor_sub'
   c_step: 10
   seed: 10
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 10000000
   no_seed: true
-  eval_freq: 100
+  eval_freq: 20000
   simple_env: false
   
   decay: false
@@ -35,7 +35,7 @@ agent:
   #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.000
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -43,9 +43,9 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 0
+  per: 1
   sub_per: 0
-  goal_regul: 0.001
+  goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -76,8 +76,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
+    random_target: true
+    random_eval_target: true
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.0
@@ -86,6 +86,6 @@ coppeliagym:
     ej_goal: [3, 1.0]
 
 buffer:
-  alpha: 0.
+  alpha: 0.9
   beta: 0.
   max_size: 200000

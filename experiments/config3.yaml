@@ -6,11 +6,11 @@ main:
   minilog: true
   save_model: false
   load_model: true
-  descriptor: 'fixed_original_hiro_recording'
+  descriptor: 'random_hard_recording_hiro_action_regul'
   c_step: 10
   seed: 2
   offpolicy: true
-  start_timesteps: 100000
+  start_timesteps: 5000
   max_timesteps: 10000000
   no_seed: true
   eval_freq: 20000

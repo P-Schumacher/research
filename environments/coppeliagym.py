@@ -61,14 +61,13 @@ class CoppeliaEnv(gym.Env):
         self.mega_reward = True
         self._button1 = False
         self._button2 = False
+        self._stop_counter = 0
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
             self._button2 = True
         if self._render and self._double_buttons:
             self._reset_button_colors()
-        self.stop_ending = False
         return state
-
 
     def render(self, mode='human'):
         '''gym render function. To render the simulator during simulation, call render(mode='human') once.
@@ -237,7 +236,7 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             self.target_dim = self._ep_target_pos.shape[0] - 1
         else:
-            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2
+            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 + 1
             #self.target_dim = self._ep_target_pos.shape[0] - 1
         self.subgoal_dim = len(self.subgoal_ranges)
 
@@ -278,25 +277,33 @@ class CoppeliaEnv(gym.Env):
             rew = -1.
             if self._double_buttons:
                 # 2 button touch task
-                if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
-                    self._button1 = True
-                    print('button 1 pressed')
-                if self._distance_query_switcher(0) < self._touch_distance and not self._button2:
-                    self._button2 = True
-                    print('button 2 pressed')
-                if self._button2 and not self._button1:
-                    self.mega_reward = False
-                if (self._button1 and self._button2) and self.mega_reward:
-                    rew += 50
-                    print('MEGA reward')
-                    if self._record_touches:
-                        self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                        self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                if (self._button1 and self._button2) and not self.mega_reward:
-                    print('FAILURE Punishment')
-                    if self._record_touches:
-                        self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                        self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                if self._stop_counter >= 0:
+                    if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
+                        self._button1 = True
+                        print('button 1 pressed')
+                    if self._distance_query_switcher(0) < self._touch_distance and not self._button2:
+                        self._button2 = True
+                        print('button 2 pressed')
+                    if self._button2 and not self._button1:
+                        self.mega_reward = False
+                    if (self._button1 and self._button2) and self.mega_reward:
+                        rew += 50
+                        print('MEGA reward')
+                        if self._record_touches:
+                            self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                            self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
+                    if (self._button1 and self._button2) and not self.mega_reward:
+                        print('FAILURE Punishment')
+                        self._button1 = False
+                        self._button2 = False
+                        self.mega_reward = True
+                        self._stop_counter = 0
+                        if self._render:
+                            self._reset_button_colors()
+                        if self._record_touches:
+                            self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
+                            self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                self._stop_counter += 1
                 return rew
             else:
                 # One button touch task
@@ -373,7 +380,8 @@ class CoppeliaEnv(gym.Env):
         elif self._ee_j_pos:
             qpos = np.concatenate([self._robot.get_ee_position(), self._robot.get_joint_positions()])
             qvel = np.concatenate([self._robot.get_ee_velocity()[0], self._robot.get_joint_velocities()])
-            observation = np.array(np.concatenate([qpos, qvel]), dtype=np.float32)
+            observation = np.array(np.concatenate([qpos, qvel, np.array([self._timestep])]), dtype=np.float32)
+            #observation = np.array(np.concatenate([qpos, qvel]), dtype=np.float32)
         else:
             qpos = self._robot.get_joint_positions()
             qvel = self._robot.get_joint_velocities() 

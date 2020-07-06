@@ -4,6 +4,7 @@ import tensorflow as tf
 from pudb import set_trace
 import random
 from matplotlib import pyplot as plt
+from collections import deque
 
 
 
@@ -81,46 +82,36 @@ class ReplayBuffer(object):
         self.data_fields = ['state', 'action', 'next_state', 'reward', 'done', 'state_seq', 'action_seq']
 
 class nstepbuffer(ReplayBuffer):
-    def __init__(self, state_dim, action_dim, buffer_cnf, nstep=5):
-        super().__init__(state_dim, action_dim, buffer_cnf)
-        self.states = []
-        self.actions = []
-        self.rewards = 0
-        self.next_states = []
-        self.dones = []
-        self.n_counter = 0
+    '''This is a WRAPPER class for other ReplayBuffer type classes to enable n-step returns'''
+    def __init__(self, replaybuffer, nstep=5):
+        self._replay_buffer = replaybuffer
         self.nstep = nstep
+        self.n_step_buffer = deque(maxlen=self.nstep)
 
     def sample(self, batch_size):
-        return super().sample(batch_size)
+        return self._replay_buffer.sample(batch_size)
 
     def add(self, state, action, reward, next_state, done, state_seq, action_seq):
-        if self.n_counter == self.nstep or done:
-            self.rewards += reward
-            reward = tf.constant(self.rewards, shape=[1,])
-            super().add(self.states[0], self.actions[0], self.rewards, next_state, done, 0, 0)
-            self._internal_reset()
-        else:
-            self.states.append(state)
-            self.actions.append(action)
-            self.rewards += reward
-            self.next_states.append(next_state)
-            self.dones.append(done)
-            self.n_counter += 1
+        self.n_step_buffer.append((state, action, reward, next_state, done))
+        if len(self.n_step_buffer) == self.nstep:
+            state, action, reward, next_state, done = self._calc_multistep_transitions()
+            self._replay_buffer.add(state, action, reward, next_state, done, 0, 0)
 
-    def _internal_reset(self):
-        self.states = []
-        self.actions = []
-        self.rewards = 0
-        self.next_states = []
-        self.dones = []
-        self.n_counter = 0
+    def _calc_multistep_transitions(self):
+        ret = 0
+        for idx in range(self.nstep):
+            ret += 0.99**idx * self.n_step_buffer[idx][2]
+        return self.n_step_buffer[0][0], self.n_step_buffer[0][1], ret, self.n_step_buffer[-1][3], self.n_step_buffer[-1][4]
 
+    @property
+    def is_weight(self):
+        return self._replay_buffer.is_weight
 
+    def update_priorities(self, errors):
+        self._replay_buffer.update_priorities(errors)
 
-
-
-
+    def reset(self):
+        self._replay_buffer.reset()
         
 class PriorityBuffer(ReplayBuffer):
     '''

@@ -2,10 +2,13 @@ project: ant_maze_new
 main:
   log: true
   minilog: true
-  descriptor: hiro_ant
+  descriptor: 'hiro_ant_zero_obs'
   save_model: true
   render: false
 agent:
  goal_type: Direction
+ zero_obs: 2
+ 
  meta_model:
-   no_candidates: 20
+   no_candidates: 10
+   zero_obs: 2

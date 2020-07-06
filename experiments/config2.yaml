@@ -1,20 +1,21 @@
-project: 'tdgoalregulexp'
+project: 'flat_double_button_exp'
 main:
   render: false
   flat_agent: false
-  log: true
-  minilog: true
+  log: false
+  minilog: false
   save_model: false
   load_model: false
-  descriptor: 'sequence_hiro_hard_notrandom_goal_regulbonus1.'
+  descriptor: 'nstep5_not_random'
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 5000
-  max_timesteps: 10000000
-  no_seed: true
-  eval_freq: 100
+  start_timesteps: 100
+  max_timesteps: 4000000
+  no_seed: false
+  eval_freq: 20000
   simple_env: false
+  zero_obs: 2
   
   decay: false
   step_decayer:
@@ -35,7 +36,7 @@ agent:
   #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.000
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -43,9 +44,9 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 0
+  per: 1
   sub_per: 0
-  goal_regul: 0.001
+  goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
@@ -64,6 +65,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
+    zero_obs: 2
   sub_model:
     policy_freq: 1
 
@@ -81,11 +83,12 @@ coppeliagym:
     reversal_time: 10000000
     touch_distance: 0.08
     minimum_dist: 0.0
+    reset_on_wrong_sequence: false
 
   subgoals:
     ej_goal: [3, 1.0]
 
 buffer:
-  alpha: 0.
+  alpha: 0.9
   beta: 0.
   max_size: 200000

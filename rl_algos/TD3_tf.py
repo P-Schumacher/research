@@ -176,15 +176,14 @@ class TD3(object):
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
     def _goal_regularization(self, action, reward, next_state, state_seq, action_seq, sub_agent):
-        #ans = reward - self._goal_regul * euclid(next_state[:, :action.shape[1]] - action)
-        #ans = reward - tf.reshape(self._goal_regul * euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-        errors = []
-        for idx, x in enumerate(state_seq):
-            y = action_seq[idx]
-            to_append = self._get_error(x, y, action[idx], reward[idx], sub_agent)
-            errors.append(to_append)
-        errors = tf.reshape(errors, [len(errors), 1])
-        return reward + self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+        #errors = []
+        #for idx, x in enumerate(state_seq):
+        #    y = action_seq[idx]
+        #    to_append = self._get_error(x, y, action[idx], reward[idx], sub_agent)
+        #    errors.append(to_append)
+        #errors = tf.reshape(errors, [len(errors), 1])
+        #return reward + self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+        return reward - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
 
 
     def _goal_transit_fn(self, goal, state, next_state):

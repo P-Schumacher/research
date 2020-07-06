@@ -24,9 +24,9 @@ def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_
     # Zero out xy for sub agent, AFTER goals have been calculated from it.
     state_seq = tf.reshape(state_seq, [b_size * c_step, state_seq.shape[-1]])
     if zero_obs:
-        state_seq *= tf.concat([tf.zeros([state_seq.shape[0], self._zero_obs]), tf.ones([state_seq.shape[0],
+        state_seq *= tf.concat([tf.zeros([state_seq.shape[0], zero_obs]), tf.ones([state_seq.shape[0],
                                                                                          state_seq.shape[1] -
-                                                                                         self._zero_obs])], axis=1)
+                                                                                         zero_obs])], axis=1)
     best_c = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
     return _get_corrected_goal(b_size, candidates, best_c) 
 

@@ -32,7 +32,7 @@ agent:
     clip_ac: 10000.5
     reg_coeff_ac: 0.0
     reg_coeff_cr: 0.0
-    zero_obs: 0
+    zero_obs: 2
     name: 'meta'
     discount: 0.99
     tau: 0.005

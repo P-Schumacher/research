@@ -15,8 +15,8 @@ class Agent:
             #self._replay_buffer = DoubleBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
             self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         else:
-            #self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
-            self._replay_buffer = nstepbuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+            self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
+        self._replay_buffer = nstepbuffer(self._replay_buffer, nstep=3)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
         

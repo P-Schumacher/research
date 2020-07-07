@@ -35,7 +35,6 @@ agent:
   #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.01
   meta_mock: false
   train_meta: true
   train_sub: true
@@ -46,6 +45,7 @@ agent:
   per: 1
   sub_per: 0
   goal_regul: 0.0
+  agent_action_regularizer: 0.001
   distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:

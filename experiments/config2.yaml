@@ -2,7 +2,7 @@ project: 'flat_double_button_exp'
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: false
   save_model: false
   load_model: false
@@ -10,12 +10,12 @@ main:
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 100
+  start_timesteps: 5000
   max_timesteps: 4000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
-  zero_obs: 2
+  zero_obs: 0
   
   decay: false
   step_decayer:
@@ -65,7 +65,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    zero_obs: 2
+    zero_obs: 0
   sub_model:
     policy_freq: 1
 

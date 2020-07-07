@@ -238,8 +238,8 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             self.target_dim = self._ep_target_pos.shape[0] - 1
         else:
-            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 + 1
-            #self.target_dim = self._ep_target_pos.shape[0] - 1
+            #self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 + 1
+            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 
         self.subgoal_dim = len(self.subgoal_ranges)
 
     def _apply_action(self, action):
@@ -383,8 +383,8 @@ class CoppeliaEnv(gym.Env):
         elif self._ee_j_pos:
             qpos = np.concatenate([self._robot.get_ee_position(), self._robot.get_joint_positions()])
             qvel = np.concatenate([self._robot.get_ee_velocity()[0], self._robot.get_joint_velocities()])
-            observation = np.array(np.concatenate([qpos, qvel, np.array([self._timestep])]), dtype=np.float32)
-            #observation = np.array(np.concatenate([qpos, qvel]), dtype=np.float32)
+            #observation = np.array(np.concatenate([qpos, qvel, np.array([self._timestep])]), dtype=np.float32)
+            observation = np.array(np.concatenate([qpos, qvel]), dtype=np.float32)
         else:
             qpos = self._robot.get_joint_positions()
             qvel = self._robot.get_joint_velocities() 

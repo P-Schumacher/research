@@ -48,12 +48,14 @@ class EnvWithGoal(object):
     self.env_name = env_name
     self.target_dim = 2
     self.subgoal_dim = 15
+    self._double_buttons = False
     # cf. Hiro Paper
     self.subgoal_ranges = np.array([10, 10, 0.5, 1, 1, 1, 1, 0.5, 0.3, 0.5, 0.3, 0.5, 0.3, 0.5, 0.3], dtype=np.float32)
 
   def reset(self, evalmode=False, hard_reset=False):
     self.step_count = 0
     obs = self.base_env.reset()
+    self.success = False
     if not evalmode:
         self.goal = self.goal_sample_fn()
     else:
@@ -83,6 +85,7 @@ class EnvWithGoal(object):
     cd2_success = success_fn(reward)
     if cd2_success:
       print("Success, Goal was: ({},{})".format(self.goal[0],self.goal[1]))
+      self.success = True
     if cd1_end_of_episode or cd2_success:
       done = True
     reward = reward if not done else 0

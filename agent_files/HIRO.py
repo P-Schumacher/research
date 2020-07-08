@@ -273,6 +273,7 @@ class HierarchicalAgent(Agent):
         avg_intr_reward = []
         rate_correct_solves = 0
         success_rate = 0
+        untouchable_steps = 0
         visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
         for episode_nbr in range(self._num_eval_episodes):
             print(f'eval number: {episode_nbr} of {self._num_eval_episodes}')
@@ -285,6 +286,8 @@ class HierarchicalAgent(Agent):
                 avg_ep_reward.append(reward)
                 avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state, action))
                 state = next_state
+                if env._stop_counter < 20:
+                    untouchable_steps += 1
                 if visit:
                     visitation[step, :] = state
                 step += 1
@@ -304,7 +307,7 @@ class HierarchicalAgent(Agent):
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
         self._evals += 1
-        return avg_ep_reward, avg_intr_reward, success_rate, rate_correct_solves
+        return avg_ep_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps
 
     def _average_q_value(self):
         '''Compute the average Q value by doing multivariate Monte Carlo Integration over

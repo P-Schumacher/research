@@ -26,10 +26,10 @@ class Agent:
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
         #tf.random.set_seed(self._seed)
         env.reset()
-        avg_reward, avg_intr_reward, success_rate, rate_correct_solves =  self._eval_policy(env, self._seed,
+        avg_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps =  self._eval_policy(env, self._seed,
                                                                        self._visit)
         self.reset()
-        return avg_reward, avg_intr_reward, success_rate, rate_correct_solves
+        return avg_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps
 
     def select_action(self, state, noise_bool=False):
         state = np.array(state)
@@ -104,6 +104,7 @@ class Agent:
         avg_ep_reward = []
         success_rate = 0
         rate_correct_solves = 0
+        untouchable_steps = 0
         for episode_nbr in range(self._num_eval_episodes):
             print(f"eval number: {episode_nbr} of {self._num_eval_episodes}")
             step = 0
@@ -114,6 +115,8 @@ class Agent:
                 next_state, reward, done, _ = env.step(action)
                 avg_ep_reward.append(reward)
                 state = next_state
+                if env._stop_counter < 20:
+                    untouchable_steps += 1
                 step += 1
                 if done and step < env.max_episode_steps:
                     success_rate += 1
@@ -127,4 +130,4 @@ class Agent:
         print("---------------------------------------")
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
-        return avg_ep_reward, 0, success_rate, rate_correct_solves
+        return avg_ep_reward, 0, success_rate, rate_correct_solves, untouchable_steps

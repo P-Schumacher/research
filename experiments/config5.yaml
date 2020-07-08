@@ -1,18 +1,18 @@
 project: 'reversal_task_reversal'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
-  load_model: true
-  descriptor: 'random_hiro_reversal'
+  load_model: false
+  descriptor: 'random_hiro_reversal_mass'
   c_step: 10
-  seed: 2
+  seed: 35
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 4000000
-  no_seed: false
+  no_seed: true
   eval_freq: 20000
   simple_env: false
   
@@ -78,7 +78,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 800000
+    reversal_time: 1200000
     touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false

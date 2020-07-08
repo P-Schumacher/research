@@ -10,7 +10,9 @@ from pyrep.objects.dummy import Dummy
 from pyrep.objects.vision_sensor import VisionSensor
 from utils.math_fns import huber, euclid
 from . import robot
-COUNTER = 20
+
+COUNTER = 20 # How many iterations should the boxes be untouchable after a wrong sequence
+
 class CoppeliaEnv(gym.Env):
     def __init__(self, cnf, init=False):
         # Allows us to restart sim in different force_mode without recreating sim threads

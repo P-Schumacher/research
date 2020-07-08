@@ -61,7 +61,7 @@ class CoppeliaEnv(gym.Env):
         self.mega_reward = True
         self._button1 = False
         self._button2 = False
-        self._stop_counter = 10
+        self._stop_counter = 20
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
             self._button2 = True
@@ -279,7 +279,7 @@ class CoppeliaEnv(gym.Env):
             rew = -1.
             if self._double_buttons:
                 # 2 button touch task
-                if self._stop_counter >= 10:
+                if self._stop_counter >= 20:
                     if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
                         self._button1 = True
                         print('button 1 pressed')

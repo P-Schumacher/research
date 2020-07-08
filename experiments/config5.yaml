@@ -4,9 +4,9 @@ main:
   flat_agent: false
   log: true
   minilog: true
-  save_model: false
+  save_model: true
   load_model: false
-  descriptor: 'not_random_hard_hiro__reversal_test'
+  descriptor: 'random_hiro_reversal'
   c_step: 10
   seed: 2
   offpolicy: true
@@ -76,12 +76,13 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
-    reversal_time: 650000
+    random_target: true
+    random_eval_target: true
+    reversal_time: 800000
     touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
+    reset_on_wrong_sequence: true
 
   subgoals:
     ej_goal: [3, 1.0]

@@ -6,13 +6,13 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flateasynotrandom_no_nstep'
+  descriptor: 'flateasynotrandom_5_nstep'
   c_step: 10
   seed: 100
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 4000000
-  no_seed: true
+  no_seed: false
   eval_freq: 20000
   simple_env: false
   zero_obs: 0
@@ -46,6 +46,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
+  nstep: 5
   goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false

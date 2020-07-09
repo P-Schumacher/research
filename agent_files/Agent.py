@@ -16,7 +16,8 @@ class Agent:
             self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         else:
             self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
-        #self._replay_buffer = nstepbuffer(self._replay_buffer, nstep=2)
+        if self._nstep != 1:
+            self._replay_buffer = nstepbuffer(self._replay_buffer, nstep=self._nstep)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
         
@@ -24,7 +25,7 @@ class Agent:
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
-        #tf.random.set_seed(self._seed)
+        tf.random.set_seed(self._seed)
         env.reset()
         avg_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps =  self._eval_policy(env, self._seed,
                                                                        self._visit)
@@ -75,6 +76,7 @@ class Agent:
         self._sub_rew_scale = agent_cnf.sub_rew_scale
         self._train_sub = agent_cnf.train_sub
         self._per = agent_cnf.per
+        self._nstep = agent_cnf.nstep
         # Main cnf
         self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed

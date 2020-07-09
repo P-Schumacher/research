@@ -68,6 +68,7 @@ agent:
     per: ${agent.per}
     goal_regul: ${agent.goal_regul}
     distance_goal_regul: ${agent.distance_goal_regul}
+    nstep: 1
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -91,4 +92,5 @@ agent:
     per: ${agent.sub_per}
     goal_regul: false
     distance_goal_regul: 0.0
+    nstep: ${agent.nstep}
 

@@ -25,6 +25,7 @@ class TD3(object):
         per,
         goal_regul,
         distance_goal_regul,
+        nstep,
         name="default",
         discount=0.99,
         tau=0.005,
@@ -54,7 +55,7 @@ class TD3(object):
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                                  c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                                 goal_regul, distance_goal_regul)
+                                 goal_regul, distance_goal_regul, nstep)
 
         self._create_persistent_tf_variables()
 
@@ -140,7 +141,7 @@ class TD3(object):
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
-        target_Q = reward + (1. - done) * self.discount * target_Q
+        target_Q = reward + (1. - done) * self.discount ** self._nstep * target_Q
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
@@ -284,7 +285,7 @@ class TD3(object):
 
     def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                             c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                            goal_regul, distance_goal_regul):
+                            goal_regul, distance_goal_regul, nstep):
         # Save parameters
         self.name = name
         self.offpolicy = offpolicy
@@ -304,6 +305,7 @@ class TD3(object):
         self._per = per
         self._goal_regul = goal_regul
         self._distance_goal_regul = distance_goal_regul
+        self._nstep = nstep
 
 
 if __name__ == '__main__':

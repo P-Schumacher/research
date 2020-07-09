@@ -9,7 +9,10 @@ ant_env = False
 vrep = True
 
 
-name = [sys.argv[1] if len(sys.argv) == 2 else None][0]
+name = [sys.argv[1] if len(sys.argv) >= 2 else None][0]
+seed = [sys.argv[2] if len(sys.argv) == 3 else None][0]
+
+
 if vrep:
     main_cnf = OmegaConf.load('configs/vrep_default/vrep_main_conf.yaml')
     env_cnf = OmegaConf.load('configs/vrep_default/vrep_env_conf.yaml')
@@ -29,6 +32,9 @@ if ant_env:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
+if seed:
+    cnf.main.seed = int(seed)
+
 if vrep:
     config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}
 else:

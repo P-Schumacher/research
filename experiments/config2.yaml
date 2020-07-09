@@ -6,13 +6,13 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flathardrandom_noooo_nstep'
+  descriptor: 'flateasynotrandom_no_nstep'
   c_step: 10
-  seed: 102
+  seed: 100
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 4000000
-  no_seed: false
+  no_seed: true
   eval_freq: 20000
   simple_env: false
   zero_obs: 0

@@ -6,9 +6,9 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flathardrandom_nonstep'
+  descriptor: 'flathardrandom_noooo_nstep'
   c_step: 10
-  seed: 10
+  seed: 102
   offpolicy: true
   start_timesteps: 5000
   max_timesteps: 4000000
@@ -78,10 +78,10 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 10000000
-    touch_distance: 0.08
+    touch_distance: 0.5
     minimum_dist: 0.0
     reset_on_wrong_sequence: false
 

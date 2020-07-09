@@ -1,16 +1,16 @@
 project: 'reversal_task_reversal'
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
-  load_model: false
-  descriptor: 'random_hiro_reversal_mass'
+  load_model: true
+  descriptor: 'random_hiro_reversal'
   c_step: 10
-  seed: 35
+  seed: 1
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 10000
   max_timesteps: 4000000
   no_seed: true
   eval_freq: 20000

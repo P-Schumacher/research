@@ -3,8 +3,9 @@ main:
   log: true
   minilog: true
   descriptor: 'hiro_ant_zero_obs'
-  save_model: true
+  save_model: false
   render: false
+
 agent:
  goal_type: Direction
  zero_obs: 2

@@ -49,6 +49,7 @@ class EnvWithGoal(object):
     self.target_dim = 2
     self.subgoal_dim = 15
     self._double_buttons = False
+    self._stop_counter = 0
     # cf. Hiro Paper
     self.subgoal_ranges = np.array([10, 10, 0.5, 1, 1, 1, 1, 0.5, 0.3, 0.5, 0.3, 0.5, 0.3, 0.5, 0.3], dtype=np.float32)
 

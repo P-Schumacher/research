@@ -24,7 +24,7 @@ class Agent:
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
         sampled one. The function then returns the avg reward, intrinsic reward and the success rate over the N episodes.'''
         # Set seed to clear tensorflow cache which prevents OutOfMemory error... I hate tensorflow
-        #tf.random.set_seed(self._seed)
+        tf.random.set_seed(self._seed)
         env.reset()
         avg_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps =  self._eval_policy(env, self._seed,
                                                                        self._visit)

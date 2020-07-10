@@ -6,12 +6,12 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flateasynotrandom_5_nstep'
+  descriptor: 'flateasyrandom_5_nstep'
   c_step: 10
   seed: 100
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 4000000
+  max_timesteps: 300000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -79,8 +79,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
+    random_target: true
+    random_eval_target: true
     reversal_time: 10000000
     touch_distance: 0.5
     minimum_dist: 0.0

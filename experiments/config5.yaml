@@ -29,6 +29,7 @@ main:
 # 3 - proportional reward based prio
 # 4 - binary reward based prio 
 agent:
+  nstep: 1
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.0 #0.6442

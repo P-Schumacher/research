@@ -24,6 +24,8 @@ class HierarchicalAgent(Agent):
             # Need to correct goal after applying noise
             self._maybe_goal_smoothing()
         action = self._get_sub_action(state) 
+        self._meta_noise *= 0.99999
+        #wandb.log({'metanoise':self._meta_noise}, commit=False)
         return self._maybe_apply_action_clipnoise(action, noise_bool)
     
     def train(self, timestep, episode_steps):
@@ -145,7 +147,7 @@ class HierarchicalAgent(Agent):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
         if not self._meta_mock:
             return 
-        mock_goal = np.array(np.random.uniform(-0.5, 0.5, size=[3,]), dtype=np.float32) 
+        mock_goal = np.array(np.random.uniform([-0.2, -1.525, 0.54], [1.425, 0.25, 3.]), dtype=np.float32) 
         self.goal = mock_goal
     
     def _maybe_center_goal(self):
@@ -190,9 +192,9 @@ class HierarchicalAgent(Agent):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
         self._maybe_modify_smoothed_state(state)
         self._sample_goal(self._meta_state)
-        self._maybe_mock()
         self._check_inner_done(self._meta_state)
         if self.meta_time:
+            self._maybe_mock()
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
 

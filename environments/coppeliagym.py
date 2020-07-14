@@ -278,6 +278,8 @@ class CoppeliaEnv(gym.Env):
         :param action: The action proposed by the agent.
         :return: The reward obtained for the proposed action given the next state.'''
         if self._sparse_rew:
+            #self.distance_first_button.append(self._distance_query_switcher(1))
+            #self.distance_second_button.append(self._distance_query_switcher(2))
             rew = -1.
             if self._double_buttons:
                 # 2 button touch task
@@ -293,9 +295,9 @@ class CoppeliaEnv(gym.Env):
                     if (self._button1 and self._button2) and self.mega_reward:
                         rew += 50
                         print('MEGA reward')
-                        if self._record_touches:
-                            self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                            self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
+                        #if self._record_touches:
+                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                     if (self._button1 and self._button2) and not self.mega_reward:
                         print('FAILURE Punishment')
                         if self._reset_on_wrong_sequence:
@@ -305,9 +307,9 @@ class CoppeliaEnv(gym.Env):
                             self._stop_counter = 0
                         if self._render:
                             self._reset_button_colors()
-                        if self._record_touches:
-                            self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                            self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
+                        #if self._record_touches:
+                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
+                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                 self._stop_counter += 1
                 return rew
             else:

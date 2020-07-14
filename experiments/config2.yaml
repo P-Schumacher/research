@@ -1,4 +1,4 @@
-project: 'flat_double_button_exp'
+project: 'flat_double_button_exp_systematic'
 main:
   render: false
   flat_agent: true
@@ -6,12 +6,12 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flateasyrandom_5_nstep'
+  descriptor: 'flateasynotrandom_noise50'
   c_step: 10
   seed: 100
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 300000
+  max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -33,7 +33,7 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
-  #sub_noise: 0.0 
+  sub_noise: 50.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.000
@@ -46,7 +46,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
-  nstep: 5
+  nstep: 1
   goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false
@@ -67,6 +67,7 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     zero_obs: 0
+
   sub_model:
     policy_freq: 1
 
@@ -79,8 +80,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 10000000
     touch_distance: 0.5
     minimum_dist: 0.0

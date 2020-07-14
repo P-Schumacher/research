@@ -1,6 +1,6 @@
 project: ant_maze_new
 main:
-  log: true
+  log: false
   minilog: true
   descriptor: 'hiro_ant_zero_obs'
   save_model: false

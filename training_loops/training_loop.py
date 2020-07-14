@@ -33,6 +33,7 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
     return c_step
 
 def main(cnf):
+    dist = []
     env, agent = create_world(cnf)
     cnf = cnf.main
     # create objects 
@@ -52,7 +53,11 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
+        dist.append(intr_rew)
         if done:
+            np.save('intrrew.npy', dist, allow_pickle=True)
+            #np.save('touches1.npy', np.array(env.distance_first_button))
+            #np.save('touches2.npy', np.array(env.distance_second_button))
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:

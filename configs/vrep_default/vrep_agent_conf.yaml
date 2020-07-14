@@ -33,6 +33,7 @@ agent:
   meta_rew_scale: 0.1
   sub_noise: 1.4
   meta_noise: 0.1
+  nstep: 1
   train_meta: true
   train_sub: true
   agent_action_regularizer: 0.00086

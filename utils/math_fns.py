@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy as np
 
 def huber(dist, delta):
     return tf.reduce_sum(tf.square(delta) * ( tf.pow(1 + tf.square(dist  / delta), 0.5) - 1 ))
@@ -27,3 +28,48 @@ def clip_by_global_norm(t_list, clip_norm):
 
 def get_norm(t_list):
     return tf.math.sqrt(sum([tf.reduce_sum(tf.square(t)) for t in t_list]))
+
+
+class OUNoise(object):
+
+    def __init__(self, ou_mu, delta=0.01, sigma=10., ou_a=1):
+        # Noise parameters
+        self.delta = delta
+        self.sigma = sigma
+        self.ou_a = ou_a
+        self.ou_mu = ou_mu
+        self.first = np.zeros_like(self.ou_mu)
+        self.init = False
+
+    def brownian_motion_log_returns(self):
+        """
+        This method returns a Wiener process. The Wiener process is also called Brownian motion. For more information
+        about the Wiener process check out the Wikipedia page: http://en.wikipedia.org/wiki/Wiener_process
+        :return: brownian motion log returns
+        """
+        sqrt_delta_sigma = np.sqrt(self.delta) * self.sigma
+        return np.random.normal(loc=0, scale=sqrt_delta_sigma, size=self.ou_mu.shape)
+
+    def ornstein_uhlenbeck_level(self):
+        """
+        This method returns the rate levels of a mean-reverting ornstein uhlenbeck process.
+        :return: the Ornstein Uhlenbeck level
+        """
+        self.prev_ou_level = [self.prev_ou_level if self.init else self.first][0]
+        drift = self.ou_a * (self.ou_mu - self.prev_ou_level) * self.delta
+        randomness = self.brownian_motion_log_returns()
+        self.init = True
+        self.prev_ou_level = self.prev_ou_level + drift + randomness
+        return self.prev_ou_level
+
+    def vis_noise(self):
+        """
+        Visualize the noise to judge the parameters
+        """
+        a = []
+        for i in range(1000):
+            a.append(self.ornstein_uhlenbeck_level())
+        from matplotlib import pyplot as plt
+        plt.plot(a)
+        plt.show()
+

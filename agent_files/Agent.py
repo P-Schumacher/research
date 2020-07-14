@@ -7,6 +7,7 @@ from pudb import set_trace
 from utils.replay_buffers import ReplayBuffer, PriorityBuffer, nstepbuffer
 from utils.double_buffer import DoubleBuffer
 import wandb 
+from utils.math_fns import OUNoise
 
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
@@ -20,6 +21,7 @@ class Agent:
             self._replay_buffer = nstepbuffer(self._replay_buffer, nstep=self._nstep)
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
         self._policy = model(**specs, **agent_cnf.sub_model) 
+        self._ounoise = OUNoise(ou_mu=np.zeros(shape=specs['action_dim']), sigma=self._sub_noise)
         
     def evaluation(self, env):
         '''Play N evaluation episodes where noise is turned off. We also evaluate only the [0,16] target, not a uniformly
@@ -36,7 +38,7 @@ class Agent:
         state = np.array(state)
         action = self._policy.select_action(state) 
         if noise_bool:
-            action += self._gaussian_noise(self._sub_noise)
+            noise = [self._ounoise.ornstein_uhlenbeck_level() if self._OU else self._gaussian_noise(self._sub_noise)][0]
             action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         return action
     
@@ -77,6 +79,7 @@ class Agent:
         self._train_sub = agent_cnf.train_sub
         self._per = agent_cnf.per
         self._nstep = agent_cnf.nstep
+        self._OU = agent_cnf.ornstein
         # Main cnf
         self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed

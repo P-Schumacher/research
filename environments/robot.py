@@ -1,4 +1,5 @@
 import numpy as np
+from pudb import set_trace
 from pyrep.robots.arms.lbr_iiwa_14_r820 import LBRIwaa14R820 as Kuka 
 from pyrep.robots.end_effectors.gripper import Gripper
 from pyrep.const import RenderMode
@@ -70,7 +71,8 @@ class Robot:
  
     def get_ee_position(self):
         '''Returns the cartesian position of the arm tip.'''
-        return self.bot[0].get_tip().get_position()
+        #return self.bot[0].get_tip().get_position()
+        return self.bot[1].get_position()
 
     def get_ee_velocity(self):
         return self.bot[0].get_tip().get_velocity()

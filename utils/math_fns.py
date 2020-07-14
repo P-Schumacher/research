@@ -32,7 +32,7 @@ def get_norm(t_list):
 
 class OUNoise(object):
 
-    def __init__(self, ou_mu, delta=0.01, sigma=10., ou_a=1):
+    def __init__(self, ou_mu, delta=0.01, sigma=10., ou_a=1.):
         # Noise parameters
         self.delta = delta
         self.sigma = sigma

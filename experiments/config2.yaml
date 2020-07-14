@@ -1,12 +1,12 @@
 project: 'flat_double_button_exp_systematic'
 main:
-  render: true
+  render: false
   flat_agent: true
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flathardrandom_nstep1'
+  descriptor: 'flathardrandom_nstep1OUdifferenttheta'
   c_step: 10
   seed: 100
   offpolicy: true
@@ -81,10 +81,10 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 100000000
-    touch_distance: 0.08
+    touch_distance: 0.5
     minimum_dist: 0.0
     reset_on_wrong_sequence: false
 

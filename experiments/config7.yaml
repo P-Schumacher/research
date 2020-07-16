@@ -1,15 +1,20 @@
-project: goal_smoothing
+project: 'reversal_task_reversal'
 main:
-  render: true
-  log: false
+  render: false
+  flat_agent: false
+  log: true
   minilog: true
-  save_model: false
+  save_model: true
   load_model: false
-  descriptor: 'goal_smoothing'
-  c_step: 5
-  seed: 5
-  offpolicy: false
-  no_seed: true
+  descriptor: 'random_hiro_decaynoise_verylong'
+  c_step: 10
+  seed: 10
+  offpolicy: true
+  start_timesteps: 5000
+  max_timesteps: 100000000
+  no_seed: false
+  eval_freq: 20000
+  simple_env: false
   
   decay: false
   step_decayer:
@@ -17,20 +22,32 @@ main:
     init_step: ${main.c_step}
     min_step: 10
 
+# PER can be: 
+# false - Deactivated
+# 1 - TD Error based prio
+# 2 - Goal state distance based prio
+# 3 - proportional reward based prio
+# 4 - binary reward based prio 
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
+  #sub_noise: 0.0 
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00001
+  agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.95
-
+  smooth_factor: 0.7
+  add_multiple_dones: false
+  per: 1
+  sub_per: 0
+  goal_regul: 0.0
+  distance_goal_regul: 0.000
+  goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -46,10 +63,31 @@ agent:
     policy_freq: 2
     ac_lr: 0.0005
     cr_lr: 0.0007
+    no_candidates: 20
+  sub_model:
+    policy_freq: 1
 
 coppeliagym:
+  sim:
+    scene_file: 'coppelia_scenes/kuka_double.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
+    sparse_rew: true
     action_regularizer: 0.00
+    time_limit: 600
+    double_buttons: true
+    random_target: true
+    random_eval_target: true
+    reversal_time: 1200000000
+    touch_distance: 0.12
+    minimum_dist: 0.
+    record_touches: false
+    reset_on_wrong_sequence: false
+
   subgoals:
     ej_goal: [3, 1.0]
 
+buffer:
+  alpha: 0.9
+  beta: 0.
+  max_size: 200000

@@ -8,7 +8,7 @@ main:
   load_model: true
   descriptor: 'random_hiro_decaying_noise_record_decay'
   c_step: 10
-  seed: 10
+  seed: 5
   offpolicy: true
   start_timesteps: 50000
   max_timesteps: 4000000

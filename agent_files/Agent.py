@@ -11,7 +11,7 @@ from utils.math_fns import OUNoise
 
 class Agent:
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, specs, model):
-        self._prepare_parameters(agent_cnf, main_cnf)
+        self._prepare_parameters(agent_cnf, main_cnf, specs)
         if self._per:
             #self._replay_buffer = DoubleBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
             self._replay_buffer = PriorityBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
@@ -38,7 +38,9 @@ class Agent:
         state = np.array(state)
         action = self._policy.select_action(state) 
         if noise_bool:
-            noise = [self._ounoise.ornstein_uhlenbeck_level() if self._OU else self._gaussian_noise(self._sub_noise)][0]
+            noise = [self._ounoise.ornstein_uhlenbeck_level() if self._OU else self._gaussian_noise(self._sub_noise,
+                                                                                                    self._action_dim)][0]
+            action += noise
             action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         return action
     
@@ -71,7 +73,7 @@ class Agent:
     def reset(self):
         pass # Not necessary for simple agent
 
-    def _prepare_parameters(self, agent_cnf, main_cnf):
+    def _prepare_parameters(self, agent_cnf, main_cnf, specs):
         # Agent cnf
         self._num_eval_episodes = agent_cnf.num_eval_episodes
         self._sub_noise = agent_cnf.sub_noise
@@ -87,6 +89,8 @@ class Agent:
         self._log = main_cnf.log
         self._gradient_steps = main_cnf.gradient_steps
         self._batch_size = main_cnf.batch_size
+        # specs
+        self._action_dim = specs['action_dim']
 
     def _gaussian_noise(self, expl_noise, dimension=1):
         return np.array(np.random.normal(0, expl_noise, dimension), dtype=np.float32) 

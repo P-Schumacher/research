@@ -44,6 +44,8 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
+        #if t == 5000:
+        #    agent.meta_replay_buffer.reset()
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)

@@ -56,6 +56,8 @@ class ReplayBuffer(object):
         self.state_seq = np.zeros((self.max_size, self.c_step, self.state_dim - 3 * self.goal_smooth), dtype =
                                   np.float32)
         self.action_seq = np.zeros((self.max_size, self.c_step, 8), dtype = np.float32)  
+        self.ptr = 0
+        self.size = 0
 
     def _sample_idxs(self, batch_size):
         '''Uniformly samples idxs to sample from. This fct is overwritten by PER to
@@ -68,8 +70,6 @@ class ReplayBuffer(object):
         else:
             self.c_step = buffer_cnf.c_step
         self.max_size = buffer_cnf.max_size
-        self.ptr = 0
-        self.size = 0
         self.state_dim = state_dim
         self.action_dim = action_dim
         self.goal_smooth = buffer_cnf.goal_smooth

@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flateasyrandom_switchedtorquevel'
+  descriptor: 'flateasynotrandom_switchedlevel_noise1.4'
   c_step: 10
   seed: 100
   offpolicy: true
@@ -33,7 +33,7 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
-  sub_noise: 20.
+  sub_noise: 1.4
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.000

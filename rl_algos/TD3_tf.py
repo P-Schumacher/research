@@ -99,9 +99,24 @@ class TD3(object):
 
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
-
     @tf.function
     def _compute_td_error(self, state, action, reward, next_state, done):
+        '''Combines the current critic output and the learning target to yield
+        the td_error which is differentiated to yield the gradients for the critic'''
+        current_Q1, target_Q = self.get_current_estimate_and_learning_target(state, action, reward, next_state, done)
+        return tf.abs(current_Q1 - target_Q)
+
+    @tf.function
+    def get_current_estimate_and_learning_target(self, state, action, reward, next_state, done):
+        '''Computes the critic estimate for the given transition tuple and then computes 
+        the learning target using the deterministic TD3 recursion eqn.
+        Those metrics are also important diagnostic tools.'''
+        if type(reward) == float:
+            state = tf.reshape(state, [1, state.shape[-1]]) 
+            action = tf.reshape(action, [1, action.shape[-1]]) 
+            next_state = tf.reshape(next_state, [1, state.shape[-1]]) 
+            reward = tf.constant(reward, shape=[1,1], dtype=tf.float32)
+            done = tf.constant(done, shape=[1,1], dtype=tf.float32)
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
         done = tf.reshape(done, [done.shape[0], 1])
         reward = tf.reshape(reward, [reward.shape[0], 1])
@@ -115,10 +130,10 @@ class TD3(object):
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
-        target_Q = reward + (1. - done) * self.discount * target_Q
+        target_Q = reward + (1. - done) * self.discount ** self._nstep * target_Q
         # Critic Update
-        current_Q1, current_Q2 = self.critic(state_action)
-        return tf.abs(target_Q - current_Q1)
+        current_Q1, _ = self.critic(state_action)
+        return current_Q1, target_Q
 
     @tf.function
     def _train_critic(self, state, action, reward, next_state, done, log, is_weight):
@@ -164,7 +179,7 @@ class TD3(object):
         # Can't use *if not* in tf.function graph
         if self.total_it % self.policy_freq == 0:
             # Actor update
-            with tf.GradientTape(persistent=True) as tape:
+            with tf.GradientTape(persistent=False) as tape:
                 action = self.actor(state)
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)

@@ -1,4 +1,4 @@
-project: 'flat_double_button_exp_systematic'
+project: 'pendulum'
 main:
   render: false
   flat_agent: true
@@ -6,15 +6,15 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'flateasynotrandom_switchedlevel_noise1.4'
+  descriptor: 'pendulum'
   c_step: 10
   seed: 100
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 128
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
-  simple_env: false
+  simple_env: true
   zero_obs: 0
   
   decay: false
@@ -33,7 +33,7 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
-  sub_noise: 1.4
+  sub_noise: 0.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.000
@@ -45,7 +45,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.7
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   nstep: 1
   goal_regul: 0.00

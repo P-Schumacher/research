@@ -33,19 +33,20 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
     return c_step
 
 def main(cnf):
-    dist = []
     env, agent = create_world(cnf)
     cnf = cnf.main
     # create objects 
-    logger = Logger(cnf.log, cnf.time_limit)
+    logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)
     # Load previously trained model.
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
-        #if t == 5000:
-        #    agent.meta_replay_buffer.reset()
+        if t == 200000:
+            agent.meta_replay_buffer.reset()
+            #agent._meta_agent.critic_optimizer.set_weights([0])
+            #agent._meta_agent.actor_optimizer.set_weights([0])
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
@@ -55,11 +56,8 @@ def main(cnf):
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-        dist.append(intr_rew)
+        logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         if done:
-            np.save('intrrew.npy', dist, allow_pickle=True)
-            #np.save('touches1.npy', np.array(env.distance_first_button))
-            #np.save('touches2.npy', np.array(env.distance_second_button))
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:

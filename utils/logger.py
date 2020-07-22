@@ -1,12 +1,14 @@
 import wandb
+from pudb import set_trace
 
 class Logger:
-    def __init__(self, log, time_limit):
+    def __init__(self, log, minilog, time_limit):
         '''Helper class that logs variables using wandb.
         It counts the episode_reward, the timesteps it took and the 
         number of episodes.
         :param log: Should we log things at all.
         :return: None'''
+        self.minilog = minilog
         self.logging = log
         self.episode_reward = 0
         self.episode_timesteps = 0
@@ -53,3 +55,14 @@ class Logger:
             wandb.log({'eval/eval_ep_rew': eval_rew, 'eval/eval_intr_rew': eval_intr_rew,
                        'eval/success_rate': eval_success, 'eval/rate_correct_solves':rate_correct_solves,
                        'eval/untouchable_steps': untouchable_steps}, step = t)
+
+    def most_important_plot(self, agent, state, action, reward, next_state, done):
+        '''Log the current critic estimate and the learning target separately.
+        According to maitre Wilmot this is the most important diagnostic plot in RL'''
+        if not self.minilog:
+            #current_estimate_sub, learning_target_sub = agent._sub_agent.get_current_estimate_and_learning_target(state, action, reward, next_state, done)
+            goal = agent.goal
+            reward *= 0.1
+            current_estimate_meta, learning_target_meta = agent._meta_agent.get_current_estimate_and_learning_target(state, goal, reward, next_state, done)
+            #wandb.logging({'sub/current_estimate': current_estimate_sub, 'sub/learning_target': learning_target_sub}, commit=False)
+            wandb.log({'meta/current_estimate': current_estimate_meta, 'meta/learning_target': learning_target_meta}, commit=False)

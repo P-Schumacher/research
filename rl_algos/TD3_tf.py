@@ -45,9 +45,11 @@ class TD3(object):
         # Create networks 
         max_action  = tf.constant(max_action, dtype=tf.float32)
         self.actor = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
+        self.actor_reset_net = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_target = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
         self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr, beta_1=self.beta_1, beta_2=self.beta_2)
         self.critic = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
+        self.critic_reset_net = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_target = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr, beta_1=self.beta_1, beta_2=self.beta_2)
         # Huber loss does not punish a noisy large gradient.
@@ -100,6 +102,12 @@ class TD3(object):
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
 
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+
+    def full_reset(self):
+        self.transfer_weights(self.actor_reset_net, self.actor, tau=1)
+        self.transfer_weights(self.actor_reset_net, self.actor_target, tau=1)
+        self.transfer_weights(self.critic_reset_net, self.critic, tau=1)
+        self.transfer_weights(self.critic_reset_net, self.critic_target, tau=1)
 
     @tf.function
     def _compute_td_error(self, state, action, reward, next_state, done):

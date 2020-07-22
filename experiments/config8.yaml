@@ -1,4 +1,4 @@
-project: 'reversal_experiments_easy'
+project: 'reversal_experiments'
 main:
   render: false
   flat_agent: false
@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: True
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'something_else_--'
+  descriptor: 'fullreset'
   c_step: 10
   seed: 10
   offpolicy: true

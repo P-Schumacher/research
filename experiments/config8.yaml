@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: True
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'something_else_optimizereset10000'
+  descriptor: 'something_else_--'
   c_step: 10
   seed: 10
   offpolicy: true
@@ -77,8 +77,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 500000
     touch_distance: 0.12
     minimum_dist: 0.

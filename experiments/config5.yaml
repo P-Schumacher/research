@@ -1,17 +1,18 @@
-project: 'simpler_times'
+project: 'reversal_experiments_easy'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: false
   save_model: false
-  load_model: true
-  descriptor: 'mockgoals_record'
-  c_step: 50
-  seed: 2
+  load_model: True
+  load_string: 'random_hiro_decaynoise_verylong'
+  descriptor: 'something_else'
+  c_step: 10
+  seed: 10
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 4000000
+  max_timesteps: 100000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -29,17 +30,16 @@ main:
 # 3 - proportional reward based prio
 # 4 - binary reward based prio 
 agent:
-  nstep: 1
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.0 #0.6442
-  sub_noise:  0.0 #1.4
-  goal_type: Absolute
+  meta_noise: 0.6442
+  #sub_noise: 0.0
+  goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
-  meta_mock: true
+  meta_mock: false
   train_meta: true
-  train_sub: true
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.7
@@ -79,8 +79,8 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 120000000
-    touch_distance: 0.00001
+    reversal_time: 500000
+    touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

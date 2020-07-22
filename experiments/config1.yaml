@@ -1,20 +1,21 @@
-project: 'buffer_control'
+project: 'pendulum'
 main:
-  render: true
+  render: false
   flat_agent: true
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
-  descriptor: '2buttonsflat'
+  descriptor: 'pendulum'
   c_step: 10
-  seed: 25
+  seed: 100
   offpolicy: true
-  start_timesteps: 5000
-  max_timesteps: 10000000
-  no_seed: true
+  start_timesteps: 128
+  max_timesteps: 1000000
+  no_seed: false
   eval_freq: 20000
-  simple_env: false
+  simple_env: true
+  zero_obs: 0
   
   decay: false
   step_decayer:
@@ -32,19 +33,24 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
+  sub_noise: 0.
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.000
+  ornstein: true
   meta_mock: false
   train_meta: true
   train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.9
+  smooth_factor: 0.7
   add_multiple_dones: false
-  per: 1
+  per: 0
+  sub_per: 0
+  nstep: 1
   goal_regul: 0.00
-
+  distance_goal_regul: 0.000
+  goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -61,21 +67,30 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
+    zero_obs: 0
+
   sub_model:
     policy_freq: 1
 
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
-    render_scene_file: 'coppelia_scenes/kuka_double.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
     sparse_rew: true
     action_regularizer: 0.00
     time_limit: 600
-    double_buttons: false
+    double_buttons: true
+    random_target: false
+    random_eval_target: false
+    reversal_time: 100000000
+    touch_distance: 0.5
+    minimum_dist: 0.0
+    reset_on_wrong_sequence: false
 
   subgoals:
     ej_goal: [3, 1.0]
+
 buffer:
   alpha: 0.9
   beta: 0.

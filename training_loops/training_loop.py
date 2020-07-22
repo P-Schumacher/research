@@ -10,7 +10,7 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 
-N = 10000000000
+N = 1000000000
 
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
@@ -46,16 +46,15 @@ def main(cnf):
     for t in range(int(cnf.max_timesteps)):
         if t == N:
             agent.meta_replay_buffer.reset()
-            set_trace()
-            agent._meta_agent.beta_1.assign(0)
-            agent._meta_agent.beta_2.assign(0)
-            agent._meta_agent.critic_optimizer.iterations.assign(0)
-            agent._meta_agent.actor_optimizer.iterations.assign(0)
-            tmp = True
-        if t > N and tmp == True:
-            agent._meta_agent.beta_1.assign(0.9)
-            agent._meta_agent.beta_2.assign(0.999)
-            tmp = False
+            #agent._meta_agent.beta_1.assign(0)
+            #agent._meta_agent.beta_2.assign(0)
+            #agent._meta_agent.critic_optimizer.iterations.assign(0)
+            #agent._meta_agent.actor_optimizer.iterations.assign(0)
+            #tmp = True
+        #if t > N and tmp == True:
+        #    agent._meta_agent.beta_1.assign(0.9)
+        #    agent._meta_agent.beta_2.assign(0.999)
+        #    tmp = False
 
             
 

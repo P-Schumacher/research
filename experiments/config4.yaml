@@ -1,17 +1,18 @@
-project: 'reversal_task_reversal'
+project: 'reversal_experiments'
 main:
   render: false
   flat_agent: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
-  load_model: false
-  descriptor: 'not_random_hard_hiro_distance_regul_reversal'
+  load_model: True
+  load_string: 'random_hiro_decaynoise_verylong'
+  descriptor: 'reversal_buffer_optimizer_reset'
   c_step: 10
-  seed: 2
+  seed: 10
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 4000000
+  max_timesteps: 100000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -32,13 +33,13 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
-  #sub_noise: 0.0 
+  #sub_noise: 0.0
   goal_type: Direction
   ri_re: false
-  agent_action_regularizer: 0.00
+  agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: true
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.7
@@ -46,7 +47,7 @@ agent:
   per: 1
   sub_per: 0
   goal_regul: 0.0
-  distance_goal_regul: 0.001
+  distance_goal_regul: 0.000
   goal_every_iteration: false
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -76,12 +77,13 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
-    reversal_time: 650000
-    touch_distance: 0.08
+    random_target: true
+    random_eval_target: true
+    reversal_time: 500000
+    touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false
+    reset_on_wrong_sequence: false
 
   subgoals:
     ej_goal: [3, 1.0]

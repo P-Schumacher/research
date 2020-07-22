@@ -5,8 +5,9 @@ main:
   log: true
   minilog: false
   save_model: false
-  load_model: true
-  descriptor: 'random_hiro_decaynoise_verylong'
+  load_model: True
+  load_string: 'random_hiro_decaynoise_verylong'
+  descriptor: 'something_else'
   c_step: 10
   seed: 10
   offpolicy: true
@@ -78,7 +79,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 200000
+    reversal_time: 300000
     touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false

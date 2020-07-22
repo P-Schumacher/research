@@ -11,6 +11,7 @@ main:
   render: false
   save_model: false
   load_model: false
+  load_string: 'None'
   start_timesteps: 5000
   max_timesteps: 1500000
   time_limit: ${coppeliagym.params.time_limit}

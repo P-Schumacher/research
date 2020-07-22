@@ -65,7 +65,7 @@ class HierarchicalAgent(Agent):
         self._transitbuffer.reset()
 
     def _self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.descriptor)
+        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.load_string)
         
         meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
         self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,

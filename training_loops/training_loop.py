@@ -43,10 +43,21 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
-        if t == 200000:
+        if t == 2000:
             agent.meta_replay_buffer.reset()
-            #agent._meta_agent.critic_optimizer.set_weights([0])
-            #agent._meta_agent.actor_optimizer.set_weights([0])
+            set_trace()
+            agent._meta_agent.beta_1.assign(0)
+            agent._meta_agent.beta_2.assign(0)
+            agent._meta_agent.critic_optimizer.iterations.assign(0)
+            agent._meta_agent.actor_optimizer.iterations.assign(0)
+            tmp = True
+        if t > 2000 and tmp == True:
+            agent._meta_agent.beta_1.assign(0.9)
+            agent._meta_agent.beta_2.assign(0.999)
+            tmp = False
+
+            
+
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)

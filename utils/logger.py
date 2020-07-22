@@ -59,7 +59,7 @@ class Logger:
     def most_important_plot(self, agent, state, action, reward, next_state, done):
         '''Log the current critic estimate and the learning target separately.
         According to maitre Wilmot this is the most important diagnostic plot in RL'''
-        if not self.minilog:
+        if self.logging and not self.minilog:
             #current_estimate_sub, learning_target_sub = agent._sub_agent.get_current_estimate_and_learning_target(state, action, reward, next_state, done)
             goal = agent.goal
             reward *= 0.1

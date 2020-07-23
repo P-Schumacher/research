@@ -10,7 +10,7 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 
-N = 500000
+N = 50000000000
 
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:

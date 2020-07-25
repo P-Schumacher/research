@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'nstep1'
+  descriptor: 'forwardmodel_learnonit'
   c_step: 10
   seed: 100
   offpolicy: true
@@ -47,7 +47,7 @@ agent:
   add_multiple_dones: false
   per: 1
   sub_per: 0
-  nstep: 1
+  nstep: 5
   goal_regul: 0.00
   distance_goal_regul: 0.000
   goal_every_iteration: false
@@ -77,14 +77,14 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
     time_limit: 600
-    double_buttons: true
+    double_buttons: false
     random_target: false
     random_eval_target: false
     reversal_time: 10000000000
-    touch_distance: 0.12
+    touch_distance: 0.5
     minimum_dist: 0.0
     reset_on_wrong_sequence: false
 

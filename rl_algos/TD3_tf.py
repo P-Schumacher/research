@@ -80,8 +80,10 @@ class TD3(object):
             target_W[idx] = tf.math.scalar_mul(tau, W[idx]) + tf.math.scalar_mul((1 - tau), target_W[idx])
             target_model.weights[idx].assign(target_W[idx])
      
-    def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None):
+    def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        reward2 = FM.get_reward(next_state, reshape=False)
+        wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
         if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)

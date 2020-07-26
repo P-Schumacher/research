@@ -10,7 +10,7 @@ class ForwardModel:
         self.net = ForwardModelNet(state_dim, [100], 0)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
-        self.it = 0
+        self.it = 0 
 
     def get_reward(self, state, reshape=True):
         if reshape:

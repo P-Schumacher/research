@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'forwardmodel_learnonit'
+  descriptor: 'baseline_reversal'
   c_step: 10
   seed: 100
   offpolicy: true
@@ -33,7 +33,7 @@ agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
   meta_noise: 0.6442
-  sub_noise: 1.4
+  sub_noise: 25.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.000
@@ -77,13 +77,13 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_render.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
     time_limit: 600
-    double_buttons: false
+    double_buttons: true
     random_target: false
     random_eval_target: false
-    reversal_time: 10000000000
+    reversal_time: 300000
     touch_distance: 0.5
     minimum_dist: 0.0
     reset_on_wrong_sequence: false

@@ -36,7 +36,7 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
 
 def main(cnf):
     env, agent = create_world(cnf)
-    FM = ForwardModel(22)
+    FM = ForwardModel(26)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
@@ -64,17 +64,17 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        intr_rew = agent.replay_add(state, action, FM.get_reward(next_state), next_state, done, success_cd)
+        FM.train(next_state, reward)
+        intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
         logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
-        FM.train(next_state, reward)
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:
-                agent.train(t, logger.episode_timesteps)
+                agent.train(t, logger.episode_timesteps, FM)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             agent.reset()

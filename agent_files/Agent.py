@@ -44,11 +44,12 @@ class Agent:
             action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         return action
     
-    def train(self, timestep, episode_timesteps):
+    def train(self, timestep, episode_timesteps, FM):
         if self._train_sub:
             m_avg = np.zeros([6, ], dtype=np.float32)
             for i in range(episode_timesteps):
-                *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep, (self._log and not self._minilog))
+                *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep, (self._log and not
+                                                                                                 self._minilog), FM=FM)
                 m_avg += metrics 
             m_avg /= self._gradient_steps
             if self._log and not self._minilog:

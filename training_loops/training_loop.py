@@ -34,8 +34,29 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
         agent._meta_agent.c_step = c_step
     return c_step
 
+class Reset_Reversal:
+    def __init__(self, agent, N):
+        self.tmp = False
+        self.N = N
+        self.agent = agent
+
+def maybe_reset_things_for_reversal(t):
+    if t == self.N:
+        self.agent.meta_replay_buffer.reset()
+        self.agent._meta_agent.beta_1.assign(0)
+        self.agent._meta_agent.beta_2.assign(0)
+        self.agent._meta_agent.critic_optimizer.iterations.assign(0)
+        self.agent._meta_agent.actor_optimizer.iterations.assign(0)
+        self.agent._meta_agent.full_reset()
+        self.tmp = True
+    if t > self.N and self.tmp == True:
+        self.agent._meta_agent.beta_1.assign(0.9)
+        self.agent._meta_agent.beta_2.assign(0.999)
+        self.tmp = False
+
 def main(cnf):
     env, agent = create_world(cnf)
+    reverser = Reset_Reversal(agent, N)
     FM = ForwardModel(26)
     cnf = cnf.main
     # create objects 
@@ -46,19 +67,7 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
-        if t == N:
-            agent.meta_replay_buffer.reset()
-            agent._meta_agent.beta_1.assign(0)
-            agent._meta_agent.beta_2.assign(0)
-            agent._meta_agent.critic_optimizer.iterations.assign(0)
-            agent._meta_agent.actor_optimizer.iterations.assign(0)
-            agent._meta_agent.full_reset()
-            tmp = True
-        if t > N and tmp == True:
-            agent._meta_agent.beta_1.assign(0.9)
-            agent._meta_agent.beta_2.assign(0.999)
-            tmp = False
-
+        reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)

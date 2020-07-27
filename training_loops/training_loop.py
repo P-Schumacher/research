@@ -11,7 +11,6 @@ from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 from rl_algos.FM import ForwardModel
 
-N = 100
 
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
@@ -35,28 +34,29 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
     return c_step
 
 class Reset_Reversal:
-    def __init__(self, agent, N):
+    def __init__(self, agent, N, active=False):
         self.tmp = False
         self.N = N
         self.agent = agent
+        self.active = active
 
-def maybe_reset_things_for_reversal(t):
-    if t == self.N:
-        self.agent.meta_replay_buffer.reset()
-        self.agent._meta_agent.beta_1.assign(0)
-        self.agent._meta_agent.beta_2.assign(0)
-        self.agent._meta_agent.critic_optimizer.iterations.assign(0)
-        self.agent._meta_agent.actor_optimizer.iterations.assign(0)
-        self.agent._meta_agent.full_reset()
-        self.tmp = True
-    if t > self.N and self.tmp == True:
-        self.agent._meta_agent.beta_1.assign(0.9)
-        self.agent._meta_agent.beta_2.assign(0.999)
-        self.tmp = False
+    def maybe_reset_things_for_reversal(self, t):
+        if t == self.N and self.active:
+            self.agent.meta_replay_buffer.reset()
+            self.agent._meta_agent.beta_1.assign(0)
+            self.agent._meta_agent.beta_2.assign(0)
+            self.agent._meta_agent.critic_optimizer.iterations.assign(0)
+            self.agent._meta_agent.actor_optimizer.iterations.assign(0)
+            self.agent._meta_agent.full_reset()
+            self.tmp = True
+        if t > self.N and self.tmp == True:
+            self.agent._meta_agent.beta_1.assign(0.9)
+            self.agent._meta_agent.beta_2.assign(0.999)
+            self.tmp = False
 
 def main(cnf):
     env, agent = create_world(cnf)
-    reverser = Reset_Reversal(agent, N)
+    #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
     FM = ForwardModel(26)
     cnf = cnf.main
     # create objects 
@@ -67,13 +67,13 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
-        reverser.maybe_reset_things_for_reversal(t)
+        #reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        FM.train(next_state, reward)
+        #FM.train(next_state, reward)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state

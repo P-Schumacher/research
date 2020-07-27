@@ -82,8 +82,8 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        reward2 = FM.get_reward(next_state, reshape=False)
-        wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
+        #reward2 = FM.get_reward(next_state, reshape=False)
+        #wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
         if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
@@ -93,7 +93,7 @@ class TD3(object):
             reward_new = reward
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         if self._per:
-            self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+            self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)

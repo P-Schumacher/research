@@ -30,7 +30,7 @@ class HierarchicalAgent(Agent):
                 wandb.log({'metanoise':self._meta_noise}, commit=False)
         return self._maybe_apply_action_clipnoise(action, noise_bool)
     
-    def train(self, timestep, episode_steps):
+    def train(self, timestep, episode_steps, forward_model):
         '''Train the agent with 1 minibatch. The meta-agent is trained every c_step steps.'''
         sub_avg = np.zeros([6,], dtype=np.float32) 
         meta_avg = np.zeros([6,], dtype=np.float32) 

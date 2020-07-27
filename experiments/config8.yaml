@@ -1,9 +1,9 @@
-project: 'reversal_experiments'
+project: 'summary_plot_maitre_wilmot'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
-  minilog: false
+  log: true
+  minilog: true
   save_model: false
   load_model: True
   load_string: 'random_hiro_decaynoise_verylong'

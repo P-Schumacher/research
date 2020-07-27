@@ -24,9 +24,10 @@ class HierarchicalAgent(Agent):
             # Need to correct goal after applying noise
             self._maybe_goal_smoothing()
         action = self._get_sub_action(state) 
-        self._meta_noise *= 0.9999
-        if self._log:
-            wandb.log({'metanoise':self._meta_noise}, commit=False)
+        if self._decay_noise:
+            self._meta_noise *= 0.9999
+            if self._log:
+                wandb.log({'metanoise':self._meta_noise}, commit=False)
         return self._maybe_apply_action_clipnoise(action, noise_bool)
     
     def train(self, timestep, episode_steps):
@@ -348,6 +349,7 @@ class HierarchicalAgent(Agent):
         self._smooth_goal = agent_cnf.smooth_goal
         self._smooth_factor = agent_cnf.smooth_factor
         self._goal_every_iteration = agent_cnf.goal_every_iteration
+        self._decay_noise = agent_cnf.decay_noise
 
     @property
     def goal(self):

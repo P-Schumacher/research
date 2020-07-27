@@ -10,7 +10,6 @@ class ForwardModel:
         self.net = ForwardModelNet(state_dim, [100], 0)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
-        self.it = 0 
 
     def get_reward(self, state, reshape=True):
         if reshape:
@@ -23,10 +22,8 @@ class ForwardModel:
             output = self.get_reward(state, reshape=False)
             loss = self.loss_fn(output, reward)
         gradients = tape.gradient(loss, self.net.trainable_variables)
-        if self.it < 100000000:
-            self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
-        self.log(np.abs(output - reward)/np.abs(reward), loss, output, reward)
-        self.it += 1
+        self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
+        #self.log(np.abs(output - reward)/np.abs(reward), loss, output, reward)
 
     def log(self, pred_err, loss, y_pred, y_true):
         wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss, 'FM/output': y_pred, 'FM/online_reward': y_true}, commit=False)

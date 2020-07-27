@@ -11,7 +11,7 @@ from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 from rl_algos.FM import ForwardModel
 
-N = 50000000000
+N = 100
 
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:

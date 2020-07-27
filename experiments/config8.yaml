@@ -1,13 +1,13 @@
 project: 'reversal_experiments'
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: false
   save_model: false
   load_model: True
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'fullreset'
+  descriptor: 'hiro_notrandom_small_noise'
   c_step: 10
   seed: 10
   offpolicy: true
@@ -32,7 +32,7 @@ main:
 agent:
   center_meta_goal: false
   meta_rew_scale: 0.1
-  meta_noise: 0.6442
+  meta_noise: 0.01 #0.6442
   #sub_noise: 0.0
   goal_type: Direction
   ri_re: false
@@ -49,6 +49,7 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
+  decay_noise: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -79,7 +80,7 @@ coppeliagym:
     double_buttons: true
     random_target: false
     random_eval_target: false
-    reversal_time: 500000
+    reversal_time: 500000000000
     touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false

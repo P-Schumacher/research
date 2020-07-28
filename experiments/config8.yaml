@@ -5,13 +5,13 @@ main:
   log: true
   minilog: true
   save_model: false
-  load_model: True
+  load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'hiro_notrandom_small_noise'
+  descriptor: 'hiro_random_small_noise'
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 100
   max_timesteps: 100000000
   no_seed: false
   eval_freq: 20000
@@ -39,7 +39,7 @@ agent:
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: false
+  train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.7
@@ -78,8 +78,8 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: false
-    random_eval_target: false
+    random_target: true
+    random_eval_target: true
     reversal_time: 500000000000
     touch_distance: 0.12
     minimum_dist: 0.

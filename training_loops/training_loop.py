@@ -57,7 +57,7 @@ class Reset_Reversal:
 def main(cnf):
     env, agent = create_world(cnf)
     #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    FM = ForwardModel(26)
+    FM = ForwardModel(2, logging=cnf.main.log)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
@@ -73,12 +73,12 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        #FM.train(next_state, reward)
+        FM.train(state, next_state, reward)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         state = next_state
         logger.inc(t, reward)
-        logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
+        #logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier

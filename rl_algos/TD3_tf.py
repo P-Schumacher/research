@@ -82,8 +82,9 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        #reward2 = FM.get_reward(next_state, reshape=False)
-        #wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
+        reward2 = FM.get_reward(state, next_state, reshape=False)
+        if log:
+            wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
         if  self.name == 'meta' and self.offpolicy:
             action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)

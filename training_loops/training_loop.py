@@ -57,7 +57,7 @@ class Reset_Reversal:
 def main(cnf):
     env, agent = create_world(cnf)
     #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    FM = ForwardModel(2, logging=cnf.main.log)
+    #FM = ForwardModel(2, logging=cnf.main.log)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
@@ -83,7 +83,7 @@ def main(cnf):
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:
-                agent.train(t, logger.episode_timesteps, FM)
+                agent.train(t, logger.episode_timesteps, None)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             agent.reset()

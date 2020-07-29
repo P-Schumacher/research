@@ -7,11 +7,11 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'flat_notrandom_12_learnfromenv'
+  descriptor: 'flat_notrandom_12_regu'
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 1000
+  start_timesteps: 5000
   max_timesteps: 10000000
   no_seed: false
   eval_freq: 20000
@@ -69,6 +69,7 @@ agent:
     no_candidates: 20
   sub_model:
     policy_freq: 1
+    use_FM: true
 
 coppeliagym:
   sim:
@@ -81,8 +82,8 @@ coppeliagym:
     double_buttons: true
     random_target: false
     random_eval_target: false
-    reversal_time: 300000
-    touch_distance: 0.12
+    reversal_time: 200000
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

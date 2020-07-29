@@ -8,59 +8,9 @@ from rl_algos.offpol_correction import off_policy_correction
 from utils.math_fns import euclid
 
 class TD3(object):
-    def __init__(
-        self,
-        state_dim,
-        action_dim,
-        max_action,
-        subgoal_ranges,
-        target_dim,
-        ac_hidden_layers,
-        cr_hidden_layers,
-        clip_cr,
-        clip_ac,
-        reg_coeff_ac,
-        reg_coeff_cr,
-        zero_obs,
-        per,
-        goal_regul,
-        distance_goal_regul,
-        nstep,
-        name="default",
-        discount=0.99,
-        tau=0.005,
-        policy_noise=0.2,
-        noise_clip=0.5,
-        policy_freq=2,
-        ac_lr = 0.0001,
-        cr_lr = 0.01,
-        offpolicy = None,
-        c_step = 10,
-        no_candidates = 10
-    ):
-        assert offpolicy != None
-        assert name == 'meta' or name == 'sub'
-        self.beta_1 = tf.Variable(0.9)
-        self.beta_2 = tf.Variable(0.999)
-        # Create networks 
-        max_action  = tf.constant(max_action, dtype=tf.float32)
-        self.actor = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
-        self.actor_reset_net = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
-        self.actor_target = Actor(state_dim, action_dim, max_action, ac_hidden_layers, reg_coeff_ac)
-        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=ac_lr, beta_1=self.beta_1, beta_2=self.beta_2)
-        self.critic = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
-        self.critic_reset_net = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
-        self.critic_target = Critic(state_dim, action_dim, cr_hidden_layers, reg_coeff_cr)
-        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=cr_lr, beta_1=self.beta_1, beta_2=self.beta_2)
-        # Huber loss does not punish a noisy large gradient.
-        self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
-        # Equal initial network and target network weights
-        self.update_target_models_hard()  
-
-        self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                                 c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                                 goal_regul, distance_goal_regul, nstep)
-
+    def __init__(self, **kwargs):
+        self._prepare_parameters(kwargs)
+        self._prepare_algo_objects()
         self._create_persistent_tf_variables()
 
     def select_action(self, state):
@@ -82,31 +32,24 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        reward2 = FM.get_reward(state, next_state, reshape=False)
-        if log:
-            wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward2))}, commit=False)
-        if  self.name == 'meta' and self.offpolicy:
-            action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
-                                          self.c_step, state_seq, action_seq, self._zero_obs)
-        if self.name == 'meta' and (self._goal_regul or self._distance_goal_regul):
-            reward_new = self._goal_regularization(action, reward, next_state, state_seq, action_seq, sub_agent)
-        else:
-            reward_new = reward
+        reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
+        reward_new = self._maybe_offpol_correction(action, reward_new, next_state, state_seq, action_seq, sub_agent)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
-        if self._per:
-            self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
+        if self.per:
+            self._prioritized_experience_update(self.per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
-        #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
+        #self._prioritized_experience_update(self.per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
         if log:
             wandb.log({f'{self.name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self.name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
-
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
     def full_reset(self):
+        '''Completely resets actor and critic network to the predefined 
+        reset networks.'''
         self.transfer_weights(self.actor_reset_net, self.actor, tau=1)
         self.transfer_weights(self.actor_reset_net, self.actor_target, tau=1)
         self.transfer_weights(self.critic_reset_net, self.critic, tau=1)
@@ -138,12 +81,12 @@ class TD3(object):
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
         next_action = self.actor_target(next_state) + noise
         # this clip assures that we don't take impossible actions a > max_action
-        next_action = tf.clip_by_value(next_action, -self._max_action, self._max_action)
+        next_action = tf.clip_by_value(next_action, -self.max_action, self.max_action)
         # Compute the target Q value
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
-        target_Q = reward + (1. - done) * self.discount ** self._nstep * target_Q
+        target_Q = reward + (1. - done) * self.discount ** self.nstep * target_Q
         # Critic Update
         current_Q1, _ = self.critic(state_action)
         return current_Q1, target_Q
@@ -164,12 +107,12 @@ class TD3(object):
         noise = tf.clip_by_value(noise, -self.noise_clip, self.noise_clip)
         next_action = self.actor_target(next_state) + noise
         # this clip assures that we don't take impossible actions a > max_action
-        next_action = tf.clip_by_value(next_action, -self._max_action, self._max_action)
+        next_action = tf.clip_by_value(next_action, -self.max_action, self.max_action)
         # Compute the target Q value
         next_state_next_action = tf.concat([next_state, next_action], 1)
         target_Q1, target_Q2 = self.critic_target(next_state_next_action)
         target_Q = tf.math.minimum(target_Q1, target_Q2)
-        target_Q = reward + (1. - done) * self.discount ** self._nstep * target_Q
+        target_Q = reward + (1. - done) * self.discount ** self.nstep * target_Q
         # Critic Update
         with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
@@ -184,8 +127,7 @@ class TD3(object):
         gradients, norm = clip_by_global_norm(gradients, self.clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
-
-        return target_Q - current_Q1
+        return tf.abs(target_Q - current_Q1)
     
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
@@ -204,6 +146,23 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self.tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
+    def _maybe_offpol_correction(self, action, reward, next_state, state_seq, action_seq, sub_agent):
+        if self.name == 'meta' and (self.goal_regul or self.distance_goal_regul):
+            return self._goal_regularization(action, reward, next_state, state_seq, action_seq, sub_agent)
+        else:
+            return reward
+
+    def _maybe_FM_reward(self, state, next_state, reward, FM, log):
+        '''Uses a learned ForwardModel (or reward model) to
+        replace the reward during learning'''
+        if self.use_FM:
+            reward_FM = FM.get_reward(state, next_state, reshape=False)
+            if log:
+                wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward_FM))}, commit=False)
+            return reward_FM
+        else:
+            return reward
+
     def _goal_regularization(self, action, reward, next_state, state_seq, action_seq, sub_agent):
         #errors = []
         #for idx, x in enumerate(state_seq):
@@ -211,9 +170,8 @@ class TD3(object):
         #    to_append = self._get_error(x, y, action[idx], reward[idx], sub_agent)
         #    errors.append(to_append)
         #errors = tf.reshape(errors, [len(errors), 1])
-        #return reward + self._goal_regul * tf.abs(errors) - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-        return reward - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-
+        #return reward + self.goal_regul * tf.abs(errors) - tf.reshape(self.distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
+        return reward - tf.reshape(self.distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
 
     def _goal_transit_fn(self, goal, state, next_state):
         dim = goal.shape[0]
@@ -279,7 +237,7 @@ class TD3(object):
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
-                error = tf.abs(td_error)
+                error = td_error
             elif per == 2:
                 error = 1 / (tf.norm(next_state[:,:action.shape[1]] - action, axis=1) + 0.00001)
             elif per == 3:
@@ -311,30 +269,31 @@ class TD3(object):
         self.ac_gr_std = tf.Variable(0, dtype=tf.float32)
         self.cr_gr_std = tf.Variable(0, dtype=tf.float32)
 
-    def _prepare_parameters(self, name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
-                            c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
-                            goal_regul, distance_goal_regul, nstep):
-        # Save parameters
-        self.name = name
-        self.offpolicy = offpolicy
-        self._max_action = max_action
-        self.discount = discount
-        self.tau = tau
-        self.policy_noise = policy_noise
-        self.noise_clip = noise_clip
-        self.policy_freq = policy_freq
-        self.c_step = c_step
-        self.no_candidates = no_candidates 
-        self.subgoal_ranges = np.array(subgoal_ranges, dtype=np.float32)
-        self.target_dim = target_dim
-        self.clip_cr = clip_cr
-        self.clip_ac = clip_ac
-        self._zero_obs = zero_obs
-        self._per = per
-        self._goal_regul = goal_regul
-        self._distance_goal_regul = distance_goal_regul
-        self._nstep = nstep
+    def _prepare_parameters(self, kwargs):
+        for key in kwargs:
+            setattr(self, key, kwargs[key])
 
+    def _prepare_algo_objects(self):
+        assert self.offpolicy != None
+        assert self.name == 'meta' or self.name == 'sub'
+        # Use these to change optimizer parameters mid-training
+        self.beta_1 = tf.Variable(0.9)
+        self.beta_2 = tf.Variable(0.999)
+        # Create networks 
+        self.max_action  = tf.constant(self.max_action, dtype=tf.float32)
+        self.actor = Actor(self.state_dim, self.action_dim, self.max_action, self.ac_hidden_layers, self.reg_coeff_ac)
+        # Use reset nets to re-initialize networks at some point
+        self.actor_reset_net = Actor(self.state_dim, self.action_dim, self.max_action, self.ac_hidden_layers, self.reg_coeff_ac)
+        self.actor_target = Actor(self.state_dim, self.action_dim, self.max_action, self.ac_hidden_layers, self.reg_coeff_ac)
+        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=self.ac_lr, beta_1=self.beta_1, beta_2=self.beta_2)
+        self.critic = Critic(self.state_dim, self.action_dim, self.cr_hidden_layers, self.reg_coeff_cr)
+        self.critic_reset_net = Critic(self.state_dim, self.action_dim, self.cr_hidden_layers, self.reg_coeff_cr)
+        self.critic_target = Critic(self.state_dim, self.action_dim, self.cr_hidden_layers, self.reg_coeff_cr)
+        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self.cr_lr, beta_1=self.beta_1, beta_2=self.beta_2)
+        # Huber loss does not punish a noisy large gradient.
+        self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
+        # Equal initial network and target network weights
+        self.update_target_models_hard()  
 
 if __name__ == '__main__':
  pass

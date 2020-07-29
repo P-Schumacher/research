@@ -8,10 +8,36 @@ import wandb
 
 class ForwardModel:
     def __init__(self, state_dim, logging):
-        self.net = ForwardModelNet(2*state_dim, [100], 0)
+        self.net = ForwardModelNet(2*state_dim, [100], 0.01)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
+        self.reset(1000, 26)
+
+    def reset(self, buffer_dim, state_dim):
+        self.max_size = buffer_dim
+        self.states = np.zeros([buffer_dim, 26], dtype=np.float32)
+        self.next_states = np.zeros([buffer_dim, 26], dtype=np.float32)
+        self.rewards = np.zeros([buffer_dim, 26], dtype=np.float32)
+        self.ptr = 0
+        self.size = 0
+
+    def sample(self, batch_size):
+        batch_idxs = self._sample_idx(batch_size)
+        return (
+        tf.convert_to_tensor(self.states[batch_idxs]),
+        tf.convert_to_tensor(self.next_states[batch_idxs]),
+        tf.convert_to_tensor(self.rewards[batch_idxs]))
+
+    def add(self, state, next_state, reward):
+        self.states[self.ptr] = state
+        self.next_states[self.ptr] = next_state
+        self.rewards[self.ptr] = reward
+        self.ptr = (self.ptr + 1) % self.max_size
+        self.size = min(self.size + 1, self.max_size)
+
+    def _sample_idx(self, batch_size):
+        return tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
 
     def get_reward(self, state, next_state, reshape=True):
         reduced_state = tf.concat([state[:,-4, tf.newaxis], state[:, -1, tf.newaxis], next_state[:, -4, tf.newaxis],
@@ -21,19 +47,19 @@ class ForwardModel:
         return self.net(reduced_state)
 
     def train(self, state, next_state, reward):
-        pred_err, loss, y_pred, y_true = self._train(state, next_state, reward)
+        self.add(state, next_state, reward)
+        states, next_states, rewards = self.sample(64)
+        pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards)
         if self.logging:
-            self.log(pred_err, loss, y_pred, y_true)
+            self.log(tf.reduce_mean(pred_err), tf.reduce_mean(loss))
 
-    def log(self, pred_err, loss, y_pred, y_true):
-        wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss, 'FM/output': y_pred, 'FM/online_reward': y_true}, commit=False)
+    def log(self, pred_err, loss):
+        wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss}, commit=False)
 
     @tf.function
     def _train(self, state, next_state, reward):
-        state = tf.reshape(state, shape=[1, state.shape[0]])
-        next_state = tf.reshape(next_state, shape=[1, next_state.shape[0]])
         with tf.GradientTape() as tape:
-            output = self.get_reward(state, next_state, reshape=True)
+            output = self.get_reward(state, next_state, reshape=False)
             loss = self.loss_fn(output, reward)
         gradients = tape.gradient(loss, self.net.trainable_variables)
         self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))

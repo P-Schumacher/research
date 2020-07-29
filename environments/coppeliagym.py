@@ -42,9 +42,9 @@ class CoppeliaEnv(gym.Env):
             self._reversal = True
             print('REVERSAL')
         if self._render and self._double_buttons:
-            if self._button1:
+            if self._button1 == 1:
                 self._target.set_color([1, 0, 1])
-            if self._button2:
+            if self._button2 == 1:
                 self._target2.set_color([1, 0, 1])
         return observation, reward, done, info
 
@@ -61,12 +61,12 @@ class CoppeliaEnv(gym.Env):
         # Control flow for task success
         self.success = False
         self.mega_reward = True
-        self._button1 = False
-        self._button2 = False
+        self._button1 = -1
+        self._button2 = -1
         self._stop_counter = COUNTER
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
-            self._button2 = True
+            self._button2 = 1
         if self._render and self._double_buttons:
             self._reset_button_colors()
         return state
@@ -219,8 +219,8 @@ class CoppeliaEnv(gym.Env):
         self._reversal = False
         self._reset_on_wrong_sequence = reset_on_wrong_sequence
         # Need these before reset to get observation.shape
-        self._button1 = False
-        self._button2 = False
+        self._button1 = -1
+        self._button2 = -1
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
         if self._record_touches:
             self.distance_first_button = []
@@ -284,25 +284,25 @@ class CoppeliaEnv(gym.Env):
             if self._double_buttons:
                 # 2 button touch task
                 if self._stop_counter >= COUNTER:
-                    if self._distance_query_switcher(1) < self._touch_distance and not self._button1:
-                        self._button1 = True
+                    if self._distance_query_switcher(1) < self._touch_distance and not self._button1 == 1:
+                        self._button1 = 1
                         print('button 1 pressed')
-                    if self._distance_query_switcher(0) < self._touch_distance and not self._button2:
-                        self._button2 = True
+                    if self._distance_query_switcher(0) < self._touch_distance and not self._button2 == 1:
+                        self._button2 = 1
                         print('button 2 pressed')
-                    if self._button2 and not self._button1:
+                    if self._button2 == 1 and not self._button1 == 1:
                         self.mega_reward = False
-                    if (self._button1 and self._button2) and self.mega_reward:
+                    if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
                         rew += 1
                         print('MEGA reward')
                         #if self._record_touches:
                         #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                         #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                    if (self._button1 and self._button2) and not self.mega_reward:
+                    if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
                         print('FAILURE Punishment')
                         if self._reset_on_wrong_sequence:
-                            self._button1 = False
-                            self._button2 = False
+                            self._button1 = -1
+                            self._button2 = -1
                             self.mega_reward = True
                             self._stop_counter = 0
                         if self._render:
@@ -316,7 +316,7 @@ class CoppeliaEnv(gym.Env):
                 # One button touch task
                 if self._get_distance(self._ep_target_pos) < self._touch_distance:
                     rew += 1
-                    self._button1 = True
+                    self._button1 = 1
                     return rew
         # dense reaching task
         return - self._get_distance(self._ep_target_pos) - self._action_regularizer * tf.square(tf.norm(action))
@@ -341,7 +341,7 @@ class CoppeliaEnv(gym.Env):
         the value of a terminal state should be set to zero. Alternatively, one could
         add the timestep to the state. cf. Time Limits in Reinforcement Learning, Pardo et al.'''
         self._needs_reset = True
-        if self._button1 and self._button2:
+        if self._button1 == 1 and self._button2 == 1:
             print("Success")
             self.success = True
         elif self._timestep >= self.max_episode_steps - 1:
@@ -435,6 +435,7 @@ class CoppeliaEnv(gym.Env):
     def _reset_button_colors(self):
         self._target.set_color([0, 0, 1])
         self._target2.set_color([1, 0, 0])
+
     def _get_info(self):
         return ''
     

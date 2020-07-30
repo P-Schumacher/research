@@ -293,7 +293,7 @@ class CoppeliaEnv(gym.Env):
                     if self._button2 == 1 and not self._button1 == 1:
                         self.mega_reward = False
                     if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
-                        rew += 1
+                        rew += 50
                         print('MEGA reward')
                         #if self._record_touches:
                         #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))

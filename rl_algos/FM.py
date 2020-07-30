@@ -8,26 +8,44 @@ import wandb
 
 class ForwardModel:
     def __init__(self, state_dim, logging):
-        self.net = ForwardModelNet(2*state_dim, [100], 0.01)
+        self.net = ForwardModelNet(2*state_dim, [2], 0)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
-        self.reset(1000, 26)
+        self.reset(7, 26)
+        self.add_manual([0,0,0,0,-1])
+        self.add_manual([0,0,1,0,-1])
+        self.add_manual([0,0,0,1,-1])
+        self.add_manual([1,0,1,0,-1])
+        self.add_manual([1,0,1,1, 50])
+        self.add_manual([0,1,0,1,-1])
+        self.add_manual([0,1,1,1,-1])
+
+    def add_manual(self, vector):
+            assert len(vector) == 5
+            state = np.zeros(shape=[1,26])
+            next_state = np.zeros(shape=[1,26])
+            state[0,-4] = vector[0]
+            state[0, -1] = vector[1]
+            next_state[0, -4] = vector[2]
+            next_state[0, -1] = vector[3]
+            reward = vector[4]
+            self.add(state, next_state, reward)
 
     def reset(self, buffer_dim, state_dim):
         self.max_size = buffer_dim
         self.states = np.zeros([buffer_dim, 26], dtype=np.float32)
         self.next_states = np.zeros([buffer_dim, 26], dtype=np.float32)
-        self.rewards = np.zeros([buffer_dim, 26], dtype=np.float32)
+        self.rewards = np.zeros([buffer_dim, 1], dtype=np.float32)
         self.ptr = 0
         self.size = 0
 
     def sample(self, batch_size):
         batch_idxs = self._sample_idx(batch_size)
         return (
-        tf.convert_to_tensor(self.states[batch_idxs]),
-        tf.convert_to_tensor(self.next_states[batch_idxs]),
-        tf.convert_to_tensor(self.rewards[batch_idxs]))
+            tf.convert_to_tensor(self.states[batch_idxs,:]),
+            tf.convert_to_tensor(self.next_states[batch_idxs,:]),
+            tf.convert_to_tensor(self.rewards[batch_idxs,:]))
 
     def add(self, state, next_state, reward):
         self.states[self.ptr] = state
@@ -47,8 +65,8 @@ class ForwardModel:
         return self.net(reduced_state)
 
     def train(self, state, next_state, reward):
-        self.add(state, next_state, reward)
-        states, next_states, rewards = self.sample(64)
+        #self.add(state, next_state, reward)
+        states, next_states, rewards = self.sample(1)
         pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards)
         if self.logging:
             self.log(tf.reduce_mean(pred_err), tf.reduce_mean(loss))

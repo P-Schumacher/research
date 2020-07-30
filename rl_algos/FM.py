@@ -8,7 +8,7 @@ import wandb
 
 class ForwardModel:
     def __init__(self, state_dim, logging):
-        self.net = ForwardModelNet(2*state_dim, [100], 0.01)
+        self.net = ForwardModelNet(2*state_dim, [100], 0)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
@@ -55,6 +55,7 @@ class ForwardModel:
 
     def log(self, pred_err, loss):
         wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss}, commit=False)
+        wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
     @tf.function
     def _train(self, state, next_state, reward):

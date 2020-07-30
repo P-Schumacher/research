@@ -35,9 +35,9 @@ class HierarchicalAgent(Agent):
         sub_avg = np.zeros([6,], dtype=np.float32) 
         meta_avg = np.zeros([6,], dtype=np.float32) 
         for train_index in range(episode_steps):
-            sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index) if self._train_sub else [0 for x in sub_avg]][0]
+            sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index, forward_model) if self._train_sub else [0 for x in sub_avg]][0]
             if (not train_index % self._c_step) and train_index:
-                meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index) if self._train_meta else [0 for x in meta_avg]][0]
+                meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index, forward_model) if self._train_meta else [0 for x in meta_avg]][0]
         self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
 
     def replay_add(self, state, action, reward, next_state, done, success_cd):
@@ -86,20 +86,22 @@ class HierarchicalAgent(Agent):
             self._prev_goal = np.zeros(shape=[3, ], dtype=np.float32)
 
 
-    def _train_sub_agent(self, timestep, train_index):
+    def _train_sub_agent(self, timestep, train_index, FM):
         *metrics, = self._sub_agent.train(self.sub_replay_buffer, 
                                           self._batch_size, 
                                           timestep, 
-                                          (self._log and not self._minilog))
+                                          (self._log and not self._minilog),
+                                          FM=FM)
         return metrics 
 
-    def _train_meta_agent(self, timestep, train_index):
+    def _train_meta_agent(self, timestep, train_index, FM):
         *metrics, = self._meta_agent.train(self.meta_replay_buffer, 
                                            self._batch_size, 
                                            timestep, 
                                            (self._log and not self._minilog), 
                                            self._sub_agent.actor,
-                                           self._sub_agent)
+                                           self._sub_agent,
+                                           FM=FM)
         return metrics 
 
     def _maybe_apply_action_clipnoise(self, action, noise_bool):
@@ -107,7 +109,7 @@ class HierarchicalAgent(Agent):
         the allowed maximum and minimum ranges.'''
         if noise_bool:
             action += self._gaussian_noise(self._sub_noise, self._action_dim)
-            return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
+            return  tf.clip_by_value(action, -self._sub_agent.max_action, self._sub_agent.max_action)
         return action
 
     def _maybe_apply_goal_clipnoise(self, noise_bool=False):

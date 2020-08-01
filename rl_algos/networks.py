@@ -74,7 +74,7 @@ class ForwardModelNet(tf.keras.Model):
         super(ForwardModelNet, self).__init__()
         self.hidden = kl.Dense(hidden_layers[0], activation='relu', kernel_initializer=initialize_relu,
                           kernel_regularizer=l2(reg_coeff))
-        self.out = kl.Dense(1, activation='tanh', kernel_initializer=initialize_tanh,
+        self.out = kl.Dense(2, activation='tanh', kernel_initializer=initialize_tanh,
                           kernel_regularizer=l2(reg_coeff))
         self.build(input_shape=(None, state_dim))
 
@@ -82,4 +82,4 @@ class ForwardModelNet(tf.keras.Model):
     def call(self, state):
         assert state.dtype == tf.float32
         x = self.hidden(state)
-        return self.out(x)
+        return self.out(x) * 50

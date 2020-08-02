@@ -58,7 +58,7 @@ def main(cnf):
     reversal = False
     env, agent = create_world(cnf)
     #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    FM = ForwardModel(26, logging=cnf.main.log, oracle=True)
+    FM = ForwardModel(26, logging=cnf.main.log, oracle=False)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)

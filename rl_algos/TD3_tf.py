@@ -35,6 +35,9 @@ class TD3(object):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         reward_new, done_new = self._maybe_FM_reward(state, next_state, reward, done, FM, log)
         reward_new = self._maybe_offpol_correction(action, reward_new, next_state, state_seq, action_seq, sub_agent)
+        if self.iteration >= 10000:
+            print(reward)
+            print(reward_new)
         td_error = self._train_critic(state, action, reward_new, next_state, done_new, log, replay_buffer.is_weight)
         if self.per:
             self._prioritized_experience_update(self.per, td_error, next_state, action, reward_new, replay_buffer)

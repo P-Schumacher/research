@@ -12,14 +12,14 @@ class ForwardModel:
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
-        self.reset(7, 26)
-        self.add_manual([0,0,0,0,-1])
-        self.add_manual([0,0,1,0,-1])
-        self.add_manual([0,0,0,1,-1])
-        self.add_manual([1,0,1,0,-1])
-        self.add_manual([1,0,1,1, 50])
-        self.add_manual([0,1,0,1,-1])
-        self.add_manual([0,1,1,1,-1])
+        self.reset(1000, 26)
+        #self.add_manual([-1,-1,-1,-1,-1])
+        #self.add_manual([-1,-1,1,-1,-1])
+        #self.add_manual([-1,-1,-1,1,-1])
+        #self.add_manual([1,-1,1,-1,-1])
+        #self.add_manual([1,-1,1,1, 1])
+        #self.add_manual([-1,1,-1,1,-1])
+        #self.add_manual([-1,1,1,1,-1])
 
     def add_manual(self, vector):
             assert len(vector) == 5
@@ -39,13 +39,14 @@ class ForwardModel:
         self.rewards = np.zeros([buffer_dim, 1], dtype=np.float32)
         self.ptr = 0
         self.size = 0
+        self.t = 0
 
     def sample(self, batch_size):
         batch_idxs = self._sample_idx(batch_size)
         return (
-            tf.convert_to_tensor(self.states[batch_idxs,:]),
-            tf.convert_to_tensor(self.next_states[batch_idxs,:]),
-            tf.convert_to_tensor(self.rewards[batch_idxs,:]))
+            tf.convert_to_tensor(self.states[batch_idxs]),
+            tf.convert_to_tensor(self.next_states[batch_idxs]),
+            tf.convert_to_tensor(self.rewards[batch_idxs]))
 
     def add(self, state, next_state, reward):
         self.states[self.ptr] = state
@@ -65,14 +66,15 @@ class ForwardModel:
         return self.net(reduced_state)
 
     def train(self, state, next_state, reward):
-        #self.add(state, next_state, reward)
-        states, next_states, rewards = self.sample(1)
+        self.add(state, next_state, reward)
+        states, next_states, rewards = self.sample(64)
         pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards)
         if self.logging:
             self.log(tf.reduce_mean(pred_err), tf.reduce_mean(loss))
 
     def log(self, pred_err, loss):
         wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss}, commit=False)
+        wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
     @tf.function
     def _train(self, state, next_state, reward):
@@ -87,13 +89,13 @@ if __name__ == '__main__':
     pred_err = [] 
     model = ForwardModel(2, logging=False)
     states = np.array([[0.,0,0,0], [1,0,1,0],[1,0,1,1],[0,1,0,1],[0,1,1,1], [0,0,1,0],[0,0,0,1]], dtype=np.float32)
-    true_rews = np.array([[-1.],[-1],[50], [-1],[-1], [-1], [-1]], dtype=np.float32)
-    for i in range(100):
+    true_rews = np.array([[-1.],[-1],[1], [-1],[-1], [-1], [-1]], dtype=np.float32)
+    for i in range(1000):
         for concatstate, reward in zip(states, true_rews):
             choice = np.random.randint(0, 7)
             print(choice)
-            concatstate = states[choice, :]
-            reward = true_rews[choice, :]
+            #concatstate = states[choice, :]
+            #reward = true_rews[choice, :]
             state = np.zeros([1, 26])
             next_state = np.zeros([1, 26])
             state[:, -4] = concatstate[0]

@@ -28,7 +28,6 @@ class ReplayBuffer(object):
 
     def sample(self, batch_size):
         self.batch_idxs = self._sample_idxs(batch_size)
-        set_trace()
         return (  
         tf.convert_to_tensor(self.state[self.batch_idxs]),
         tf.convert_to_tensor(self.action[self.batch_idxs]),

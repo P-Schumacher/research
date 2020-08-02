@@ -10,7 +10,7 @@ project = sys.argv[1]
 runs = api.runs('rlpractitioner/'+project)
 
 keys = ['_step', 'eval/eval_ep_rew', 'eval/eval_intr_rew', 'eval/success_rate', 'c_step', 'ep_rew',
-        'eval/rate_correct_solves']
+        'eval/rate_correct_solves', 'FM/pred_error']
 
 name_list = []
 config_list = []

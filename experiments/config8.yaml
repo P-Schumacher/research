@@ -2,16 +2,16 @@ project: 'FM_MODEL'
 main:
   render: false
   flat_agent: true
-  log: false
+  log: true
   minilog: false
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'flat_notrandom_oldenv_notusefm_TEST'
+  descriptor: 'flat_notrandom_ORACLESEED10'
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 10
+  start_timesteps: 200
   max_timesteps: 10000000
   no_seed: false
   eval_freq: 20000
@@ -70,7 +70,7 @@ agent:
     use_FM: False
   sub_model:
     policy_freq: 1
-    use_FM: false
+    use_FM: true
 
 coppeliagym:
   sim:
@@ -83,8 +83,8 @@ coppeliagym:
     double_buttons: true
     random_target: false
     random_eval_target: false
-    reversal_time: 200000
-    touch_distance: 0.3
+    reversal_time: 80000
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

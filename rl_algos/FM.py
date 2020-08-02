@@ -67,9 +67,9 @@ class ForwardModel:
 
     def predict_oracle(self, state, done, reversal):
         if not reversal:
-            ret = tf.constant([50. if np.all(x == [1.,-1,1,1]) else -1. for x in state])[:, tf.newaxis]
+            ret = tf.constant([49. if np.all(x == [1.,-1,1,1]) else -1. for x in state])[:, tf.newaxis]
         else:
-            ret = tf.constant([50. if np.all(x == [-1.,1,1,1]) else -1. for x in state])[:, tf.newaxis]
+            ret = tf.constant([49. if np.all(x == [-1.,1,1,1]) else -1. for x in state])[:, tf.newaxis]
         if reversal:
             return ret, done * -1. + 1. 
         else:

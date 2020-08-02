@@ -75,7 +75,7 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        if t == 200000:
+        if t == 80000:
             reversal = True
         FM.train(state, next_state, reward, success_cd, reversal)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)

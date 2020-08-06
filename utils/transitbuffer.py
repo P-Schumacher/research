@@ -27,7 +27,7 @@ class TransitBuffer(ReplayBuffer):
         self._prepare_offpolicy_datastructures(sub_env_spec)
         self._agent = agent
             
-    def add(self, state, action, reward, next_state, done, success_cd):
+    def add(self, state, action, reward, next_state, done, success_cd, FM=None):
         '''Adds the transitions to the appropriate buffers. Goal is saved at
         each timestep to be used for the transition of the next timestep. At 
         an episode end, the meta agent recieves a transition of t:t_end, 
@@ -40,7 +40,7 @@ class TransitBuffer(ReplayBuffer):
         if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
             self._initialize_buffer(state, action, reward, next_state, done) 
         else: 
-            return self._add(state, action, reward, next_state, done, success_cd)
+            return self._add(state, action, reward, next_state, done, success_cd, FM)
 
     def compute_intr_reward(self, goal, state, next_state, action):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
@@ -96,14 +96,14 @@ class TransitBuffer(ReplayBuffer):
             self._sum_of_rewards += reward
             self._init = True
 
-    def _add(self, state, action, reward, next_state, done, success_cd):
+    def _add(self, state, action, reward, next_state, done, success_cd, FM):
         '''This function handles all of the logic for adding transitions.
         It is the first function that should be modified, all others
         are primitives.'''
         self._finish_sub_transition(self.goal, reward)
         self._save_sub_transition(state, action, reward, next_state, success_cd, self.goal)
         if self.meta_time:
-            self._finish_meta_transition(self._meta_state, success_cd)
+            self._finish_meta_transition(self._meta_state, success_cd, FM)
             if np.any(self._orig_goal):
                 self.goal = self._orig_goal
             self._save_meta_transition(self._meta_state, self.goal, success_cd)
@@ -113,7 +113,7 @@ class TransitBuffer(ReplayBuffer):
             # This implicitly computes the next goal in the transitbuffer.
             self._agent.select_action(next_state) 
             self._finish_sub_transition(self.goal, reward)
-            self._finish_meta_transition(self._meta_state, success_cd)
+            self._finish_meta_transition(self._meta_state, success_cd, FM)
             self._needs_reset = True
             intr_return = self._ep_rewards
             self._ep_rewards = 0
@@ -139,9 +139,9 @@ class TransitBuffer(ReplayBuffer):
         self._ep_rewards += intr_reward
         self._add_to_sub(old.state, old.goal, old.action, intr_reward, old.next_state, next_goal, old.done)
 
-    def _finish_meta_transition(self, next_state, done):
+    def _finish_meta_transition(self, next_state, done, FM):
         old = self._load_meta_transition()
-        self._add_to_meta(old.state, old.goal, self._sum_of_rewards * self._meta_rew_scale, next_state, done)
+        self._add_to_meta(old.state, old.goal, self._sum_of_rewards * self._meta_rew_scale, next_state, done, FM)
 
     def _finish_one_step_episode(self, state, action, reward, next_state, done):
         '''1 step episodes are handled separately because the adding of states to 
@@ -180,7 +180,7 @@ class TransitBuffer(ReplayBuffer):
         self._sub_replay_buffer.add(cat_state, action, intr_reward,
                                    cat_next_state, extr_done, 0, 0)
         
-    def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done):
+    def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done, FM=None):
         '''Adds transitions to the replay buffer of the meta agent. *self._state_seq* and 
         *self._action_seq* are collected sub-agent experience transitions that are used
         to compute the offpolicy-correction.
@@ -194,6 +194,7 @@ class TransitBuffer(ReplayBuffer):
                 self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                             self._action_seq)
         self._reset_sequence()
+        #FM.train(state, next_state, sum_of_rewards)
 
     def _reset_sequence(self):
         '''After the sequence has been added to the meta replaybuffer, we overwrite the arrays with np.inf,

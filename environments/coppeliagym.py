@@ -300,6 +300,7 @@ class CoppeliaEnv(gym.Env):
                         #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                     if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
                         print('FAILURE Punishment')
+                        rew -= 0
                         if self._reset_on_wrong_sequence:
                             self._button1 = -1
                             self._button2 = -1

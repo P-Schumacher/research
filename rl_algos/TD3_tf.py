@@ -31,14 +31,18 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
+        self.iteration += 1
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
+        reward_new, done_new = self._maybe_FM_reward(state, next_state, reward, done, FM, log)
         reward_new = self._maybe_offpol_correction(action, reward_new, next_state, state_seq, action_seq, sub_agent)
-        td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        if self.iteration >= 10000:
+            print(reward)
+            print(reward_new)
+        td_error = self._train_critic(state, action, reward_new, next_state, done_new, log, replay_buffer.is_weight)
         if self.per:
             self._prioritized_experience_update(self.per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        self._train_actor(state, action, reward_new, next_state, done_new, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self.per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -152,16 +156,17 @@ class TD3(object):
         else:
             return reward
 
-    def _maybe_FM_reward(self, state, next_state, reward, FM, log):
+    def _maybe_FM_reward(self, state, next_state, reward, done,  FM, log):
         '''Uses a learned ForwardModel (or reward model) to
         replace the reward during learning'''
         if self.use_FM:
-            reward_FM = FM.get_reward(state, next_state, reshape=False)
+            reward_FM, done_FM = FM.forward_pass(state, next_state, done, reshape=False)
             if log:
-                wandb.log({'FM/batchprederror': tf.abs(tf.reduce_mean(reward - reward_FM))}, commit=False)
-            return reward_FM
+                wandb.log({'FM/agentbatchRerror': tf.reduce_mean(tf.abs(reward - reward_FM)), 'FM/agentbatchDerror':
+                          tf.reduce_sum(tf.abs(done- done_FM))}, commit=False)
+            return reward_FM, done_FM
         else:
-            return reward
+            return reward, done
 
     def _goal_regularization(self, action, reward, next_state, state_seq, action_seq, sub_agent):
         #errors = []
@@ -272,6 +277,7 @@ class TD3(object):
     def _prepare_parameters(self, kwargs):
         for key in kwargs:
             setattr(self, key, kwargs[key])
+        self.iteration = 0
 
     def _prepare_algo_objects(self):
         assert self.offpolicy != None

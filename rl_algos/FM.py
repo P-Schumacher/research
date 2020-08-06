@@ -7,11 +7,13 @@ from rl_algos.networks import ForwardModelNet
 import wandb
 
 class ForwardModel:
-    def __init__(self, state_dim, logging):
-        self.net = ForwardModelNet(2*state_dim, [2], 0)
+    '''Model that learns the reward in tandem with the RL agent learning.'''
+    def __init__(self, state_dim, logging, oracle=False):
+        self.net = ForwardModelNet(2*state_dim, [100], 0)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
+        self.oracle = oracle
         self.reset(1000, 26)
         #self.add_manual([-1,-1,-1,-1,-1])
         #self.add_manual([-1,-1,1,-1,-1])
@@ -37,6 +39,7 @@ class ForwardModel:
         self.states = np.zeros([buffer_dim, 26], dtype=np.float32)
         self.next_states = np.zeros([buffer_dim, 26], dtype=np.float32)
         self.rewards = np.zeros([buffer_dim, 1], dtype=np.float32)
+        self.dones= np.zeros([buffer_dim, 1], dtype=np.float32)
         self.ptr = 0
         self.size = 0
         self.t = 0
@@ -44,31 +47,57 @@ class ForwardModel:
     def sample(self, batch_size):
         batch_idxs = self._sample_idx(batch_size)
         return (
-            tf.convert_to_tensor(self.states[batch_idxs]),
-            tf.convert_to_tensor(self.next_states[batch_idxs]),
-            tf.convert_to_tensor(self.rewards[batch_idxs]))
+        tf.convert_to_tensor(self.states[batch_idxs]),
+        tf.convert_to_tensor(self.next_states[batch_idxs]),
+        tf.convert_to_tensor(self.rewards[batch_idxs]),
+        tf.convert_to_tensor(self.dones[batch_idxs]))
 
-    def add(self, state, next_state, reward):
+    def add(self, state, next_state, reward, done):
         self.states[self.ptr] = state
         self.next_states[self.ptr] = next_state
         self.rewards[self.ptr] = reward
+        self.dones[self.ptr] = done
         self.ptr = (self.ptr + 1) % self.max_size
         self.size = min(self.size + 1, self.max_size)
 
     def _sample_idx(self, batch_size):
         return tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
 
-    def get_reward(self, state, next_state, reshape=True):
-        reduced_state = tf.concat([state[:,-4, tf.newaxis], state[:, -1, tf.newaxis], next_state[:, -4, tf.newaxis],
-                                   next_state[:, -1, tf.newaxis]], axis=-1)
-        if reshape:
-            reduced_state = tf.reshape(reduced_state, shape=[1, reduced_state.shape[-1]])
-        return self.net(reduced_state)
+    def forward_pass(self, state, next_state, done, reshape=True, reversal=False):
+        '''Computes estimated rewards and done in a forward pass.
+        This information has then to be called from the class.'''
+        if not self.oracle:
+            reduced_state = tf.concat([state, next_state], axis=-1)
+            out = self.net(reduced_state)
+            return out[:,0, tf.newaxis], tf.cast(out[:,1, tf.newaxis] >= 20, dtype=tf.float32)
+        else:
+            reduced_state = tf.concat([state[:,-4, tf.newaxis], state[:, -1, tf.newaxis], next_state[:, -4, tf.newaxis],
+                                       next_state[:, -1, tf.newaxis]], axis=-1)
+            if reshape:
+                reduced_state = tf.reshape(reduced_state, shape=[1, reduced_state.shape[-1]])
+            return self.predict_oracle(reduced_state, done, reversal)
 
-    def train(self, state, next_state, reward):
-        self.add(state, next_state, reward)
-        states, next_states, rewards = self.sample(64)
-        pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards)
+    def get_reward(self):
+        return self.reward
+
+    def get_done(self):
+        done = self.done >= 20
+        return done
+
+    def predict_oracle(self, state, done, reversal):
+        if not reversal:
+            ret = tf.constant([49. if np.all(x == [1.,-1,1,1]) else -1. for x in state])[:, tf.newaxis]
+        else:
+            ret = tf.constant([49. if np.all(x == [-1.,1,1,1]) else -1. for x in state])[:, tf.newaxis]
+        if reversal:
+            return ret, done * -1. + 1. 
+        else:
+            return ret, done 
+
+    def train(self, state, next_state, reward, done, reversal=False):
+        self.add(state, next_state, reward, done)
+        states, next_states, rewards, dones  = self.sample(64)
+        pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards, dones)
         if self.logging:
             self.log(tf.reduce_mean(pred_err), tf.reduce_mean(loss))
 
@@ -76,14 +105,14 @@ class ForwardModel:
         wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss}, commit=False)
         wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
-    @tf.function
-    def _train(self, state, next_state, reward):
+    def _train(self, state, next_state, reward, done, reversal=False):
         with tf.GradientTape() as tape:
-            output = self.get_reward(state, next_state, reshape=False)
-            loss = self.loss_fn(output, reward)
+            ret_pred, done_pred = self.forward_pass(state, next_state, done, reshape=False, reversal=reversal)
+            loss = self.loss_fn(ret_pred, reward) + self.loss_fn(done_pred, 50*done) 
         gradients = tape.gradient(loss, self.net.trainable_variables)
-        self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
-        return tf.abs(output-reward)/tf.abs(reward), loss, output, reward
+        if not self.oracle:
+            self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
+        return tf.abs(ret_pred-reward)/tf.abs(reward), loss, ret_pred, reward
 
 if __name__ == '__main__':
     pred_err = [] 

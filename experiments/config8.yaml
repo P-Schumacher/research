@@ -7,15 +7,16 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'flat_notrandom_12_noreversal_50_nstep1'
+  descriptor: 'flat_notrandom_nofm_nstep5'
   c_step: 10
   seed: 10
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 200
   max_timesteps: 10000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
+  batch_size: 5
   
   decay: false
   step_decayer:
@@ -31,10 +32,10 @@ main:
 # 4 - binary reward based prio 
 agent:
   center_meta_goal: false
-  nstep: 1
+  nstep: 5
   meta_rew_scale: 0.1
   meta_noise: 0.6442 #0.01
-  sub_noise: 25.0
+  sub_noise: 25.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -67,7 +68,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: False
+    use_FM: false
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -83,8 +84,8 @@ coppeliagym:
     double_buttons: true
     random_target: false
     random_eval_target: false
-    reversal_time: 200000
-    touch_distance: 0.3
+    reversal_time: 80000
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

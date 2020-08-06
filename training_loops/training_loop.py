@@ -55,9 +55,10 @@ class Reset_Reversal:
             self.tmp = False
 
 def main(cnf):
+    reversal = False
     env, agent = create_world(cnf)
     #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    #FM = ForwardModel(2, logging=cnf.main.log)
+    FM = ForwardModel(26, logging=cnf.main.log, oracle=False)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
@@ -74,21 +75,23 @@ def main(cnf):
         next_state, reward, done, _ = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        #FM.train(state, next_state, reward)
+        if t == 80000:
+            reversal = True
+        FM.train(state, next_state, reward, success_cd, reversal)
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
-        state = next_state
         logger.inc(t, reward)
-        #onlineprederr = tf.abs(reward - FM.get_reward(tf.reshape(state, [1,26]), tf.reshape(next_state, [1,26])))
-        #run_online = 0.9 * run_online + 0.1 * onlineprederr
-        #if cnf.log:
-        #    wandb.log({f'FM/avgonlineprederr':run_online}, commit=False)
+        onlineprederr = tf.abs(reward - FM.forward_pass(tf.reshape(state, [1,26]), tf.reshape(next_state, [1,26]), done)[0])
+        run_online = 0.9 * run_online + 0.1 * onlineprederr
+        if cnf.log:
+            wandb.log({f'FM/avgonlineprederr':run_online}, commit=False)
         #logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
+        state = next_state
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:
-                agent.train(t, logger.episode_timesteps)
+                agent.train(t, logger.episode_timesteps, FM)
             print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             agent.reset()

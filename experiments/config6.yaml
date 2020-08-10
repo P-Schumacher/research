@@ -1,21 +1,22 @@
-project: 'reversal_experiments_easy'
+project: 'FM_MODEL_NEW'
 main:
   render: false
   flat_agent: false
   log: true
   minilog: false
   save_model: false
-  load_model: True
+  load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'something_else'
+  descriptor: 'reset_goal_at_200000_fm'
   c_step: 10
-  seed: 10
+  seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 100000000
+  max_timesteps: 10000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
+  batch_size: 128
   
   decay: false
   step_decayer:
@@ -31,9 +32,10 @@ main:
 # 4 - binary reward based prio 
 agent:
   center_meta_goal: false
+  nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.6442
-  #sub_noise: 0.0
+  meta_noise: 0.64
+  sub_noise: 1.4
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -42,13 +44,14 @@ agent:
   train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
-  smooth_factor: 0.7
+  smooth_factor: 0.001
   add_multiple_dones: false
   per: 1
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
+  decay_noise: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -65,8 +68,10 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
+    use_FM: true
   sub_model:
     policy_freq: 1
+    use_FM: false
 
 coppeliagym:
   sim:
@@ -77,9 +82,9 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
-    reversal_time: 500000
+    random_target: false
+    random_eval_target: false
+    reversal_time: 200000
     touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false

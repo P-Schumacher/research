@@ -40,9 +40,9 @@ class HierarchicalAgent(Agent):
                 meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index, forward_model) if self._train_meta else [0 for x in meta_avg]][0]
         self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
 
-    def replay_add(self, state, action, reward, next_state, done, success_cd):
+    def replay_add(self, state, action, reward, next_state, done, success_cd, FM=None):
         '''Adds a transition to the replay buffer.'''
-        return self._transitbuffer.add(state, action, reward, next_state, done, success_cd)
+        return self._transitbuffer.add(state, action, reward, next_state, done, success_cd, FM)
         
     def save_model(self, string):
         '''Saves the weights of sub and meta agent to a file.'''
@@ -329,6 +329,9 @@ class HierarchicalAgent(Agent):
         self._action_dim = env_spec['action_dim']
         self._subgoal_dim = subgoal_dim
         # Main cnf
+        #set_trace()
+        #for key in main_cnf.keys():
+        #    main_cnf[f'_{key}'] = main_cnf.pop(key)
         self._minilog = main_cnf.minilog
         self._batch_size = main_cnf.batch_size
         self._c_step = main_cnf.c_step

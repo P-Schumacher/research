@@ -165,9 +165,22 @@ class TD3(object):
         replace the reward during learning'''
         if self.use_FM:
             reward_FM = FM.forward_pass(state, next_state, reshape=False)
+            reward_FM *= 0.1
+            high_rews = tf.where(reward != -1.)[:,0]
+            low_rews = tf.where(reward == -1.)[:,0]
+            high_preds = tf.gather(reward_FM, high_rews)
+            low_preds = tf.gather(reward_FM, low_rews)
+            high_rews = tf.gather(reward, high_rews)
+            low_rews = tf.gather(reward, low_rews)
+            high_log = tf.reduce_sum(tf.abs(high_preds - high_rews))
+            low_log = tf.reduce_sum(tf.abs(low_preds - low_rews))
             if log:
-                wandb.log({'FM/agentbatchRerror': tf.reduce_mean(tf.abs(reward - reward_FM))}, commit=False)
-            return reward_FM * 0.1
+                wandb.log({'FM/agentbatchRerror_high': high_log, 'FM/agentbatchRerror_low': low_log,
+                           'FM/agentbatch_lowpred': tf.reduce_mean(low_preds), 'FM/agentbatch_highpred':
+                           tf.reduce_mean(high_preds), 'FM/agentbatch_lowrew': tf.reduce_mean(low_rews),
+                           'FM/agentbatch_highrew':
+                           tf.reduce_mean(high_rews)}, commit=False)
+            return reward_FM 
         else:
             return reward
 

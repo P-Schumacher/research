@@ -10,7 +10,7 @@ import wandb
 class ForwardModel:
     '''Model that learns the reward in tandem with the RL agent learning.'''
     def __init__(self, state_dim, logging, oracle=False, nstep=10):
-        self.net = ForwardModelNet(2*state_dim, [100], 0.0001)
+        self.net = ForwardModelNet(2*state_dim, [100], 0.)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
@@ -101,13 +101,13 @@ class ForwardModel:
     def train(self, state, next_state, reward, done, reset, reversal=False):
         self.add(state, next_state, reward, done, reset)
         if self.size >= 500:
-            states, next_states, rewards  = self.sample(32)
-            pred_err, loss, y_pred, y_true = self._train(states, next_states, rewards)
+            states, next_states, rewards  = self.sample(128)
+            high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
             if self.logging:
-                self.log(tf.reduce_mean(pred_err), tf.reduce_mean(loss))
+                self.log(high_prederr, low_prederr, loss)
 
-    def log(self, pred_err, loss):
-        wandb.log({'FM/pred_error': pred_err, 'FM/loss': loss}, commit=False)
+    def log(self, high_prederr, low_prederr, loss):
+        wandb.log({'FM/high_prederror': high_prederr, 'FM/low_prederror': low_prederr, 'FM/loss': loss}, commit=False)
         wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
     @tf.function
@@ -118,7 +118,13 @@ class ForwardModel:
         gradients = tape.gradient(loss, self.net.trainable_variables)
         if not self.oracle:
             self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
-        return tf.abs(ret_pred-reward)/tf.abs(reward), loss, ret_pred, reward
+        high_rews = tf.where(reward != -10.)[:,0]
+        low_rews = tf.where(reward == -10.)[:,0]
+        high_preds = tf.gather(ret_pred, high_rews)
+        low_preds = tf.gather(ret_pred, low_rews)
+        high_rews = tf.gather(reward, high_rews)
+        low_rews = tf.gather(reward, low_rews)
+        return tf.reduce_sum(tf.abs(high_preds - high_rews)), tf.reduce_sum(tf.abs(low_preds - low_rews)), tf.reduce_sum(loss), ret_pred, reward
 
     def _calc_multistep_transitions(self):
         ret = 0

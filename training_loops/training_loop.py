@@ -34,7 +34,7 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
     return c_step
 
 class Reset_Reversal:
-    def __init__(self, agent, N, active=False):
+    def __init__(self, agent, N, active=True):
         self.tmp = False
         self.N = N
         self.agent = agent
@@ -43,21 +43,21 @@ class Reset_Reversal:
     def maybe_reset_things_for_reversal(self, t):
         if t == self.N and self.active:
             self.agent.meta_replay_buffer.reset()
-            self.agent._meta_agent.beta_1.assign(0)
-            self.agent._meta_agent.beta_2.assign(0)
-            self.agent._meta_agent.critic_optimizer.iterations.assign(0)
-            self.agent._meta_agent.actor_optimizer.iterations.assign(0)
-            self.agent._meta_agent.full_reset()
-            self.tmp = True
+            #self.agent._meta_agent.beta_1.assign(0)
+            #self.agent._meta_agent.beta_2.assign(0)
+            #self.agent._meta_agent.critic_optimizer.iterations.assign(0)
+            #self.agent._meta_agent.actor_optimizer.iterations.assign(0)
+            #self.agent._meta_agent.full_reset()
+            #self.agent._meta_noise = 3.5
+            #self.tmp = True
         if t > self.N and self.tmp == True:
             self.agent._meta_agent.beta_1.assign(0.9)
             self.agent._meta_agent.beta_2.assign(0.999)
             self.tmp = False
 
 def main(cnf):
-    reversal = False
     env, agent = create_world(cnf)
-    #reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
+    reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
     FM = ForwardModel(26, logging=cnf.main.log, oracle=False)
     cnf = cnf.main
     # create objects 
@@ -69,7 +69,7 @@ def main(cnf):
     state, done = env.reset(), False
     run_online = 0.
     for t in range(int(cnf.max_timesteps)):
-        #reverser.maybe_reset_things_for_reversal(t)
+        reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)

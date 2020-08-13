@@ -297,7 +297,7 @@ class HierarchicalAgent(Agent):
                         if env.mega_reward:
                             rate_correct_solves += 1
             if visit:
-                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
+                np.save(f'./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes

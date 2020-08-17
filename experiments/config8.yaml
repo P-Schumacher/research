@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_decaying_noise_new'
+  descriptor: 'notrandom_large_noise_new_0.08'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -34,7 +34,7 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.64
+  meta_noise: 0.6442
   sub_noise: 1.4
   goal_type: Direction
   ri_re: false

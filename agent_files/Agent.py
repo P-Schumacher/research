@@ -62,7 +62,7 @@ class Agent:
                            f'sub/actor_gradstd': m_avg[4],
                            f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
-    def replay_add(self, state, action, next_state, reward, done, success_cd):
+    def replay_add(self, state, action, next_state, reward, done, success_cd, FM):
         self._replay_buffer.add(state, action, next_state, self._sub_rew_scale * reward, success_cd, 0, 0)
 
     def save_model(self, string):

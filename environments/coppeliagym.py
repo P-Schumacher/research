@@ -133,18 +133,18 @@ class CoppeliaEnv(gym.Env):
             self._ep_target_pos2 = self._target2.get_position()
             self._target_init_pose2 = self._target2.get_pose()
         self._gym_cam = None
-        self._target.set_renderable(False)
+        self._target.set_renderable(True)
         self._target.set_dynamic(False)
         self._target.set_respondable(False)
         if self._double_buttons:
-            self._target2.set_renderable(False)
+            self._target2.set_renderable(True)
             self._target2.set_dynamic(False)
             self._target2.set_respondable(False)
         if render and not flat_agent and not self._init:
             self._init = True
             print("RENDER")
             from pyrep.const import PrimitiveShape
-            self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=True,
+            self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=False,
                                            respondable=False, color=[0,0.05,1])
             self._meta_goal.set_dynamic(False)
 

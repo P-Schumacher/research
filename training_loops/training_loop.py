@@ -73,8 +73,6 @@ def main(cnf):
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
-        while t >= 50:
-            action = np.zeros_like(action)
         next_state, reward, done, _ = env.step(action)
             
         # future value fct only zero if terminal because of success, not time

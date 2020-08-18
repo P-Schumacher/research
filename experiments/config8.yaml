@@ -1,17 +1,17 @@
-project: 'summary_plot_hiro_notrandom'
+project: 'reversal_pretrained'
 main:
-  render: true
+  render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_large_noise_noisenew_0.08'
+  descriptor: 'notrandom_large_noise_noisenew_0.08_loadboth_highLR'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 100000
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
@@ -41,7 +41,7 @@ agent:
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: true
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 0
+    reversal_time: 100000
     touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false

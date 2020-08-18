@@ -61,8 +61,8 @@ class CoppeliaEnv(gym.Env):
         # Control flow for task success
         self.success = False
         self.mega_reward = True
-        self._button1 = -1
-        self._button2 = -1
+        self._button1 = 0
+        self._button2 = 0
         self._stop_counter = COUNTER
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
@@ -219,8 +219,8 @@ class CoppeliaEnv(gym.Env):
         self._reversal = False
         self._reset_on_wrong_sequence = reset_on_wrong_sequence
         # Need these before reset to get observation.shape
-        self._button1 = -1
-        self._button2 = -1
+        self._button1 = 0
+        self._button2 = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
         if self._record_touches:
             self.distance_first_button = []
@@ -302,8 +302,8 @@ class CoppeliaEnv(gym.Env):
                         print('FAILURE Punishment')
                         rew -= 0
                         if self._reset_on_wrong_sequence:
-                            self._button1 = -1
-                            self._button2 = -1
+                            self._button1 = 0
+                            self._button2 = 0
                             self.mega_reward = True
                             self._stop_counter = 0
                         if self._render:

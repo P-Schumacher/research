@@ -42,19 +42,24 @@ class Reset_Reversal:
 
     def maybe_reset_things_for_reversal(self, t):
         if t == self.N and self.active:
-            pass
             #self.agent.meta_replay_buffer.reset()
             #self.agent._meta_agent.beta_1.assign(0)
             #self.agent._meta_agent.beta_2.assign(0)
             #self.agent._meta_agent.critic_optimizer.iterations.assign(0)
             #self.agent._meta_agent.actor_optimizer.iterations.assign(0)
+            self.old = self.agent._meta_agent.actor_optimizer.learning_rate.numpy()
+            self.agent._meta_agent.actor_optimizer.learning_rate.assign(0.0008)
             #self.agent._meta_agent.full_reset()
             #self.agent._meta_noise = 3.5
             #self.tmp = True
+            self.its += 1
         if t > self.N and self.tmp == True:
-            self.agent._meta_agent.beta_1.assign(0.9)
-            self.agent._meta_agent.beta_2.assign(0.999)
-            self.tmp = False
+            if self.its >= 10000:
+                self.agent._meta_agent.actor_optimizer.learning_rate = self.old
+            #self.agent._meta_agent.beta_1.assign(0.9)
+            #self.agent._meta_agent.beta_2.assign(0.999)
+
+            #self.tmp = False
 
 def main(cnf):
     env, agent = create_world(cnf)
@@ -74,7 +79,6 @@ def main(cnf):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
         next_state, reward, done, _ = env.step(action)
-            
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)

@@ -300,6 +300,7 @@ class TD3(object):
         assert self.offpolicy != None
         assert self.name == 'meta' or self.name == 'sub'
         # Use these to change optimizer parameters mid-training
+        self.ac_lr = tf.Variable(self.ac_lr)
         self.beta_1 = tf.Variable(0.9)
         self.beta_2 = tf.Variable(0.999)
         # Create networks 

@@ -39,6 +39,7 @@ class Reset_Reversal:
         self.N = N
         self.agent = agent
         self.active = active
+        self.its = 0
 
     def maybe_reset_things_for_reversal(self, t):
         if t == self.N and self.active:

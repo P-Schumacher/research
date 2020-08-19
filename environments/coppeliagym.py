@@ -190,6 +190,11 @@ class CoppeliaEnv(gym.Env):
                            record_touches,
                            reset_on_wrong_sequence):
         # Config settings
+        kwargs = {f'_{key}': value for key, value in kwargs.items() if key != 'time_limit'}
+        set_trace()
+        for key in kwargs.keys():
+            setattr(self, key, kwargs[key])
+
         self.max_episode_steps = time_limit
         self._spherical_coord = spherical_coord
         self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s

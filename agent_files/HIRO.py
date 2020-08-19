@@ -109,7 +109,7 @@ class HierarchicalAgent(Agent):
         the allowed maximum and minimum ranges.'''
         if noise_bool:
             action += self._gaussian_noise(self._sub_noise, self._action_dim)
-            return  tf.clip_by_value(action, -self._sub_agent.max_action, self._sub_agent.max_action)
+            return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
         return action
 
     def _maybe_apply_goal_clipnoise(self, noise_bool=False):

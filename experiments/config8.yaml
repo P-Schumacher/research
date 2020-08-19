@@ -7,11 +7,11 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_large_noise_partial_reversed_model_100000NOW'
+  descriptor: 'random_large_noise_partial_reversed_model_300000_TRAINALWAYS_FM'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 100000
+  start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
@@ -34,7 +34,7 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.644
+  meta_noise: 0.1
   sub_noise: 1.4
   goal_type: Direction
   ri_re: false
@@ -68,7 +68,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: false
+    use_FM: true
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 100000
+    reversal_time: 300000
     touch_distance: 0.12
     minimum_dist: 0.
     record_touches: false

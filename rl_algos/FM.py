@@ -15,7 +15,7 @@ class ForwardModel:
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
         self.oracle = oracle
-        self.reset(1000, 26)
+        self.reset(200000, 26)
         self.nstep = nstep
         self.n_step_buffer = deque(maxlen=self.nstep)
 

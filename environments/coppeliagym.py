@@ -33,6 +33,12 @@ class CoppeliaEnv(gym.Env):
         self._apply_action(action)
         self._sim.step()
         reward = self._get_rew(action)
+        self._pos_reward, self._neg_reward = self._neg_reward, self._pos_reward
+        if not self._total_it >= self._reversal_time:
+            reward_reversed = self._get_rew(action)
+        else:
+            reward_reversed = reward
+        self._pos_reward, self._neg_reward = self._neg_reward, self._pos_reward
         done = self._get_done()
         observation = self._get_observation()
         info = self._get_info()
@@ -46,7 +52,7 @@ class CoppeliaEnv(gym.Env):
                 self._target.set_color([1, 0, 1])
             if self._button2 == 1:
                 self._target2.set_color([1, 0, 1])
-        return observation, reward, done, info
+        return observation, reward, done, reward_reversed
 
     def reset(self, evalmode=False):
         '''Resets the environment to its initial state by setting all the object positions 
@@ -166,66 +172,27 @@ class CoppeliaEnv(gym.Env):
         self._initial_arm_conftree = self._robot.bot[0].get_configuration_tree()
         self._initial_gripper_conftree = self._robot.bot[1].get_configuration_tree()
 
-    def _prepare_parameters(self, 
-                           time_limit,
-                           max_vel,
-                           max_torque,
-                           force,
-                           render,
-                           ee_pos,
-                           ee_j_pos,
-                           sparse_rew,
-                           random_target,
-                           random_eval_target,
-                           sub_mock,
-                           action_regularizer,
-                           gripper_range,
-                           distance_function,
-                           spherical_coord,
-                           flat_agent,
-                           double_buttons,
-                           reversal_time,
-                           touch_distance,
-                           minimum_dist,
-                           record_touches,
-                           reset_on_wrong_sequence):
+    def _prepare_parameters(self, **kwargs):
         # Config settings
-        kwargs = {f'_{key}': value for key, value in kwargs.items() if key != 'time_limit'}
-        set_trace()
+        kwargs = {f'_{key}': value for key, value in kwargs.items()}
+        kwargs['max_episode_steps'] = kwargs.pop('_time_limit')
+        kwargs['force_mode'] = kwargs.pop('_force')
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-
-        self.max_episode_steps = time_limit
-        self._spherical_coord = spherical_coord
-        self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
-        self._max_torque = np.array(max_torque, np.float64) 
-        self.force_mode = force
-        self._render = render
-        self._ee_pos = ee_pos
-        self._ee_j_pos = ee_j_pos
-        self._sparse_rew = sparse_rew
-        self._random_target = random_target
-        self._random_eval_target = random_eval_target
-        self._sub_mock = sub_mock
-        self._gripper_range = gripper_range
-        self._action_regularizer = action_regularizer
-        self._distance_fn = self._get_distance_fn(distance_function)
-        self._flat_agent = flat_agent
-        self._double_buttons = double_buttons
-        self._reversal_time = reversal_time
-        self._touch_distance = touch_distance
-        self._minimum_dist = minimum_dist
-        self._record_touches = record_touches
+        self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
+        self._max_torque = np.array(self._max_torque, np.float64) 
+        self._distance_fn = self._get_distance_fn(self._distance_function)
         # Control flow
         self._timestep = 0
         self._needs_reset = True
         self._init = False
         self._total_it = 0
         self._reversal = False
-        self._reset_on_wrong_sequence = reset_on_wrong_sequence
         # Need these before reset to get observation.shape
         self._button1 = 0
         self._button2 = 0
+        self._pos_reward = 50
+        self._neg_reward = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
         if self._record_touches:
             self.distance_first_button = []
@@ -298,14 +265,14 @@ class CoppeliaEnv(gym.Env):
                     if self._button2 == 1 and not self._button1 == 1:
                         self.mega_reward = False
                     if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
-                        rew += 50
+                        rew += self._pos_reward
                         print('MEGA reward')
                         #if self._record_touches:
                         #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
                         #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
                     if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
                         print('FAILURE Punishment')
-                        rew -= 0
+                        rew += self._neg_reward
                         if self._reset_on_wrong_sequence:
                             self._button1 = 0
                             self._button2 = 0

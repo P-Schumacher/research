@@ -2,16 +2,16 @@ project: 'reversal_pretrained'
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_large_noise_noisenew_0.08_loadboth_highLR'
+  descriptor: 'random_large_noise_partial_reversed_model_100000NOW'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 100
+  start_timesteps: 100000
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000

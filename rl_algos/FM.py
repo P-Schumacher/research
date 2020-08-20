@@ -18,6 +18,7 @@ class ForwardModel:
         self.reset(200000, 26)
         self.nstep = nstep
         self.n_step_buffer = deque(maxlen=self.nstep)
+        self._use_nstep = True
 
     def reset(self, buffer_dim, state_dim):
         self.max_size = buffer_dim
@@ -44,14 +45,18 @@ class ForwardModel:
         we don't want multi-step transitions over an episode
         restart. This is different from the done parameter
         which indicates if the MDP ended.'''
-        self.n_step_buffer.append((state, next_state, reward))
-        if len(self.n_step_buffer) == self.nstep:
-            state, next_state, reward,  = self._calc_multistep_transitions()
-            self._add(state, next_state, reward)
-            if done:
-                self._add_non_strict_terminal_transitions()
-            if reset:
+        if self._use_nstep:  
+            self.n_step_buffer.append((state, next_state, reward))
+            if len(self.n_step_buffer) == self.nstep:
+                state, next_state, reward,  = self._calc_multistep_transitions()
+                self._add(state, next_state, reward)
                 self.n_step_buffer.clear()
+                #if done:
+                    #self._add_non_strict_terminal_transitions()
+                #if reset:
+                #    self.n_step_buffer.clear()
+        else:
+            self._add(state, next_state, reward)
 
     def _add_non_strict_terminal_transitions(self):
         '''Instead of just adding {s_t, s_t+n} when the episode ends,
@@ -100,7 +105,7 @@ class ForwardModel:
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
         self.add(state, next_state, reward, done, reset)
-        if self.size >= 500:
+        if self.size >= 50 and len(self.n_step_buffer) == 0:
             states, next_states, rewards  = self.sample(128)
             high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
             if self.logging:

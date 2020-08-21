@@ -1,19 +1,26 @@
-project: ant_maze_new_vis_plots
+project: ant_maze_new_general_plots
 main:
   log: true
-  minilog: true
-  descriptor: 'hiro_ant_vis_plot_c10'
-  save_model: false
+  minilog: false
+  flat_agent: false
+  descriptor: 'relative_goal_zero_obs'
+  save_model: true
   render: false
   offpolicy: true
   max_timesteps: 3000000
-  visit: true
+  visit: false
   c_step: 10
+  start_timesteps: 5000
   eval_freq: 20000
 
 agent:
  goal_type: Direction
  zero_obs: 2
+ sub_noise: 5.
+ meta_noise: 0.0
+ meta_mock: true
+ train_meta: false
+ train_sub: true
  
  meta_model:
    no_candidates: 20

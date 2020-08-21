@@ -1,4 +1,5 @@
 import tensorflow as tf
+from pudb import set_trace
 
 @tf.function
 def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_state_b, no_candidates, c_step, state_seq,
@@ -27,8 +28,8 @@ def off_policy_correction(subgoal_ranges, target_dim, pi, goal_b, state_b, next_
         state_seq *= tf.concat([tf.zeros([state_seq.shape[0], zero_obs]), tf.ones([state_seq.shape[0],
                                                                                          state_seq.shape[1] -
                                                                                          zero_obs])], axis=1)
-    best_c = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
-    return _get_corrected_goal(b_size, candidates, best_c) 
+    best_c, ret = _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, state_seq, prop_goals, pi) 
+    return _get_corrected_goal(b_size, candidates, best_c), ret
 
 def _multi_goal_transition(state_seq, candidates, c_step):
     # Realize that the multi timestep goal transition can be vectorized to a single calculation.
@@ -86,5 +87,5 @@ def _get_best_c(b_size, c_step, action_dim, g_dim, no_candidates, action_seq, st
         logprob = - 0.5 * tf.reduce_sum(tf.square(tf.norm(diffn, axis=2)), axis=1)
         best_c = tf.where(logprob > max_logprob, c, best_c)
         max_logprob = tf.where(logprob > max_logprob, logprob, max_logprob)
-    return best_c
+    return best_c, max_logprob
 

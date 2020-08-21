@@ -51,12 +51,27 @@ class TD3(object):
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
         # Equal initial network and target network weights
         self.update_target_models_hard()  
+        self.iterations = 0
 
         self._prepare_parameters(name, offpolicy, max_action, discount, tau, policy_noise, noise_clip, policy_freq,
                                  c_step, no_candidates, subgoal_ranges, target_dim, clip_cr, clip_ac, zero_obs, per,
                                  goal_regul, distance_goal_regul)
 
         self._create_persistent_tf_variables()
+
+    def save_residual_error(self, replay_buffer, sub_actor):
+        y_plot = []
+        for candi in [2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 3000, 10000, 50000]:
+            candidates_avg = []
+            for i in range(50):
+                state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(128)
+                action, ret = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, candi,
+                                               self.c_step, state_seq, action_seq, self._zero_obs)
+                candidates_avg.append(tf.reduce_mean(ret))
+            y_plot.append(candidates_avg)
+        print(y_plot) 
+        np.save('residual_plot.npy', y_plot)
+        raise Exception
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state.reshape(1, -1))
@@ -76,9 +91,13 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None):
+        self.iterations += 1
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         if  self.name == 'meta' and self.offpolicy:
-            action = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
+            if self.iterations >= 1000000000000:
+                print('NOW')
+                self.save_residual_error(replay_buffer, sub_actor)
+            action, _ = off_policy_correction(self.subgoal_ranges, self.target_dim, sub_actor, action, state, next_state, self.no_candidates,
                                           self.c_step, state_seq, action_seq, self._zero_obs)
         if self.name == 'meta' and (self._goal_regul or self._distance_goal_regul):
             reward_new = self._goal_regularization(action, reward, next_state, state_seq, action_seq, sub_agent)

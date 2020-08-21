@@ -1,4 +1,5 @@
 import tensorflow as tf
+import os
 import numpy as np
 from agent_files.Agent import Agent
 from utils.transitbuffer import TransitBuffer
@@ -145,8 +146,11 @@ class HierarchicalAgent(Agent):
         '''Replaces the subgoal by a constant goal that is put in by hand. For debugging and understanding.'''
         if not self._meta_mock:
             return 
-        mock_goal = np.array(np.random.uniform(-0.5, 0.5, size=[3,]), dtype=np.float32) 
-        self.goal = mock_goal
+        #mock_goal = np.array(np.random.uniform(-0.5, 0.5, size=[3,]), dtype=np.float32) 
+        if self.meta_time:
+            mock_goal = np.zeros_like(self.goal, dtype=np.float32)
+            mock_goal[0] = 10.
+            self.goal = tf.constant(mock_goal)
     
     def _maybe_center_goal(self):
         '''Adds a constant term to the generated subgoal such that it is forced to be 
@@ -297,7 +301,8 @@ class HierarchicalAgent(Agent):
                         if env.mega_reward:
                             rate_correct_solves += 1
             if visit:
-                np.save(f'./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
+                self._create_visit_directory()
+                np.save(f'./results/visitation/{self._file_name}/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes
@@ -314,6 +319,10 @@ class HierarchicalAgent(Agent):
         state and actions.'''
         # TODO implement
         return 0
+
+    def _create_visit_directory(self):
+        if not os.path.exists(f'./results/visitation/{self._file_name}'):
+                os.makedirs(f'./results/visitation/{self._file_name}')
 
     def _prepare_parameters(self, agent_cnf, main_cnf, env_spec, subgoal_dim):
         '''Unpacks the parameters from the config files to state variables.'''

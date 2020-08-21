@@ -82,6 +82,8 @@ class Agent:
         self._log = main_cnf.log
         self._gradient_steps = main_cnf.gradient_steps
         self._batch_size = main_cnf.batch_size
+        # control flow
+        self._evals = 0
 
     def _gaussian_noise(self, expl_noise, dimension=1):
         return np.array(np.random.normal(0, expl_noise, dimension), dtype=np.float32) 
@@ -105,6 +107,7 @@ class Agent:
         success_rate = 0
         rate_correct_solves = 0
         untouchable_steps = 0
+        visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
         for episode_nbr in range(self._num_eval_episodes):
             print(f"eval number: {episode_nbr} of {self._num_eval_episodes}")
             step = 0
@@ -117,12 +120,17 @@ class Agent:
                 state = next_state
                 if env._stop_counter < 20:
                     untouchable_steps += 1
+                if visit:
+                    visitation[step, :] = state
                 step += 1
                 if done and step < env.max_episode_steps:
                     success_rate += 1
                     if env._double_buttons:
                         if env.mega_reward:
                             rate_correct_solves += 1
+            if visit:
+                self._create_visit_directory()
+                np.save(f'./results/visitation/{self._file_name}/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         success_rate = success_rate / self._num_eval_episodes
@@ -130,4 +138,10 @@ class Agent:
         print("---------------------------------------")
         print(f'Evaluation over {self._num_eval_episodes} episodes: {avg_ep_reward}')
         print("---------------------------------------")
+        self._evals += 1
         return avg_ep_reward, 0, success_rate, rate_correct_solves, untouchable_steps
+
+    def _create_visit_directory(self):
+        if not os.path.exists(f'./results/visitation/{self._file_name}'):
+                os.makedirs(f'./results/visitation/{self._file_name}')
+

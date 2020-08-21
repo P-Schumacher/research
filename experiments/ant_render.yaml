@@ -1,8 +1,14 @@
 main:
   log: false
-  descriptor: hiro_ant
+  descriptor: relative_goal_zero_obs
   load_model: true
   render: true
+  flat_agent: false
+  c_step: 10
+agent:
+  sub_noise: 0.
+  meta_noise: 0.
+  meta_mock: true
 
 env_w_goal:
   evalmode: true

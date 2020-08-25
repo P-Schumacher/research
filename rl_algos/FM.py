@@ -106,7 +106,7 @@ class ForwardModel:
             high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
             if self.logging:
                 self.log(high_prederr, low_prederr, loss)
-	self.size = self.replay_buffer.size
+        self.size = self.replay_buffer.size
 
     def log(self, high_prederr, low_prederr, loss):
         wandb.log({'FM/high_prederror': high_prederr, 'FM/low_prederror': low_prederr, 'FM/loss': loss}, commit=False)

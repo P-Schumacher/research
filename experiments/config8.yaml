@@ -11,7 +11,7 @@ main:
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 128
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000

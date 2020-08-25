@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'train_500000_resetjustmetaandbuffer__0.2'
+  descriptor: 'FM_train_500000_resetjustmeta_0.2'
   c_step: 10
   seed: 25
   offpolicy: true

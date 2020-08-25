@@ -43,7 +43,7 @@ class Reset_Reversal:
 
     def maybe_reset_things_for_reversal(self, t):
         if t == self.N and self.active:
-            self.agent.meta_replay_buffer.reset()
+            #self.agent.meta_replay_buffer.reset()
             self.agent._meta_agent._beta_1.assign(0)
             self.agent._meta_agent._beta_2.assign(0)
             self.agent._meta_agent.critic_optimizer.iterations.assign(0)
@@ -93,7 +93,7 @@ def main(cnf):
         #        FM.train(state, next_state, reward_reversed, success_cd, done)
         #        print(f'MODEL training step {i} of 100000')
         #    trained = True
-        #FM.train(state, next_state, reward_reversed, success_cd, done)
+        FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
         logger.most_important_plot(agent, state, action, reward, next_state, success_cd)

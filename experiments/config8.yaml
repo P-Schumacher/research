@@ -3,11 +3,11 @@ main:
   render: false
   flat_agent: false
   log: true
-  minilog: true
+  minilog: false
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'NOFM_FULLRESET_TRAINNISYNC_100000_dontresetbufferanddontreversal'
+  descriptor: 'train_500000_resetjustmetaandbuffer__0.2'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -46,7 +46,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
@@ -84,8 +84,8 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 10000000
-    touch_distance: 0.12
+    reversal_time: 500000000
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

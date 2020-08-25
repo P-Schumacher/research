@@ -9,16 +9,19 @@ import wandb
 
 class ForwardModel:
     '''Model that learns the reward in tandem with the RL agent learning.'''
-    def __init__(self, state_dim, logging, oracle=False, nstep=10):
+    def __init__(self, state_dim, logging, replay_buffer=None, nstep=10, stat_data=False):
         self.net = ForwardModelNet(2*state_dim, [100], 0.)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
-        self.oracle = oracle
         self.reset(200000, 26)
         self.nstep = nstep
         self.n_step_buffer = deque(maxlen=self.nstep)
         self._use_nstep = True
+        self.replay_buffer = replay_buffer
+        self.stat_data = stat_data
+        if self.stat_data:
+            self.size = self.replay_buffer.size
 
     def reset(self, buffer_dim, state_dim):
         self.max_size = buffer_dim
@@ -30,11 +33,18 @@ class ForwardModel:
         self.t = 0
 
     def sample(self, batch_size):
-        batch_idxs = self._sample_idx(batch_size)
-        return (
-        tf.convert_to_tensor(self.states[batch_idxs]),
-        tf.convert_to_tensor(self.next_states[batch_idxs]),
-        tf.convert_to_tensor(self.rewards[batch_idxs]))
+        if not self.stat_data:
+            batch_idxs = self._sample_idx(batch_size)
+            return (
+            tf.convert_to_tensor(self.states[batch_idxs]),
+            tf.convert_to_tensor(self.next_states[batch_idxs]),
+            tf.convert_to_tensor(self.rewards[batch_idxs]))
+        else:
+            batch_idxs = self._sample_idx(batch_size)
+            return (
+            tf.convert_to_tensor(self.replay_buffer.state[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.next_state[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.reward[batch_idxs]))
 
     def add(self, state, next_state, reward, done, reset):
         '''Constructs multi-step transitions from one-step transitions
@@ -47,7 +57,7 @@ class ForwardModel:
         which indicates if the MDP ended.'''
         if self._use_nstep:  
             self.n_step_buffer.append((state, next_state, reward))
-            if len(self.n_step_buffer) == self.nstep:
+            if len(self.n_step_buffer) == self.nstep or reset:
                 state, next_state, reward,  = self._calc_multistep_transitions()
                 self._add(state, next_state, reward)
                 self.n_step_buffer.clear()
@@ -78,33 +88,19 @@ class ForwardModel:
         self.size = min(self.size + 1, self.max_size)
 
     def _sample_idx(self, batch_size):
-        return tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
+        if not self.stat_data:
+            return tf.random.uniform([batch_size,], 0, self.size, dtype=tf.int32)
+        else:
+            return tf.random.uniform([batch_size,], 0, self.replay_buffer.size, dtype=tf.int32)
 
     def forward_pass(self, state, next_state, reshape=True, reversal=False):
         '''Computes estimated rewards and done in a forward pass.
         This information has then to be called from the class.'''
-        if not self.oracle:
-            reduced_state = tf.concat([state, next_state], axis=-1)
-            return self.net(reduced_state)
-        else:
-            reduced_state = tf.concat([state[:,-4, tf.newaxis], state[:, -1, tf.newaxis], next_state[:, -4, tf.newaxis],
-                                       next_state[:, -1, tf.newaxis]], axis=-1)
-            if reshape:
-                reduced_state = tf.reshape(reduced_state, shape=[1, reduced_state.shape[-1]])
-            return self.predict_oracle(reduced_state, reversal)
-
-    def predict_oracle(self, state, reversal):
-        if not reversal:
-            ret = tf.constant([49. if np.all(x == [1.,-1,1,1]) else -1. for x in state])[:, tf.newaxis]
-        else:
-            ret = tf.constant([49. if np.all(x == [-1.,1,1,1]) else -1. for x in state])[:, tf.newaxis]
-        if reversal:
-            return ret
-        else:
-            return ret
+        reduced_state = tf.concat([state, next_state], axis=-1)
+        return self.net(reduced_state)
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
-        self.add(state, next_state, reward, done, reset)
+        #self.add(state, next_state, reward, done, reset)
         if self.size >= 50 and len(self.n_step_buffer) == 0:
             states, next_states, rewards  = self.sample(128)
             high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
@@ -121,8 +117,7 @@ class ForwardModel:
             ret_pred = self.forward_pass(state, next_state, reshape=False, reversal=reversal)
             loss = self.loss_fn(ret_pred, reward) + sum(self.net.losses)
         gradients = tape.gradient(loss, self.net.trainable_variables)
-        if not self.oracle:
-            self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
+        self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
         high_rews = tf.where(reward != -10.)[:,0]
         low_rews = tf.where(reward == -10.)[:,0]
         high_preds = tf.gather(ret_pred, high_rews)
@@ -133,7 +128,7 @@ class ForwardModel:
 
     def _calc_multistep_transitions(self):
         ret = 0
-        for idx in range(self.nstep):
+        for idx in range(len(self.n_step_buffer)):
             ret +=  self.n_step_buffer[idx][2]
         return self.n_step_buffer[0][0], self.n_step_buffer[-1][1], ret
 

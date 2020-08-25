@@ -31,7 +31,6 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        self.iteration += 1
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
@@ -163,9 +162,9 @@ class TD3(object):
     def _maybe_FM_reward(self, state, next_state, reward,  FM, log):
         '''Uses a learned ForwardModel (or reward model) to
         replace the reward during learning'''
-        if self._use_FM and self.iteration >= 30000:
+        if self._use_FM and self.total_it >= 0:
             reward_FM = FM.forward_pass(state, next_state, reshape=False)
-            reward_FM *= 0.1
+            #reward_FM *= 0.1
             high_rews = tf.where(reward != -1.)[:,0]
             low_rews = tf.where(reward == -1.)[:,0]
             high_preds = tf.gather(reward_FM, high_rews)
@@ -294,7 +293,6 @@ class TD3(object):
         kwargs = {f'_{key}': value for key, value in kwargs.items()}
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        self.iteration = 0
         self._subgoal_ranges = np.array(self._subgoal_ranges, dtype=np.float32)
 
     def _prepare_algo_objects(self):

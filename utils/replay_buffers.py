@@ -46,6 +46,9 @@ class ReplayBuffer(object):
         '''Loads buffer data from the disk. Remember to set the size and ptr manually.'''
         for field in self.data_fields:
             setattr(self, field, np.load(f'{directory}{field}.npy'))
+        index = np.where(self.state[:,0] == 0)[0][0]
+        self.size = index
+        self.ptr = index
 
     def reset(self):
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
@@ -155,10 +158,24 @@ class PriorityBuffer(ReplayBuffer):
 
     def load_data(self, directory):
         '''Loads buffer data from the disk. Remember to set the size and ptr manually.'''
+        print('Loading priority buffer data...')
         super().load_data(directory)
-        self.priorities = np.load(f'{directory}priorities.npy')
-        self.tree.tree = np.load(f'{directory}tree.npy')
-        self.tree.indices = np.load(f'{directory}indices.npy')
+        try:
+            self.priorities = np.load(f'{directory}priorities.npy')
+            self.tree.tree = np.load(f'{directory}tree.npy')
+            self.tree.indices = np.load(f'{directory}indices.npy')
+            print('Loading successfull')
+        except:
+            print('Loading priority buffer fields has failed, moving to manual priorities')
+            self._update_manual_priorities()
+
+    def _update_manual_priorities(self): 
+        state, action, reward, next_state, done = self.get_buffer() 
+        td_error = np.ones(shape=[state.shape[0],], dtype=np.float32) * 100000
+        self.batch_idxs = np.arange(0, self.size, 1) 
+        self.tree_idxs = self.batch_idxs + self.tree.capacity - 1 
+        self.update_priorities(td_error) 
+
 
     def sample_uniformly(self, batch_size):
         self.batch_idxs = np.random.uniform(0, self.size, [batch_size,])

@@ -60,11 +60,11 @@ class ForwardModel:
             if len(self.n_step_buffer) == self.nstep or reset:
                 state, next_state, reward,  = self._calc_multistep_transitions()
                 self._add(state, next_state, reward)
-                self.n_step_buffer.clear()
-                #if done:
-                    #self._add_non_strict_terminal_transitions()
-                #if reset:
-                #    self.n_step_buffer.clear()
+                #self.n_step_buffer.clear()
+                if done:
+                    self._add_non_strict_terminal_transitions()
+                if reset:
+                    self.n_step_buffer.clear()
         else:
             self._add(state, next_state, reward)
 
@@ -101,7 +101,7 @@ class ForwardModel:
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
         #self.add(state, next_state, reward, done, reset)
-        if self.size >= 1000 and len(self.n_step_buffer) == 0 and self.replay_buffer.size > self.size:
+        if self.size >= 200 and len(self.n_step_buffer) == 0: # and self.replay_buffer.size > self.size:
             states, next_states, rewards  = self.sample(128)
             high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
             if self.logging:

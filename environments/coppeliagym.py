@@ -166,29 +166,7 @@ class CoppeliaEnv(gym.Env):
         self._initial_arm_conftree = self._robot.bot[0].get_configuration_tree()
         self._initial_gripper_conftree = self._robot.bot[1].get_configuration_tree()
 
-    def _prepare_parameters(self, 
-                           time_limit,
-                           max_vel,
-                           max_torque,
-                           force,
-                           render,
-                           ee_pos,
-                           ee_j_pos,
-                           sparse_rew,
-                           random_target,
-                           random_eval_target,
-                           sub_mock,
-                           action_regularizer,
-                           gripper_range,
-                           distance_function,
-                           spherical_coord,
-                           flat_agent,
-                           double_buttons,
-                           reversal_time,
-                           touch_distance,
-                           minimum_dist,
-                           record_touches,
-                           reset_on_wrong_sequence):
+    def _prepare_parameters(self, **kwargs):
         # Config settings
         kwargs = {f'_{key}': value for key, value in kwargs.items() if key != 'time_limit'}
         set_trace()

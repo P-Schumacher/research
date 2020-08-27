@@ -74,7 +74,6 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
-    run_online = 0.
     for t in range(int(cnf.max_timesteps)):
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
@@ -83,17 +82,12 @@ def main(cnf):
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)
-        #FM.train(state, next_state, reward, success_cd, done)
+        if agent._meta_agent._use_FM:
+            FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
-        #onlineprederr = tf.abs(reward - FM.forward_pass(tf.reshape(state, [1,26]), tf.reshape(next_state, [1,26]))[0])
-        #run_online = 0.2 * run_online + 0.8 * onlineprederr
-        #if cnf.log:
-        #    wandb.log({f'FM/avgonlineprederr':run_online}, commit=False)
         logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         state = next_state
-        #if t == 200000:
-        #    FM = ForwardModel(26, logging=cnf.log, oracle=False)
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier

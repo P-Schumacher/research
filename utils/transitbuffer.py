@@ -123,7 +123,7 @@ class TransitBuffer(ReplayBuffer):
             self._ep_rewards = 0
             return intr_return
         self._sum_of_rewards += reward
-        self._sum_of_reversed_rewards += reward
+        self._sum_of_reversed_rewards += reward_reversed
 
     def _collect_seq_state_actions(self, state, action):
         '''The states and actions of the sub-agent  are collected so that the offpolicy correction for the meta-agent can

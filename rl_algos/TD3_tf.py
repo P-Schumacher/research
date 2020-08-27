@@ -31,7 +31,7 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq, _ = replay_buffer.sample(batch_size)
         reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -162,7 +162,7 @@ class TD3(object):
     def _maybe_FM_reward(self, state, next_state, reward,  FM, log):
         '''Uses a learned ForwardModel (or reward model) to
         replace the reward during learning'''
-        if self._use_FM and self.total_it >= 0:
+        if self._use_FM and self.total_it >= 30000:
             reward_FM = FM.forward_pass(state, next_state, reshape=False)
             #reward_FM *= 0.1
             high_rews = tf.where(reward != -1.)[:,0]

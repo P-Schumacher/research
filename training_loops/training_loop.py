@@ -87,12 +87,7 @@ def main(cnf):
         next_state, reward, done, reward_reversed = env.step(action)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
-        intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)
-        #if not trained:
-        #    for i in range(40000):
-        #        FM.train(state, next_state, reward_reversed, success_cd, done)
-        #        print(f'MODEL training step {i} of 100000')
-        #    trained = True
+        intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM, reward_reversed)
         FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)

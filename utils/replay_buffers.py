@@ -14,11 +14,12 @@ class ReplayBuffer(object):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
 
-    def add(self, state, action, reward, next_state, done, state_seq, action_seq):
+    def add(self, state, action, reward, next_state, done, state_seq, action_seq, reversed_reward):
         self.state[self.ptr] = state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
         self.reward[self.ptr] = reward
+        self.reversed_reward[self.ptr] = reversed_reward
         self.done[self.ptr] = float(done)
         self.state_seq[self.ptr] = state_seq
         self.action_seq[self.ptr] = action_seq
@@ -35,7 +36,8 @@ class ReplayBuffer(object):
         tf.convert_to_tensor(self.next_state[self.batch_idxs]),
         tf.convert_to_tensor(self.done[self.batch_idxs]),
         tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
-        tf.convert_to_tensor(self.action_seq[self.batch_idxs]))
+        tf.convert_to_tensor(self.action_seq[self.batch_idxs]),
+        tf.convert_to_tensor(self.reversed_reward[self.batch_idxs]))
 
     def save_data(self):
         '''Saves the buffer data to the disk. Only useful for analyzing them.'''
@@ -59,6 +61,7 @@ class ReplayBuffer(object):
         self.state_seq = np.zeros((self.max_size, self.c_step, self.state_dim - 3 * self.goal_smooth), dtype =
                                   np.float32)
         self.action_seq = np.zeros((self.max_size, self.c_step, 8), dtype = np.float32)  
+        self.reversed_reward = np.zeros((self.max_size, 1), dtype = np.float32)  
         self.ptr = 0
         self.size = 0
 

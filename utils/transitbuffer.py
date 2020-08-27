@@ -27,7 +27,7 @@ class TransitBuffer(ReplayBuffer):
         self._prepare_offpolicy_datastructures(sub_env_spec)
         self._agent = agent
             
-    def add(self, state, action, reward, next_state, done, success_cd, FM=None):
+    def add(self, state, action, reward, next_state, done, success_cd, FM=None, reward_reversed=0):
         '''Adds the transitions to the appropriate buffers. Goal is saved at
         each timestep to be used for the transition of the next timestep. At 
         an episode end, the meta agent recieves a transition of t:t_end, 
@@ -38,9 +38,9 @@ class TransitBuffer(ReplayBuffer):
             raise Exception("You need to reset the agent if a 'done' has occurred in the environment.")
 
         if not self._init:  # Variables are saved in the first call, transitions constructed in later calls.
-            self._initialize_buffer(state, action, reward, next_state, done) 
+            self._initialize_buffer(state, action, reward, next_state, done, reward_reversed) 
         else: 
-            return self._add(state, action, reward, next_state, done, success_cd, FM)
+            return self._add(state, action, reward, next_state, done, success_cd, FM, reward_reversed)
 
     def compute_intr_reward(self, goal, state, next_state, action):
         '''Computes the intrinsic reward for the sub agent. It is the L2-norm between the goal and the next_state, restricted to those dimensions that
@@ -69,12 +69,13 @@ class TransitBuffer(ReplayBuffer):
         '''Resets the class for the next episode.'''
         self._init = False
         self._sum_of_rewards = 0
+        self._sum_of_reversed_rewards = 0
         self._needs_reset = False
         self._state_seq[:] = np.inf
         self._action_seq[:] = np.inf
         self._ptr = 0
 
-    def _initialize_buffer(self, state, action, reward, next_state, done):
+    def _initialize_buffer(self, state, action, reward, next_state, done, reward_reversed=0):
         '''Should be the first function called when add transitions is added after a reset() was called. 
         This function handles episodes which only last a single step. If the episode is longer, the MDP
         information is stored to create a transition in the next add. As such, transition t=0 is created
@@ -94,9 +95,10 @@ class TransitBuffer(ReplayBuffer):
                 self.goal = self._orig_goal
             self._save_meta_transition(self._meta_state, self.goal, done)
             self._sum_of_rewards += reward
+            self._sum_of_reversed_rewards += reward_reversed
             self._init = True
 
-    def _add(self, state, action, reward, next_state, done, success_cd, FM):
+    def _add(self, state, action, reward, next_state, done, success_cd, FM, reward_reversed):
         '''This function handles all of the logic for adding transitions.
         It is the first function that should be modified, all others
         are primitives.'''
@@ -108,8 +110,10 @@ class TransitBuffer(ReplayBuffer):
                 self.goal = self._orig_goal
             self._save_meta_transition(self._meta_state, self.goal, success_cd)
             self._sum_of_rewards = 0
+            self._sum_of_reversed_rewards = 0
         if done:
             self._sum_of_rewards += reward
+            self._sum_of_reversed_rewards += reward_reversed
             # This implicitly computes the next goal in the transitbuffer.
             self._agent.select_action(next_state) 
             self._finish_sub_transition(self.goal, reward)
@@ -119,6 +123,7 @@ class TransitBuffer(ReplayBuffer):
             self._ep_rewards = 0
             return intr_return
         self._sum_of_rewards += reward
+        self._sum_of_reversed_rewards += reward
 
     def _collect_seq_state_actions(self, state, action):
         '''The states and actions of the sub-agent  are collected so that the offpolicy correction for the meta-agent can
@@ -143,7 +148,7 @@ class TransitBuffer(ReplayBuffer):
         old = self._load_meta_transition()
         self._add_to_meta(old.state, old.goal, self._sum_of_rewards * self._meta_rew_scale, next_state, done, FM)
 
-    def _finish_one_step_episode(self, state, action, reward, next_state, done):
+    def _finish_one_step_episode(self, state, action, reward, next_state, done, reward_reversed):
         '''1 step episodes are handled separately because the adding of states to 
         the replay buffers is always one step behind the environment timestep.'''
         meta_state = self._meta_state 
@@ -178,7 +183,7 @@ class TransitBuffer(ReplayBuffer):
             cat_state[:self._zero_obs] = 0
             cat_next_state[:self._zero_obs] = 0
         self._sub_replay_buffer.add(cat_state, action, intr_reward,
-                                   cat_next_state, extr_done, 0, 0)
+                                   cat_next_state, extr_done, 0, 0, 0)
         
     def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done, FM=None):
         '''Adds transitions to the replay buffer of the meta agent. *self._state_seq* and 
@@ -187,14 +192,13 @@ class TransitBuffer(ReplayBuffer):
         This is the primitive for adding transitions to the meta-agent. It is
         the last function that is called.'''
         self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
-                                    self._action_seq)
+                                    self._action_seq, self._sum_of_reversed_rewards*self._meta_rew_scale)
         if sum_of_rewards != (-1 * self._meta_rew_scale * self._c_step) and self._add_multiple_dones:
             # Adding those transitions multiple times can help in sparse tasks.
             for _ in range(4):
                 self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                             self._action_seq)
         self._reset_sequence()
-        #FM.train(state, next_state, sum_of_rewards)
 
     def _reset_sequence(self):
         '''After the sequence has been added to the meta replaybuffer, we overwrite the arrays with np.inf,
@@ -219,6 +223,7 @@ class TransitBuffer(ReplayBuffer):
 
     def _prepare_control_variables(self):
         self._sum_of_rewards = 0
+        self._sum_of_reversed_rewards = 0
         self._ep_rewards = 0
         self._init = False  # The buffer.add() does not create a transition in s0 as we need s1
         self.meta_time = False

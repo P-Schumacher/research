@@ -168,42 +168,25 @@ class CoppeliaEnv(gym.Env):
 
     def _prepare_parameters(self, **kwargs):
         # Config settings
-        kwargs = {f'_{key}': value for key, value in kwargs.items() if key != 'time_limit'}
-        set_trace()
+        kwargs = {f'_{key}': value for key, value in kwargs.items()}
+        kwargs['max_episode_steps'] = kwargs.pop('_time_limit')
+        kwargs['force_mode'] = kwargs.pop('_force')
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-
-        self.max_episode_steps = time_limit
-        self._spherical_coord = spherical_coord
-        self._max_vel = np.array(max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
-        self._max_torque = np.array(max_torque, np.float64) 
-        self.force_mode = force
-        self._render = render
-        self._ee_pos = ee_pos
-        self._ee_j_pos = ee_j_pos
-        self._sparse_rew = sparse_rew
-        self._random_target = random_target
-        self._random_eval_target = random_eval_target
-        self._sub_mock = sub_mock
-        self._gripper_range = gripper_range
-        self._action_regularizer = action_regularizer
-        self._distance_fn = self._get_distance_fn(distance_function)
-        self._flat_agent = flat_agent
-        self._double_buttons = double_buttons
-        self._reversal_time = reversal_time
-        self._touch_distance = touch_distance
-        self._minimum_dist = minimum_dist
-        self._record_touches = record_touches
+        self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses ra    d / s
+        self._max_torque = np.array(self._max_torque, np.float64)
+        self._distance_fn = self._get_distance_fn(self._distance_function)
         # Control flow
         self._timestep = 0
         self._needs_reset = True
         self._init = False
         self._total_it = 0
         self._reversal = False
-        self._reset_on_wrong_sequence = reset_on_wrong_sequence
         # Need these before reset to get observation.shape
         self._button1 = 0
         self._button2 = 0
+        self._pos_reward = 50
+        self._neg_reward = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
         if self._record_touches:
             self.distance_first_button = []

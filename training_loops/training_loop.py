@@ -65,7 +65,7 @@ class Reset_Reversal:
 def main(cnf):
     env, agent = create_world(cnf)
     reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    reverser = Reset_Reversal(agent, 500000)
+    reverser = Reset_Reversal(agent, 300000)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
@@ -74,13 +74,8 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
-    #agent.meta_replay_buffer.load_data('./')
     FM = ForwardModel(26, logging=cnf.log, replay_buffer=agent.meta_replay_buffer, stat_data=True)
-    trained = False
     for t in range(int(cnf.max_timesteps)):
-        #if t == 500000:
-        #    agent.meta_replay_buffer.save_data()
-        #    print('saved!')
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
@@ -88,7 +83,8 @@ def main(cnf):
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM, reward_reversed)
-        FM.train(state, next_state, reward, success_cd, done)
+        if agent._meta_agent._use_FM:
+            FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
         logger.most_important_plot(agent, state, action, reward, next_state, success_cd)

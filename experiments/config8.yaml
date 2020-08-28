@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'test'
+  descriptor: 'Reset_all_but_buffer_fullmodel'
   c_step: 10
   seed: 25
   offpolicy: true

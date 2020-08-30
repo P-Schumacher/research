@@ -1,13 +1,13 @@
-project: 'summary_plot_hiro_random'
+project: 'summary_plot_flat_random'
 main:
   render: false
-  flat_agent: false
+  flat_agent: true
   log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_small_noise_0.08'
+  descriptor: 'notrandom_large_noise_0.08'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -32,16 +32,16 @@ main:
 # 4 - binary reward based prio 
 agent:
   center_meta_goal: false
-  nstep: 1
+  nstep: 5
   meta_rew_scale: 0.1
   meta_noise: 0.01
-  sub_noise: 1.4
+  sub_noise: 25.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: false
+  train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001

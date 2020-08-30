@@ -41,7 +41,7 @@ class Agent:
             noise = [self._ounoise.ornstein_uhlenbeck_level() if self._OU else self._gaussian_noise(self._sub_noise,
                                                                                                     self._action_dim)][0]
             action += noise
-            action = tf.clip_by_value(action, -self._policy.max_action, self._policy.max_action)
+            action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         if self._decay_noise:
             self._sub_noise *= 0.9999
         return action

@@ -82,7 +82,7 @@ def main(cnf):
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)
-        if agent._meta_agent._use_FM:
+        if not cnf.flat_agent and agent._meta_agent._use_FM:
             FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)

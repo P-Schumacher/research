@@ -25,7 +25,7 @@ class HierarchicalAgent(Agent):
             self._maybe_goal_smoothing()
         action = self._get_sub_action(state) 
         if self._decay_noise:
-            self._meta_noise *= 0.9999999
+            self._meta_noise *= 0.9999
             if self._log:
                 wandb.log({'metanoise':self._meta_noise}, commit=False)
         return self._maybe_apply_action_clipnoise(action, noise_bool)

@@ -1,16 +1,16 @@
-project: 'meeting_27082020'
+project: 'shared_q'
 main:
   render: false
   flat_agent: false
   log: true
   minilog: true
   save_model: false
-  load_model: true
+  load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'just_train_on_reversed'
+  descriptor: 'shared_q_function_maximization0.'
   c_step: 10
   seed: 25
-  offpolicy: true
+  offpolicy: false
   start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
@@ -41,7 +41,7 @@ agent:
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: false
+  train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 300000
+    reversal_time: 100000
     touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false

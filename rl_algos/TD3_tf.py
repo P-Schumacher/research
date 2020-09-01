@@ -162,7 +162,7 @@ class TD3(object):
     def _maybe_FM_reward(self, state, next_state, reward,  FM, log):
         '''Uses a learned ForwardModel (or reward model) to
         replace the reward during learning'''
-        if self._use_FM and self.total_it >= 0:
+        if self._use_FM and self.total_it >= 30000:
             reward_FM = FM.forward_pass(state, next_state, reshape=False)
             #reward_FM *= 0.1
             high_rews = tf.where(reward != -1.)[:,0]

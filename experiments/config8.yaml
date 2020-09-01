@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'Reset_all_but_buffer_fullmodel'
+  descriptor: 'just_train_on_reversed'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 300000000
+    reversal_time: 10000000000
     touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false

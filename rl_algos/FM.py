@@ -44,7 +44,7 @@ class ForwardModel:
             return (
             tf.convert_to_tensor(self.replay_buffer.state[batch_idxs]),
             tf.convert_to_tensor(self.replay_buffer.next_state[batch_idxs]),
-            tf.convert_to_tensor(self.replay_buffer.reward[batch_idxs]))
+            tf.convert_to_tensor(self.replay_buffer.reversed_reward[batch_idxs]))
 
     def add(self, state, next_state, reward, done, reset):
         '''Constructs multi-step transitions from one-step transitions

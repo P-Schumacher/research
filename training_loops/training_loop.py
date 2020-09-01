@@ -65,7 +65,6 @@ class Reset_Reversal:
 def main(cnf):
     env, agent = create_world(cnf)
     reverser = Reset_Reversal(agent, cnf.coppeliagym.params.reversal_time)
-    reverser = Reset_Reversal(agent, 300000)
     cnf = cnf.main
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)

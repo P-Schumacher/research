@@ -1,16 +1,16 @@
-project: 'flat_reaching_sparse'
+project: 'shared_q'
 main:
   render: false
-  flat_agent: true
+  flat_agent: false
   log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_sparse_reaching0.08noise1.4'
+  descriptor: 'baseline_q'
   c_step: 10
   seed: 25
-  offpolicy: true
+  offpolicy: false
   start_timesteps: 5000
   max_timesteps: 5000000
   no_seed: false
@@ -34,7 +34,7 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.01
+  meta_noise: 0.644
   sub_noise: 1.4
   goal_type: Direction
   ri_re: false
@@ -46,7 +46,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
@@ -78,14 +78,14 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
-    sparse_rew: false
+    sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 300
-    double_buttons: false
+    time_limit: 600
+    double_buttons: true
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.08
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

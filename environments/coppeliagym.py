@@ -288,9 +288,9 @@ class CoppeliaEnv(gym.Env):
             else:
                 # One button touch task
                 if self._get_distance(self._ep_target_pos) < self._touch_distance:
-                    rew += 1
+                    rew += 50
                     self._button1 = 1
-                    return rew
+                return rew
         # dense reaching task
         return - self._get_distance(self._ep_target_pos) - self._action_regularizer * tf.square(tf.norm(action))
 

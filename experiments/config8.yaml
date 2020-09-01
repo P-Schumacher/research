@@ -1,4 +1,4 @@
-project: 'meeting_27082020'
+project: 'forward_models_current'
 main:
   render: false
   flat_agent: false
@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'just_train_on_reversed'
+  descriptor: 'reversed_reset_trainonbuffer_thentrainonmodel'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -68,7 +68,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: false
+    use_FM: true
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 300000
+    reversal_time: 100000
     touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false

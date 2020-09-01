@@ -43,7 +43,7 @@ class Reset_Reversal:
 
     def maybe_reset_things_for_reversal(self, t):
         if t == self.N and self.active:
-            self.agent.meta_replay_buffer.reset()
+            #self.agent.meta_replay_buffer.reset()
             self.agent._meta_agent._beta_1.assign(0)
             self.agent._meta_agent._beta_2.assign(0)
             self.agent._meta_agent.critic_optimizer.iterations.assign(0)
@@ -51,7 +51,7 @@ class Reset_Reversal:
             #self.old = self.agent._meta_agent.actor_optimizer.learning_rate.numpy()
             #self.agent._meta_agent.actor_optimizer.learning_rate.assign(0.0008)
             self.agent._meta_agent.full_reset()
-            self.agent._meta_noise = 10.
+            #self.agent._meta_noise = 10.
             self.tmp = True
             self.its += 1
         if t > self.N and self.tmp == True:

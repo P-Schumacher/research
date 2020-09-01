@@ -3,7 +3,7 @@ This repository implements the HIRO algorithm for Hierarchical Reinforcement Lea
 
 Disclaimer:
 This is a research repository. As such, no guarantees for the quality or the executionability of the code will be made. Feel free to draw inspiration from it.
-Look at my other repositories for code that is quaranteed to run, even if not maintained.
+Look at my other repositories for code that is guaranteed to run, even if not maintained.
 
 
 ## Dependencies 

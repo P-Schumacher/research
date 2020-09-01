@@ -43,7 +43,7 @@ class CoppeliaEnv(gym.Env):
         observation = self._get_observation()
         info = self._get_info()
         self._timestep += 1
-        self._total_it +=1 
+        self._total_it += 1 
         if not self._reversal and (self._total_it >= self._reversal_time):
             self._reversal = True
             print('REVERSAL')

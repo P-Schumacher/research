@@ -7,10 +7,10 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'shared_q_function_maximization0.3_offpol'
+  descriptor: 'shared_q_function_maximization0.3_NOoffpol'
   c_step: 10
   seed: 25
-  offpolicy: true
+  offpolicy: false
   start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false

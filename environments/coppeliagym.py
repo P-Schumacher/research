@@ -286,7 +286,10 @@ class CoppeliaEnv(gym.Env):
                     self._button1 = 1
                 return rew
         # dense reaching task
-        return - self._get_distance(self._ep_target_pos) - self._action_regularizer * tf.square(tf.norm(action))
+        dist = - self._get_distance(self._ep_target_pos)
+        if tf.abs(dist) < self._touch_distance:
+            self._button1 = True
+        return  dist - self._action_regularizer * tf.square(tf.norm(action))
 
     def _distance_query_switcher(self, box):
         if not self._reversal:

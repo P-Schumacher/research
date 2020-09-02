@@ -111,7 +111,7 @@ class CoppeliaEnv(gym.Env):
         sim = PyRep()
         scene_file = [scene_file if not render else render_scene_file][0]
         scene_file = join(dirname(abspath(__file__)), scene_file)
-        sim.launch(scene_file, headless=headless, write_coppeliasim_stdout_to_file=False)
+        sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.
         sim.set_simulation_timestep(dt=sim_timestep)
         sim.start()
@@ -286,7 +286,10 @@ class CoppeliaEnv(gym.Env):
                     self._button1 = 1
                 return rew
         # dense reaching task
-        return - self._get_distance(self._ep_target_pos) - self._action_regularizer * tf.square(tf.norm(action))
+        dist = - self._get_distance(self._ep_target_pos)
+        if tf.abs(dist) < self._touch_distance:
+            self._button1 = True
+        return  dist - self._action_regularizer * tf.square(tf.norm(action))
 
     def _distance_query_switcher(self, box):
         if not self._reversal:

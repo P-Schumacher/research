@@ -1,4 +1,4 @@
-project: 'shared_q'
+project: 'flat_reaching_sparse_new'
 main:
   render: false
   flat_agent: false

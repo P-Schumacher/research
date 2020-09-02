@@ -1,4 +1,4 @@
-project: 'shared_q'
+project: 'dense_reaching'
 main:
   render: false
   flat_agent: false
@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'baseline_batch'
+  descriptor: 'flat_dense_corrected'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -78,10 +78,10 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
-    sparse_rew: true
+    sparse_rew: false
     action_regularizer: 0.00
-    time_limit: 600
-    double_buttons: true
+    time_limit: 300
+    double_buttons: false
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000

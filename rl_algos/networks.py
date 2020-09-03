@@ -82,4 +82,4 @@ class ForwardModelNet(tf.keras.Model):
     def call(self, state):
         assert state.dtype == tf.float32
         x = self.hidden(state)
-        return self.out(x) * 50
+        return self.out(x) * 5

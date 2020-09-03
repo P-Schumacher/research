@@ -73,7 +73,7 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
-    FM = ForwardModel(26, logging=cnf.log, replay_buffer=agent.meta_replay_buffer, stat_data=True)
+    FM = ForwardModel(26, 3, logging=cnf.log, replay_buffer=agent.meta_replay_buffer, stat_data=True)
     for t in range(int(cnf.max_timesteps)):
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)

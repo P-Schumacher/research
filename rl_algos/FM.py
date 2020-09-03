@@ -9,8 +9,8 @@ import wandb
 
 class ForwardModel:
     '''Model that learns the reward in tandem with the RL agent learning.'''
-    def __init__(self, state_dim, logging, replay_buffer=None, nstep=10, stat_data=False):
-        self.net = ForwardModelNet(2*state_dim, [100], 0.)
+    def __init__(self, state_dim, action_dim, logging, replay_buffer=None, nstep=10, stat_data=False):
+        self.net = ForwardModelNet(state_dim + action_dim, [100], 0.)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
@@ -34,17 +34,19 @@ class ForwardModel:
 
     def sample(self, batch_size):
         if not self.stat_data:
+            raise Exception('NO STAT DATA')
             batch_idxs = self._sample_idx(batch_size)
             return (
             tf.convert_to_tensor(self.states[batch_idxs]),
             tf.convert_to_tensor(self.next_states[batch_idxs]),
-            tf.convert_to_tensor(self.rewards[batch_idxs]))
+            tf.convert_to_tensor(self.reversed_reward[batch_idxs]))
         else:
             batch_idxs = self._sample_idx(batch_size)
             return (
             tf.convert_to_tensor(self.replay_buffer.state[batch_idxs]),
             tf.convert_to_tensor(self.replay_buffer.next_state[batch_idxs]),
-            tf.convert_to_tensor(self.replay_buffer.reversed_reward[batch_idxs]))
+            tf.convert_to_tensor(self.replay_buffer.reversed_reward[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.action[batch_idxs]))
 
     def add(self, state, next_state, reward, done, reset):
         '''Constructs multi-step transitions from one-step transitions
@@ -101,9 +103,9 @@ class ForwardModel:
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
         #self.add(state, next_state, reward, done, reset)
-        if self.size >= 200 and len(self.n_step_buffer) == 0: # and self.replay_buffer.size > self.size:
-            states, next_states, rewards  = self.sample(128)
-            high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, next_states, rewards)
+        if self.size >= 128 and len(self.n_step_buffer) == 0 and self.replay_buffer.size > self.size:
+            states, next_states, rewards, actions  = self.sample(128)
+            high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, actions, rewards)
             if self.logging:
                 self.log(high_prederr, low_prederr, loss)
         self.size = self.replay_buffer.size
@@ -119,8 +121,8 @@ class ForwardModel:
             loss = self.loss_fn(ret_pred, reward) + sum(self.net.losses)
         gradients = tape.gradient(loss, self.net.trainable_variables)
         self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
-        high_rews = tf.where(reward != -10.)[:,0]
-        low_rews = tf.where(reward == -10.)[:,0]
+        high_rews = tf.where(reward != -1.)[:,0]
+        low_rews = tf.where(reward == -1.)[:,0]
         high_preds = tf.gather(ret_pred, high_rews)
         low_preds = tf.gather(ret_pred, low_rews)
         high_rews = tf.gather(reward, high_rews)

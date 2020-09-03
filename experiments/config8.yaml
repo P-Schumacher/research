@@ -7,7 +7,8 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'reversed_reset_trainonmodel_loadlower_s-a_pair_new_trainlessoften'
+  descriptor: 'reversed_reset_trainonbuffer_loadlower'
+
   c_step: 10
   seed: 25
   offpolicy: true
@@ -68,7 +69,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: true
+    use_FM: false
   sub_model:
     policy_freq: 1
     use_FM: false

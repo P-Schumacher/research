@@ -1,10 +1,10 @@
-project: ant_maze_new_general_plots
+project: ant_maze_new_precision_plots
 main:
   log: true
-  minilog: false
+  minilog: true
   flat_agent: false
-  descriptor: 'relative_goal_zero_obs'
-  save_model: true
+  descriptor: 'hiro_ant_justxygoal'
+  save_model: false
   render: false
   offpolicy: true
   max_timesteps: 3000000
@@ -16,10 +16,9 @@ main:
 agent:
  goal_type: Direction
  zero_obs: 2
- sub_noise: 5.
- meta_noise: 0.0
- meta_mock: true
- train_meta: false
+ sub_noise: 1.4
+ meta_mock: false
+ train_meta: true
  train_sub: true
  
  meta_model:

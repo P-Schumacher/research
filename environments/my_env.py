@@ -9,9 +9,8 @@ def get_goal_sample_fn(env_name, evalmode):
     # we use the commented out goal sampling function.  The uncommented
     # one is only used for training.
     if evalmode:
-      return lambda: np.array([15., 0.]) # evaluation goal
-    return lambda: np.array([15., 0.])
-    #return lambda: np.random.uniform((-4, -4), (20, 20))
+      return lambda: np.array([0., 16.]) # evaluation goal
+    return lambda: np.random.uniform((-4, -4), (20, 20))
   elif env_name == 'AntPush':
     return lambda: np.array([0., 19.])
   elif env_name == 'AntFall':
@@ -32,8 +31,7 @@ def get_reward_fn(env_name):
 
 
 def success_fn(last_reward):
-  #return last_reward > -5.0
-  return last_reward > -2.
+  return last_reward > -5.0
 
 
 class EnvWithGoal(object):

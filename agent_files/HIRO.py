@@ -113,7 +113,7 @@ class HierarchicalAgent(Agent):
         if noise_bool:
             self.goal += self._gaussian_noise(self._meta_noise, self._subgoal_dim)
             if (not self._spherical_coord) and (not self._center_meta_goal):
-                self.goal = tf.clip_by_value(self.goal, -self._subgoal_ranges, self._subgoal_ranges)
+                self.goal = tf.clip_by_value(self.goal, -self._clip_range, self._clip_range)
 
     def _maybe_log_training_metrics(self, sub_avg, meta_avg, timestep):
         '''Logs different training metrics such as: actor, critic loss, the norms and standard
@@ -331,6 +331,8 @@ class HierarchicalAgent(Agent):
         self._target_dim = env_spec['target_dim']
         self._action_dim = env_spec['action_dim']
         self._subgoal_dim = subgoal_dim
+        self._clip_range = self._subgoal_ranges.copy()
+        #self._clip_range[2:] = 1000
         # Main cnf
         self._minilog = main_cnf.minilog
         self._batch_size = main_cnf.batch_size

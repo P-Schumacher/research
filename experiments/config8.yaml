@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'shared_q_function_maximization0.3_NOoffpol'
+  descriptor: 'shared_q_function_maximization0._NOOFFPOL_SPARSEREW'
   c_step: 10
   seed: 25
   offpolicy: false
@@ -36,7 +36,7 @@ agent:
   meta_rew_scale: 0.1
   meta_noise: 0.644
   sub_noise: 1.4
-  goal_type: Direction
+  goal_type: Sparse
   ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false

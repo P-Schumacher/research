@@ -130,21 +130,40 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
     
     @tf.function
-    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
-        # Can't use *if not* in tf.function graph
-        if self.total_it % self._policy_freq == 0:
-            # Actor update
-            with tf.GradientTape(persistent=False) as tape:
-                action = self.actor(state)
-                state_action = tf.concat([state, action], 1)
-                actor_loss = self.critic.Q1(state_action)
-                mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-            gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-            gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
-            self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
-            self.transfer_weights(self.actor, self.actor_target, self._tau)
-            self.transfer_weights(self.critic, self.critic_target, self._tau)
-            self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, high_agent, FM):
+        if self._name == 'sub':
+            # Can't use *if not* in tf.function graph
+            if self.total_it % self._policy_freq == 0:
+                # Actor update
+                with tf.GradientTape(persistent=False) as tape:
+                    action = self.actor(state_low)
+                    ntilde_state = FM.predict(state_high, action)
+                    n_goal = high_agent.select_action(state_high)
+                    meta_value = high_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
+                    state_action = tf.concat([state, action], 1)
+                    actor_loss = self.critic.Q1(state_action) + 1.0 * meta_value
+                    mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+                gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+                gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
+                self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+                self.transfer_weights(self.actor, self.actor_target, self._tau)
+                self.transfer_weights(self.critic, self.critic_target, self._tau)
+                self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+        else:
+            # Can't use *if not* in tf.function graph
+            if self.total_it % self._policy_freq == 0:
+                # Actor update
+                with tf.GradientTape(persistent=False) as tape:
+                    action = self.actor(state)
+                    state_action = tf.concat([state, action], 1)
+                    actor_loss = self.critic.Q1(state_action)
+                    mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+                gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+                gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
+                self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+                self.transfer_weights(self.actor, self.actor_target, self._tau)
+                self.transfer_weights(self.critic, self.critic_target, self._tau)
+                self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
     def _maybe_goal_regul(self, action, reward, next_state, state_seq, action_seq, sub_agent):
         if self._name == 'meta' and (self._goal_regul or self._distance_goal_regul):

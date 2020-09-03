@@ -91,7 +91,7 @@ class HierarchicalAgent(Agent):
                                           self._batch_size, 
                                           timestep, 
                                           (self._log and not self._minilog),
-                                          FM=FM)
+                                          FM=FM, sub_agent=self._meta_agent)
         return metrics 
 
     def _train_meta_agent(self, timestep, train_index, FM):

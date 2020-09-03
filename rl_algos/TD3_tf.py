@@ -38,7 +38,9 @@ class TD3(object):
         if self._per:
             self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        set_trace()
+        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight, state_high, FM,
+                          sub_agent)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -130,7 +132,7 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
     
     @tf.function
-    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, high_agent, FM):
+    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, state_high, FM, high_agent):
         if self._name == 'sub':
             # Can't use *if not* in tf.function graph
             if self.total_it % self._policy_freq == 0:

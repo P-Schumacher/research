@@ -43,7 +43,7 @@ class Agent:
             action += noise
             action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         if self._decay_noise:
-            self._sub_noise *= 0.9999
+            self._sub_noise *= 0.99999
         return action
     
     def train(self, timestep, episode_timesteps, FM):

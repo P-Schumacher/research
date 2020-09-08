@@ -152,7 +152,7 @@ class TD3(object):
                     n_goal = sub_agent.select_action(ntilde_state)
                     meta_value = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
                     state_action = tf.concat([state, action], 1)
-                    actor_loss = self.critic.Q1(state_action) + 0.1 * meta_value
+                    actor_loss = self.critic.Q1(state_action) + 0.5 * meta_value
                     mean_actor_loss = -tf.math.reduce_mean(actor_loss)
                 gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
                 gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)

@@ -117,7 +117,7 @@ class CoppeliaEnv(gym.Env):
         sim = PyRep()
         scene_file = [scene_file if not render else render_scene_file][0]
         scene_file = join(dirname(abspath(__file__)), scene_file)
-        sim.launch(scene_file, headless=headless, write_coppeliasim_stdout_to_file=False)
+        sim.launch(scene_file, headless=headless)
         # Need sim_timestep set to custom in CoppeliaSim Scene for this method to work.
         sim.set_simulation_timestep(dt=sim_timestep)
         sim.start()

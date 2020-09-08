@@ -5,9 +5,9 @@ main:
   log: true
   minilog: true
   save_model: false
-  load_model: true
+  load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'reversed_reset_trainonbuffer_loadlower'
+  descriptor: 'baseline0.2'
 
   c_step: 10
   seed: 25
@@ -42,7 +42,7 @@ agent:
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: false
+  train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
@@ -85,7 +85,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 600000
+    reversal_time: 600000000
     touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false

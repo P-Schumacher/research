@@ -14,8 +14,11 @@ class TD3(object):
         self._create_persistent_tf_variables()
 
     def select_action(self, state):
-        state = tf.convert_to_tensor(state.reshape(1, -1))
-        return tf.reshape(self.actor(state), [-1])
+        if state.shape[0] != 128:
+            state = tf.convert_to_tensor(tf.reshape(state, (1, -1)))
+            return tf.reshape(self.actor(state), [-1])
+        else:
+            return self.actor(state)
 
     def update_target_models_hard(self):
         '''Copy network weights to target network weights.'''
@@ -31,16 +34,15 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        state, action, reward, next_state, done, state_seq, action_seq, _ = replay_buffer.sample(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq, _, unmod_state, unmod_next_state = replay_buffer.sample(batch_size)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
-        reward_new = self._maybe_FM_reward(state, action, reward, FM, log)
+        reward_new = self._maybe_FM_reward(state, next_state, action, reward, FM, log)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         if self._per:
             self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        set_trace()
-        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight, state_high, FM,
-                          sub_agent)
+        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight,
+                          sub_agent=sub_agent, unmod_state=unmod_state, FM=FM)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -132,18 +134,25 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
     
     @tf.function
-    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, state_high, FM, high_agent):
+    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, unmod_state=None, FM=None,
+                     sub_agent=None):
         if self._name == 'sub':
             # Can't use *if not* in tf.function graph
             if self.total_it % self._policy_freq == 0:
                 # Actor update
                 with tf.GradientTape(persistent=False) as tape:
-                    action = self.actor(state_low)
-                    ntilde_state = FM.predict(state_high, action)
-                    n_goal = high_agent.select_action(state_high)
-                    meta_value = high_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
+                    action = self.actor(state)
+                    ntilde_state = unmod_state
+                    #for i in range(10):
+                    ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
+                       # n_goal = sub_agent.select_action(ntilde_state)
+                       # state_l = state[:, :-3]
+                       # action = self.actor(tf.concat([state_l, n_goal], 1))
+
+                    n_goal = sub_agent.select_action(ntilde_state)
+                    meta_value = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
                     state_action = tf.concat([state, action], 1)
-                    actor_loss = self.critic.Q1(state_action) + 1.0 * meta_value
+                    actor_loss = self.critic.Q1(state_action) + 0.1 * meta_value
                     mean_actor_loss = -tf.math.reduce_mean(actor_loss)
                 gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
                 gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
@@ -180,11 +189,11 @@ class TD3(object):
         else:
             return action
 
-    def _maybe_FM_reward(self, state, next_state, reward,  FM, log):
+    def _maybe_FM_reward(self, state, next_state, action, reward,  FM, log):
         '''Uses a learned ForwardModel (or reward model) to
         replace the reward during learning'''
-        if self._use_FM and self.total_it >= 60000:
-            reward_FM = FM.forward_pass(state, next_state, reshape=False)
+        if self._use_FM and self.total_it >= 0:
+            reward_FM, next_state_FM = FM.forward_pass(state, action, reshape=False)
             #reward_FM *= 0.1
             high_rews = tf.where(reward != -1.)[:,0]
             low_rews = tf.where(reward == -1.)[:,0]

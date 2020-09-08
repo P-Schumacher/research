@@ -10,7 +10,7 @@ import wandb
 class ForwardModel:
     '''Model that learns the reward in tandem with the RL agent learning.'''
     def __init__(self, state_dim, action_dim, logging, replay_buffer=None, nstep=10, stat_data=False):
-        self.net = ForwardModelNet(state_dim + action_dim, [100], 0.)
+        self.net = ForwardModelNet(state_dim, [100], 0.)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
         self.logging = logging
@@ -43,9 +43,9 @@ class ForwardModel:
         else:
             batch_idxs = self._sample_idx(batch_size)
             return (
-            tf.convert_to_tensor(self.replay_buffer.state[batch_idxs]),
-            tf.convert_to_tensor(self.replay_buffer.next_state[batch_idxs]),
-            tf.convert_to_tensor(self.replay_buffer.reversed_reward[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.unmod_state[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.unmod_next_state[batch_idxs]),
+            tf.convert_to_tensor(self.replay_buffer.reward[batch_idxs]),
             tf.convert_to_tensor(self.replay_buffer.action[batch_idxs]))
 
     def add(self, state, next_state, reward, done, reset):
@@ -95,30 +95,30 @@ class ForwardModel:
         else:
             return tf.random.uniform([batch_size,], 0, self.replay_buffer.size, dtype=tf.int32)
 
-    def forward_pass(self, state, next_state, reshape=True, reversal=False):
+    def forward_pass(self, state, action, reshape=True, reversal=False):
         '''Computes estimated rewards and done in a forward pass.
         This information has then to be called from the class.'''
-        reduced_state = tf.concat([state, next_state], axis=-1)
-        return self.net(reduced_state)
+        #reduced_state = tf.concat([state, next_state, action], axis=-1)
+        return self.net.forwardit(state, action)
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
-        #self.add(state, next_state, reward, done, reset)
         if self.size >= 128 and len(self.n_step_buffer) == 0 and self.replay_buffer.size > self.size:
-            states, next_states, rewards, actions  = self.sample(128)
-            high_prederr, low_prederr, loss, y_pred, y_true = self._train(states, actions, rewards)
+            states, next_states, rewards, actions = self.sample(128)
+            high_prederr, low_prederr, loss, y_pred, y_true, stateerr = self._train(states, next_states, actions, rewards)
             if self.logging:
-                self.log(high_prederr, low_prederr, loss)
+                self.log(high_prederr, low_prederr, loss, stateerr)
         self.size = self.replay_buffer.size
 
-    def log(self, high_prederr, low_prederr, loss):
+    def log(self, high_prederr, low_prederr, loss, stateerr):
         wandb.log({'FM/high_prederror': high_prederr, 'FM/low_prederror': low_prederr, 'FM/loss': loss}, commit=False)
-        wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
+        wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights]),
+                   'FM/nstate_err': stateerr}, commit=False)
 
     @tf.function
-    def _train(self, state, next_state, reward, reversal=False):
+    def _train(self, state, next_state, action, reward, reversal=False):
         with tf.GradientTape() as tape:
-            ret_pred = self.forward_pass(state, next_state, reshape=False, reversal=reversal)
-            loss = self.loss_fn(ret_pred, reward) + sum(self.net.losses)
+            ret_pred, ntilde_state = self.forward_pass(state, action, reshape=False, reversal=reversal)
+            loss = self.loss_fn(ret_pred, reward) + self.loss_fn(ntilde_state, next_state) + sum(self.net.losses)
         gradients = tape.gradient(loss, self.net.trainable_variables)
         self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
         high_rews = tf.where(reward != -1.)[:,0]
@@ -127,7 +127,7 @@ class ForwardModel:
         low_preds = tf.gather(ret_pred, low_rews)
         high_rews = tf.gather(reward, high_rews)
         low_rews = tf.gather(reward, low_rews)
-        return tf.reduce_sum(tf.abs(high_preds - high_rews)), tf.reduce_sum(tf.abs(low_preds - low_rews)), tf.reduce_sum(loss), ret_pred, reward
+        return tf.reduce_sum(tf.abs(high_preds - high_rews)), tf.reduce_sum(tf.abs(low_preds - low_rews)), tf.reduce_sum(loss), ret_pred, reward, tf.reduce_mean(tf.abs(next_state - ntilde_state))
 
     def _calc_multistep_transitions(self):
         ret = 0

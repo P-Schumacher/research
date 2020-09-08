@@ -14,8 +14,12 @@ class ReplayBuffer(object):
         self._prepare_parameters(state_dim, action_dim, buffer_cnf)
         self.reset()
 
-    def add(self, state, action, reward, next_state, done, state_seq, action_seq, reversed_reward):
+    def add(self, state, action, reward, next_state, done, state_seq, action_seq, reversed_reward, unmod_state=None,
+            stabe=False, unmod_next_state=None):
         self.state[self.ptr] = state.astype(np.float16)
+        if stabe:
+            self.unmod_state[self.ptr] = unmod_state.astype(np.float16)
+            self.unmod_next_state[self.ptr] = unmod_next_state.astype(np.float16)
         self.action[self.ptr] = action
         self.next_state[self.ptr] = next_state.astype(np.float16)
         self.reward[self.ptr] = reward
@@ -37,7 +41,9 @@ class ReplayBuffer(object):
         tf.convert_to_tensor(self.done[self.batch_idxs]),
         tf.convert_to_tensor(self.state_seq[self.batch_idxs]),
         tf.convert_to_tensor(self.action_seq[self.batch_idxs]),
-        tf.convert_to_tensor(self.reversed_reward[self.batch_idxs]))
+        tf.convert_to_tensor(self.reversed_reward[self.batch_idxs]),
+        tf.convert_to_tensor(self.unmod_state[self.batch_idxs]),
+        tf.convert_to_tensor(self.unmod_next_state[self.batch_idxs]))
 
     def save_data(self):
         '''Saves the buffer data to the disk. Only useful for analyzing them.'''
@@ -54,6 +60,8 @@ class ReplayBuffer(object):
 
     def reset(self):
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
+        self.unmod_state = np.zeros((self.max_size, self.state_dim+3), dtype = np.float32)
+        self.unmod_next_state = np.zeros((self.max_size, self.state_dim+3), dtype = np.float32)
         self.action = np.zeros((self.max_size, self.action_dim), dtype = np.float32)
         self.next_state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
         self.reward = np.zeros((self.max_size, 1), dtype = np.float32)

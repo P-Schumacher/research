@@ -172,6 +172,8 @@ class TransitBuffer(ReplayBuffer):
         if self._offpolicy:
             self._collect_seq_state_actions(state, action)
         # Remove target from sub-agent state. Conform with paper code.
+        unmod_state = state.copy()
+        unmod_next_state = next_state.copy()
         state = state[:-self._target_dim]  
         next_state = next_state[:-self._target_dim]
         # Concatenate for the network
@@ -183,7 +185,8 @@ class TransitBuffer(ReplayBuffer):
             cat_state[:self._zero_obs] = 0
             cat_next_state[:self._zero_obs] = 0
         self._sub_replay_buffer.add(cat_state, action, intr_reward,
-                                   cat_next_state, extr_done, 0, 0, 0)
+                                   cat_next_state, extr_done, 0, 0, 0, unmod_state=unmod_state, stabe=True,
+                                    unmod_next_state=unmod_next_state)
         
     def _add_to_meta(self, state, goal, sum_of_rewards, next_state, done, FM=None):
         '''Adds transitions to the replay buffer of the meta agent. *self._state_seq* and 

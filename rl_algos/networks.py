@@ -1,4 +1,5 @@
 import tensorflow as tf
+from pudb import set_trace
 import tensorflow.keras.layers as kl
 import tensorflow.keras.initializers as inits
 import numpy as np
@@ -74,12 +75,18 @@ class ForwardModelNet(tf.keras.Model):
         super(ForwardModelNet, self).__init__()
         self.hidden = kl.Dense(hidden_layers[0], activation='relu', kernel_initializer=initialize_relu,
                           kernel_regularizer=l2(reg_coeff))
-        self.out = kl.Dense(1, activation='tanh', kernel_initializer=initialize_tanh,
+        self.rew_out = kl.Dense(1, activation='tanh', kernel_initializer=initialize_tanh,
                           kernel_regularizer=l2(reg_coeff))
-        self.build(input_shape=(None, state_dim))
+        self.state_out = kl.Dense(state_dim, activation='tanh', kernel_initializer=initialize_tanh,
+                          kernel_regularizer=l2(reg_coeff))
+        self.build(input_shape=(None, state_dim+8))
 
     @tf.function 
-    def call(self, state):
-        assert state.dtype == tf.float32
-        x = self.hidden(state)
-        return self.out(x) * 5
+    def call(self, x):
+        assert x.dtype == tf.float32
+        x = self.hidden(x)
+        return self.rew_out(x) * 5, self.state_out(x) * 50
+
+    def forwardit(self, state, action):
+        x = tf.concat([state, action], -1)
+        return self.call(x)

@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'no_reversal_but_model_learning_300000'
+  descriptor: 'noreversal_learnon_model'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -84,7 +84,7 @@ coppeliagym:
     double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 600000000
+    reversal_time: 30000000000
     touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false

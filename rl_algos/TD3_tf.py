@@ -145,11 +145,11 @@ class TD3(object):
                     stateinput = tf.concat([state[:-3], goal],1)
                     action = self.actor(stateinput)
                     ntilde_state = unmod_state
-                    #for i in range(10):
-                    ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
-                       # n_goal = sub_agent.select_action(ntilde_state)
-                       # state_l = state[:, :-3]
-                       # action = self.actor(tf.concat([state_l, n_goal], 1))
+                    for i in range(5):
+                        ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
+                        n_goal = sub_agent.select_action(ntilde_state)
+                        state_l = state[:, :-3]
+                        action = self.actor(tf.concat([state_l, n_goal], 1))
 
                     n_goal = sub_agent.select_action(ntilde_state)
                     meta_value = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))

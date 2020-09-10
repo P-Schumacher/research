@@ -1,19 +1,18 @@
-project: 'forward_models_current'
+project: 'meeting_11092020'
 main:
   render: false
   flat_agent: false
   log: true
   minilog: true
   save_model: false
-  load_model: false
+  load_model: true
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'baseline0.2'
-
+  descriptor: 'no_reversal_but_model_learning_300000'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 1000000
+  max_timesteps: 2000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -69,7 +68,7 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: false
+    use_FM: true
   sub_model:
     policy_freq: 1
     use_FM: false

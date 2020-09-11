@@ -1,4 +1,4 @@
-project: 'forward_models_current'
+project: 'forward_models_current_easy'
 main:
   render: false
   flat_agent: false
@@ -7,11 +7,11 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'forwardmodeltraining_newestidea0.1_5erprediction'
+  descriptor: 'forwardmodeltraining_newestidea0.001'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 5000
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
@@ -85,7 +85,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 600000000
-    touch_distance: 0.2
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

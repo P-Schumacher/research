@@ -99,7 +99,12 @@ class ForwardModel:
         '''Computes estimated rewards and done in a forward pass.
         This information has then to be called from the class.'''
         #reduced_state = tf.concat([state, next_state, action], axis=-1)
-        return self.net.forwardit(state, action)
+        ret_pred, state_pred = self.net.forwardit(state, action)
+        stddev = tf.constant([1.,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0])
+        stddev = tf.broadcast_to(stddev, shape=state_pred.shape)
+        stddev = tf.multiply(stddev, 2.0)
+        state_pred = tf.random.normal(state_pred.shape,mean=state_pred, stddev=stddev)
+        return ret_pred, state_pred
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
         if self.size >= 128 and len(self.n_step_buffer) == 0 and self.replay_buffer.size > self.size:

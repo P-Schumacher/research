@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'forwardmodeltraining_newestidea0.1_5erprediction'
+  descriptor: 'new0.1_probabilistic'
   c_step: 10
   seed: 25
   offpolicy: true

@@ -141,20 +141,13 @@ class TD3(object):
             if self.total_it % self._policy_freq == 0:
                 # Actor update
                 with tf.GradientTape(persistent=False) as tape:
-                    goal = sub_agent.select_action(unmod_state)
-                    stateinput = tf.concat([state[:-3], goal],1)
-                    action = self.actor(stateinput)
+                    action = self.actor(state)
                     ntilde_state = unmod_state
-                    for i in range(5):
-                        ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
-                        n_goal = sub_agent.select_action(ntilde_state)
-                        state_l = state[:, :-3]
-                        action = self.actor(tf.concat([state_l, n_goal], 1))
-
+                    ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
                     n_goal = sub_agent.select_action(ntilde_state)
                     meta_value = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
                     state_action = tf.concat([state, action], 1)
-                    actor_loss = self.critic.Q1(state_action) + 0.2 * meta_value
+                    actor_loss = self.critic.Q1(state_action) + 0.1 * meta_value
                     mean_actor_loss = -tf.math.reduce_mean(actor_loss)
                 gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
                 gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)

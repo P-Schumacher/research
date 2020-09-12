@@ -1,4 +1,4 @@
-project: 'forward_models_current_easy'
+project: 'forward_models_current'
 main:
   render: false
   flat_agent: false
@@ -11,7 +11,7 @@ main:
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 128
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
@@ -85,7 +85,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 600000000
-    touch_distance: 0.5
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

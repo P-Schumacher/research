@@ -1,20 +1,20 @@
-project: 'forward_models_current'
+project: 'forward_models_newidea_sweep'
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'forwardmodeltraining_newestidea0.001'
+  descriptor: 'forwardmodeltraining'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 128
-  max_timesteps: 1000000
+  max_timesteps: 300000
   no_seed: false
-  eval_freq: 20000
+  eval_freq: 5000
   simple_env: false
   batch_size: 128
   
@@ -72,6 +72,8 @@ agent:
   sub_model:
     policy_freq: 1
     use_FM: false
+    alpha: 1.
+    beta: 0.
 
 coppeliagym:
   sim:
@@ -85,7 +87,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 600000000
-    touch_distance: 0.2
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

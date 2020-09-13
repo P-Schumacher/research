@@ -1,13 +1,13 @@
-project: 'forward_models_newidea_sweep'
+project: 'forward_models_current_easy'
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'forwardmodeltraining'
+  descriptor: 'forwardmodeltraining_a0.36b0.05'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -72,8 +72,8 @@ agent:
   sub_model:
     policy_freq: 1
     use_FM: false
-    alpha: 1.
-    beta: 0.
+    alpha: 0.36
+    beta: 0.053
 
 coppeliagym:
   sim:

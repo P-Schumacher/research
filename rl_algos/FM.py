@@ -100,10 +100,6 @@ class ForwardModel:
         This information has then to be called from the class.'''
         #reduced_state = tf.concat([state, next_state, action], axis=-1)
         ret_pred, state_pred = self.net.forwardit(state, action)
-        #stddev = tf.constant([1.,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0])
-        #stddev = tf.broadcast_to(stddev, shape=state_pred.shape)
-        #stddev = tf.multiply(stddev, 2.0)
-        #state_pred = tf.random.normal(state_pred.shape,mean=state_pred, stddev=stddev)
         return ret_pred, state_pred
 
     def train(self, state, next_state, reward, done, reset, reversal=False):
@@ -121,8 +117,13 @@ class ForwardModel:
 
     @tf.function
     def _train(self, state, next_state, action, reward, reversal=False):
+        stddev = tf.constant([1.,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1,1,0])
+        stddev = tf.broadcast_to(stddev, shape=state.shape)
+        stddev = tf.multiply(stddev, 2.0)
+        noise = tf.random.normal(shape=state.shape, mean=0., stddev=stddev)
         with tf.GradientTape() as tape:
             ret_pred, ntilde_state = self.forward_pass(state, action, reshape=False, reversal=reversal)
+            ntilde_state = ntilde_state # + noise
             loss = self.loss_fn(ret_pred, reward) + self.loss_fn(ntilde_state, next_state) + sum(self.net.losses)
         gradients = tape.gradient(loss, self.net.trainable_variables)
         self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))

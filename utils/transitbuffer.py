@@ -186,6 +186,8 @@ class TransitBuffer(ReplayBuffer):
         to compute the offpolicy-correction.
         This is the primitive for adding transitions to the meta-agent. It is
         the last function that is called.'''
+        state[:3] = 0
+        next_state[:3] = 0
         self._meta_replay_buffer.add(state, goal, sum_of_rewards, next_state, done, self._state_seq,
                                     self._action_seq)
         if sum_of_rewards != (-1 * self._meta_rew_scale * self._c_step) and self._add_multiple_dones:

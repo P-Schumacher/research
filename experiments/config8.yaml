@@ -1,13 +1,13 @@
-project: 'sparse_flat_reaching'
+project: 'exp' 
 main:
   render: false
-  flat_agent: true
+  flat_agent: false
   log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_small_noise0.2_noper'
+  descriptor: 'random_small_noise0.2_noper_3metazero'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -80,8 +80,8 @@ coppeliagym:
   params:
     sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 300
-    double_buttons: false
+    time_limit: 600
+    double_buttons: true
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000

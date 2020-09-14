@@ -1,4 +1,4 @@
-for i in 1 2 3 4 5
+for i in 1 2 3 
 do
-	xvfb-run -a python3 main.py config8 &
+	python3 main.py config8 &
 done

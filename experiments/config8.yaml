@@ -1,13 +1,13 @@
-project: 'exp' 
+project: 'sparse_flat_reaching'
 main:
   render: false
-  flat_agent: false
+  flat_agent: true
   log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_small_noise0.2_noper_3metazero'
+  descriptor: 'random_small_noise0.08_REALPER'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -46,8 +46,8 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 0
-  sub_per: 0
+  per: 1
+  sub_per: 1
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
@@ -80,12 +80,12 @@ coppeliagym:
   params:
     sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 600
-    double_buttons: true
+    time_limit: 300
+    double_buttons: false
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.2
+    touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

@@ -136,6 +136,25 @@ class TD3(object):
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight, unmod_state=None, FM=None,
                      sub_agent=None):
+        if self._name == 'meta':
+            if self.total_it % self._policy_freq == 0:
+                # Actor update
+                with tf.GradientTape(persistent=False) as tape:
+                    goal = self.actor(state)
+                    state_goal = tf.concat([state, goal], 1)
+                    lowstate = tf.concat([state[:, :-self._target_dim], goal],1)
+                    action = sub_agent.select_action(lowstate)
+                    lowstate_action = tf.concat([lowstate, action], 1)
+                    sub_loss = sub_agent.critic.Q1(lowstate_action)
+                    actor_loss = self.critic.Q1(state_goal) + self._alpha * sub_loss
+                    mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+                gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+                gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
+                self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+                self.transfer_weights(self.actor, self.actor_target, self._tau)
+                self.transfer_weights(self.critic, self.critic_target, self._tau)
+                self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+
         if self._name == 'sub':
             # Can't use *if not* in tf.function graph
             if self.total_it % self._policy_freq == 0:
@@ -145,9 +164,9 @@ class TD3(object):
                     ntilde_state = unmod_state
                     ret_pred, ntilde_state = FM.forward_pass(ntilde_state, action)
                     n_goal = sub_agent.select_action(ntilde_state)
-                    meta_value = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
+                    meta_loss = sub_agent.critic.Q1(tf.concat([ntilde_state, n_goal], 1))
                     state_action = tf.concat([state, action], 1)
-                    actor_loss = self._alpha * self.critic.Q1(state_action) + self._beta * meta_value
+                    actor_loss = self.critic.Q1(state_action) + self._beta * meta_loss
                     mean_actor_loss = -tf.math.reduce_mean(actor_loss)
                 gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
                 gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)

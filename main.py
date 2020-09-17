@@ -41,8 +41,8 @@ if ant_env:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
-cnf.agent.sub_model.alpha = args.alpha
-cnf.agent.sub_model.beta= args.beta
+cnf.agent.meta_model.alpha = args.alpha
+cnf.agent.sub_model.beta = args.beta
 if seed:
     cnf.main.seed = int(seed)
 

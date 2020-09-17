@@ -1,4 +1,4 @@
-project: 'forward_models_current_easy'
+project: 'newnewnew'
 main:
   render: false
   flat_agent: false
@@ -7,11 +7,11 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'forwardmodeltraining_a0.36b0.05'
-  c_step: 10
+  descriptor: 'forwardmodeltraining_combined_a0.5_b0.5_sparse_c20'
+  c_step: 20
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 5000
   max_timesteps: 300000
   no_seed: false
   eval_freq: 5000
@@ -36,7 +36,7 @@ agent:
   meta_rew_scale: 0.1
   meta_noise: 0.644
   sub_noise: 1.4
-  goal_type: Direction
+  goal_type: Sparse
   ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false
@@ -69,11 +69,10 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     use_FM: false
+
   sub_model:
     policy_freq: 1
     use_FM: false
-    alpha: 0.36
-    beta: 0.053
 
 coppeliagym:
   sim:
@@ -87,7 +86,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 600000000
-    touch_distance: 0.5
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

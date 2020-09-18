@@ -177,8 +177,8 @@ class TransitBuffer(ReplayBuffer):
         if self._zero_obs:
             cat_state[:self._zero_obs] = 0
             cat_next_state[:self._zero_obs] = 0
-            cat_state[10:13] = 0
-            cat_next_state[10:13] = 0
+            #cat_state[10:13] = 0
+            #cat_next_state[10:13] = 0
         self._sub_replay_buffer.add(cat_state, action, intr_reward,
                                    cat_next_state, extr_done, 0, 0)
         

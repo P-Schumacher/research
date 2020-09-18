@@ -81,8 +81,8 @@ coppeliagym:
   params:
     sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 600
-    double_buttons: true
+    time_limit: 300
+    double_buttons: false
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000

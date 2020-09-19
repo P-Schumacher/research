@@ -1,4 +1,4 @@
-project: 'distancethreshplot'
+project: 'distancethreshplot_notrandom_2buttons'
 main:
   render: false
   flat_agent: true
@@ -81,10 +81,10 @@ coppeliagym:
   params:
     sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 300
-    double_buttons: false
-    random_target: true
-    random_eval_target: true
+    time_limit: 600
+    double_buttons: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 100000000000
     touch_distance: 0.08
     minimum_dist: 0.

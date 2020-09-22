@@ -124,7 +124,7 @@ class TD3(object):
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self._discount ** self._nstep * target_Q
         # Critic Update
-        with tf.GradientTape() as tape2:
+        with tf.GradientTape() as tape:
             current_Q1, current_Q2 = self.critic(state_action)
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
@@ -132,14 +132,14 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-        tape2 = hvd.DistributedGradientTape(tape2)
-        gradients = tape2.gradient(critic_loss, self.critic.trainable_variables)
+        tape = hvd.DistributedGradientTape(tape)
+        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
         return tf.abs(target_Q - current_Q1)
     
-    #@tf.function
+    @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
         if self.total_it % self._policy_freq == 0:
@@ -326,8 +326,6 @@ class TD3(object):
         self.critic_reset_net = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_target = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr*hvd.size(), beta_1=self._beta_1, beta_2=self._beta_2)
-        #self.critic_optimizer = hvd.DistributedOptimizer(self.critic_optimizer)
-        #self.actor_optimizer = hvd.DistributedOptimizer(self.actor_optimizer)
         # Huber loss does not punish a noisy large gradient.
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
         # Equal initial network and target network weights

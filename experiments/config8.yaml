@@ -1,17 +1,17 @@
 project: 'distancethreshplot_random_2buttons_n5_horovod'
 main:
   render: false
-  flat_agent: true
+  flat_agent: false
   log: false
   minilog: false
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_flat_0.3_n5_p6'
+  descriptor: 'notrandom_hiro_0.3_n5_p6'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 5000
   max_timesteps: 5000000
   no_seed: false
   eval_freq: 20000

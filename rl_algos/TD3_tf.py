@@ -6,6 +6,7 @@ from utils.math_fns import euclid, get_norm, clip_by_global_norm
 from rl_algos.networks import Actor, Critic
 from rl_algos.offpol_correction import off_policy_correction
 from utils.math_fns import euclid
+import horovod.tensorflow as hvd
 
 class TD3(object):
     def __init__(self, **kwargs):
@@ -40,6 +41,8 @@ class TD3(object):
             self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
         self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        if self.iteration == 1:
+            self._horo_broadcast()
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -47,6 +50,12 @@ class TD3(object):
             wandb.log({f'{self._name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self._name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+
+    def _horo_broadcast(self):
+        hvd.broadcast_variables(self.critic.trainable_variables, root_rank=0)
+        hvd.broadcast_variables(self.actor.trainable_variables, root_rank=0)
+        hvd.broadcast_variables(self.critic_optimizer.variables(), root_rank=0)
+        hvd.broadcast_variables(self.actor_optimizer.variables(), root_rank=0)
 
     def full_reset(self):
         '''Completely resets actor and critic network to the predefined 
@@ -115,7 +124,7 @@ class TD3(object):
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self._discount ** self._nstep * target_Q
         # Critic Update
-        with tf.GradientTape() as tape:
+        with tf.GradientTape() as tape2:
             current_Q1, current_Q2 = self.critic(state_action)
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
@@ -123,8 +132,8 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-
-        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
+        tape2 = hvd.DistributedGradientTape(tape2)
+        gradients = tape2.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
@@ -140,6 +149,7 @@ class TD3(object):
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+            #tape = hvd.DistributedGradientTape(tape)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
@@ -315,7 +325,7 @@ class TD3(object):
         self.critic = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_reset_net = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_target = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
-        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr, beta_1=self._beta_1, beta_2=self._beta_2)
+        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr*hvd.size(), beta_1=self._beta_1, beta_2=self._beta_2)
         # Huber loss does not punish a noisy large gradient.
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
         # Equal initial network and target network weights

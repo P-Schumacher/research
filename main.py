@@ -4,6 +4,7 @@ import wandb
 import sys
 import os
 from pudb import set_trace
+import horovod.tensorflow as hvd
 try:
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -13,7 +14,7 @@ try:
 except:
     mpi = False 
     print('MPI NOT LOADED')
-
+hvd.init()
 #os.environ['CUDA_VISIBLE_DEVICES']='-1'
 ant_env = False
 vrep = True
@@ -42,6 +43,8 @@ if ant_env:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
+if hvd.rank() != 0:
+    cnf.main.log = False
 if seed and not mpi:
     cnf.main.seed = int(seed)
 if mpi:

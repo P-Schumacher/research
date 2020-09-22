@@ -10,7 +10,7 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 from rl_algos.FM import ForwardModel
-
+import horovod.tensorflow as hvd
 
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
@@ -86,14 +86,15 @@ def main(cnf):
             FM.train(state, next_state, reward, success_cd, done)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
-        logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
+        #logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         state = next_state
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:
                 agent.train(t, logger.episode_timesteps, FM)
-            print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
+            if hvd.rank() == 0:
+                print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)
             agent.reset()
             logger.reset()

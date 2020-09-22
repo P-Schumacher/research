@@ -195,8 +195,7 @@ class HierarchicalAgent(Agent):
     def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
         self._add_third_goal(state, reward_fn)
-        self._maybe_modify_smoothed_state(state)
-        print(type(self._meta_state))
+        self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
         if self.meta_time:

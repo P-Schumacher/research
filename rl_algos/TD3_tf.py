@@ -57,6 +57,7 @@ class TD3(object):
         hvd.broadcast_variables(self.critic_optimizer.variables(), root_rank=0)
         hvd.broadcast_variables(self.actor_optimizer.variables(), root_rank=0)
 
+
     def full_reset(self):
         '''Completely resets actor and critic network to the predefined 
         reset networks.'''
@@ -65,14 +66,14 @@ class TD3(object):
         self.transfer_weights(self.critic_reset_net, self.critic, tau=1)
         self.transfer_weights(self.critic_reset_net, self.critic_target, tau=1)
 
-    @tf.function
+    #@tf.function
     def _compute_td_error(self, state, action, reward, next_state, done):
         '''Combines the current critic output and the learning target to yield
         the td_error which is differentiated to yield the gradients for the critic'''
         current_Q1, target_Q = self.get_current_estimate_and_learning_target(state, action, reward, next_state, done)
         return tf.abs(current_Q1 - target_Q)
 
-    @tf.function
+    #@tf.function
     def get_current_estimate_and_learning_target(self, state, action, reward, next_state, done):
         '''Computes the critic estimate for the given transition tuple and then computes 
         the learning target using the deterministic TD3 recursion eqn.
@@ -101,7 +102,7 @@ class TD3(object):
         current_Q1, _ = self.critic(state_action)
         return current_Q1, target_Q
 
-    @tf.function
+    #@tf.function
     def _train_critic(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -238,7 +239,7 @@ class TD3(object):
         #rew = -euclid(goal - next_state[:, :dim], axis=1)
         return rew
 
-    @tf.function
+    #@tf.function
     def _compute_td_error_copy(self, sub_agent, state, action, reward, next_state):
         # ATTENTION HAVE REMOVED TERMINAL STATE CONDITION FOR THIS CASE
         state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
@@ -326,8 +327,6 @@ class TD3(object):
         self.critic_reset_net = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_target = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr*hvd.size(), beta_1=self._beta_1, beta_2=self._beta_2)
-        #self.critic_optimizer = hvd.DistributedOptimizer(self.critic_optimizer)
-        #self.actor_optimizer = hvd.DistributedOptimizer(self.actor_optimizer)
         # Huber loss does not punish a noisy large gradient.
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
         # Equal initial network and target network weights

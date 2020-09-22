@@ -74,11 +74,15 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
+    switch = 0
     for t in range(int(cnf.max_timesteps)):
+        if not t % 10000:
+            switch = (switch + 1) % 2
+        reward_fn = [1 if switch else 0][0]
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
-        action = agent.select_action(state, noise_bool=True)
-        next_state, reward, done, _ = env.step(action)
+        action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)
+        next_state, reward, done, _ = env.step(action, reward_fn)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)

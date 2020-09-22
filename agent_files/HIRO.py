@@ -11,14 +11,14 @@ class HierarchicalAgent(Agent):
         self._self_prepare_algo_objects(agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
         self._prepare_control_variables()
         
-    def select_action(self, state, noise_bool=False):
+    def select_action(self, state, reward_fn, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
         saved(!) for the add-fct. Depending on input, gaussian noise is added to the goal and the action. Goal smoothing 
         means taking the Polyak Average of the old and the new goal. 
         :param state: State of the MDP.
         :param noise_bool: Boolean indicating if noise should be added to the action and the goal.
         :return action: The action that the sub-agent takes.'''
-        self._get_meta_goal(state)
+        self._get_meta_goal(state, reward_fn)
         if self.meta_time:
             self._maybe_apply_goal_clipnoise(noise_bool)
             # Need to correct goal after applying noise
@@ -68,7 +68,6 @@ class HierarchicalAgent(Agent):
 
     def _self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
         self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.load_string)
-        
         meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
         self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
                                            buffer_cnf)
@@ -189,18 +188,27 @@ class HierarchicalAgent(Agent):
         meta_env_spec['max_action'] = self._subgoal_ranges
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         if self._smooth_goal:
-            meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim
+            meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim 
+        meta_env_spec['state_dim'] += 2
         return meta_env_spec, sub_env_spec
 
-    def _get_meta_goal(self, state):
+    def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
+        self._add_third_goal(state, reward_fn)
         self._maybe_modify_smoothed_state(state)
+        print(type(self._meta_state))
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
         if self.meta_time:
             self._maybe_mock()
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
+
+    def _add_third_goal(self, state, reward_fn):
+        if reward_fn == 0:
+            self._meta_state = np.concatenate([state, np.array([1,0])], -1)
+        else:
+            self._meta_state = np.concatenate([state, np.array([0,1])], -1)
 
     def _maybe_modify_smoothed_state(self, state):
         '''Concatenates the previous given goal to the state vector for the

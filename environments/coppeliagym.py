@@ -27,7 +27,7 @@ class CoppeliaEnv(gym.Env):
         if cnf.params.ee_pos and cnf.params.ee_j_pos:
             raise Exception(f'Decide on your state space! ee_pos:{cnf.params.ee_pos} ee_j_pos:{cnf.params.ee_j_pos}')
 
-    def step(self, action):
+    def step(self, action, reward_fn):
         if self._needs_reset:
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
@@ -38,6 +38,10 @@ class CoppeliaEnv(gym.Env):
         info = self._get_info()
         self._timestep += 1
         self._total_it +=1 
+        if reward_fn:
+            self._reversal = True
+        else:
+            self._reversal = False
         if not self._reversal and (self._total_it >= self._reversal_time):
             self._reversal = True
             print('REVERSAL')

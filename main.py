@@ -49,6 +49,7 @@ if seed and not mpi:
     cnf.main.seed = int(seed)
 if mpi:
     cnf.main.seed = int(rank)
+cnf.main.seed = hvd.rank()
 
 if vrep:
     config = {**cnf.main, **cnf.agent, **cnf.coppeliagym.params, **cnf.coppeliagym.sim, **cnf.buffer, **cnf.agent.sub_model, **cnf.agent.meta_model}

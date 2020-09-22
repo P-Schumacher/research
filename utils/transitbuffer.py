@@ -111,7 +111,7 @@ class TransitBuffer(ReplayBuffer):
         if done:
             self._sum_of_rewards += reward
             # This implicitly computes the next goal in the transitbuffer.
-            self._agent.select_action(next_state) 
+            self._agent.select_action(next_state, 0) 
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(self._meta_state, success_cd, FM)
             self._needs_reset = True

@@ -132,7 +132,8 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-        tape = hvd.DistributedGradientTape(tape)
+        if self._name == 'sub':
+            tape = hvd.DistributedGradientTape(tape)
         gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
@@ -149,7 +150,8 @@ class TD3(object):
                 state_action = tf.concat([state, action], 1)
                 actor_loss = self.critic.Q1(state_action)
                 mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-            tape = hvd.DistributedGradientTape(tape)
+            if self._name == 'sub':
+                tape = hvd.DistributedGradientTape(tape)
             gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
             gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
             self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))

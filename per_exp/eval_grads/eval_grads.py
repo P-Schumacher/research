@@ -52,9 +52,9 @@ def update_buffer(replay_buffer, agent):
 
 
 N = 1000000
-N_TRAIN_CRITIC = 50
-N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 20
+N_TRAIN_CRITIC = 5
+N_TRAIN_TRUE_CRITIC = 100
+SAMPLES = 5
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main

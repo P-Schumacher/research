@@ -76,9 +76,9 @@ def main(cnf):
     switch = 0
     reward_fn = tf.Variable(0)
     for t in range(int(cnf.max_timesteps)):
-        if not t % 100:
+        if not t % 10000:
             switch = (switch + 1) % 2
-        reward_fn.assign([1 if switch else 0][0])
+        reward_fn.assign([1 if switch else -1][0])
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)

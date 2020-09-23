@@ -293,9 +293,14 @@ class HierarchicalAgent(Agent):
             step = 0
             state, done = env.reset(evalmode=True), False
             self.reset()
+            if episode_nbr < (self._num_eval_episodes / 2.0):
+                reward_fn = 0
+            else:
+                reward_fn = 1
             while not done:
-                action = self.select_action(state)
-                next_state, reward, done, _ = env.step(action)
+                
+                action = self.select_action(state, reward_fn)
+                next_state, reward, done, _ = env.step(action, reward_fn)
                 avg_ep_reward.append(reward)
                 avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state, action))
                 state = next_state

@@ -31,7 +31,6 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        self.iteration += 1
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
@@ -147,106 +146,12 @@ class TD3(object):
             self.transfer_weights(self.critic, self.critic_target, self._tau)
             self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
-    def _maybe_goal_regul(self, action, reward, next_state, state_seq, action_seq, sub_agent):
-        if self._name == 'meta' and (self._goal_regul or self._distance_goal_regul):
-            return self._goal_regularization(action, reward, next_state, state_seq, action_seq, sub_agent)
-        else:
-            return reward
-
     def _maybe_offpol_correction(self, sub_actor, action, state, next_state, state_seq, action_seq):
         if self._name == 'meta' and self._offpolicy:
             return off_policy_correction(self._subgoal_ranges, self._target_dim, sub_actor, action, state, next_state,
                                          self._no_candidates, self._c_step, state_seq, action_seq, self._zero_obs) 
         else:
             return action
-
-    def _maybe_FM_reward(self, state, next_state, reward,  FM, log):
-        '''Uses a learned ForwardModel (or reward model) to
-        replace the reward during learning'''
-        if self._use_FM:
-            reward_FM = FM.forward_pass(state, next_state, reshape=False)
-            reward_FM *= 0.1
-            high_rews = tf.where(reward != -1.)[:,0]
-            low_rews = tf.where(reward == -1.)[:,0]
-            high_preds = tf.gather(reward_FM, high_rews)
-            low_preds = tf.gather(reward_FM, low_rews)
-            high_rews = tf.gather(reward, high_rews)
-            low_rews = tf.gather(reward, low_rews)
-            high_log = tf.reduce_sum(tf.abs(high_preds - high_rews))
-            low_log = tf.reduce_sum(tf.abs(low_preds - low_rews))
-            if log:
-                wandb.log({'FM/agentbatchRerror_high': high_log, 'FM/agentbatchRerror_low': low_log,
-                           'FM/agentbatch_lowpred': tf.reduce_mean(low_preds), 'FM/agentbatch_highpred':
-                           tf.reduce_mean(high_preds), 'FM/agentbatch_lowrew': tf.reduce_mean(low_rews),
-                           'FM/agentbatch_highrew':
-                           tf.reduce_mean(high_rews)}, commit=False)
-            return reward_FM 
-        else:
-            return reward
-
-    def _goal_regularization(self, action, reward, next_state, state_seq, action_seq, sub_agent):
-        #errors = []
-        #for idx, x in enumerate(state_seq):
-        #    y = action_seq[idx]
-        #    to_append = self._get_error(x, y, action[idx], reward[idx], sub_agent)
-        #    errors.append(to_append)
-        #errors = tf.reshape(errors, [len(errors), 1])
-        #return reward + self.goal_regul * tf.abs(errors) - tf.reshape(self.distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-        return reward - tf.reshape(self._distance_goal_regul *  euclid(next_state[:, :action.shape[1]] - action, axis=1), [128,1])
-
-    def _goal_transit_fn(self, goal, state, next_state):
-        dim = goal.shape[0]
-        return state[:dim] + goal - state[:dim]
-
-    def _get_error(self, state_stack, action_stack, goal, sumrew, sub_agent):
-        goal = tf.reshape(goal, [1, goal.shape[0]])
-        sum_of_td_errors = tf.constant(0.0, shape=[1,1])
-        for i in range(state_stack.shape[0] - 1):
-            if tf.reduce_any(tf.math.is_inf(state_stack[i+1])):
-                break
-            state = state_stack[i,:-self._target_dim]
-            state = tf.reshape(state, [1, state.shape[0]])
-            state = tf.concat([state, goal], axis=1)
-            low_action = action_stack[i,:]
-            low_action = tf.reshape(low_action, [1, low_action.shape[0]])
-            goal = self._goal_transit_fn(goal, state_stack[i], state_stack[i+1])
-            next_state = state_stack[i+1,:-self._target_dim]
-            next_state = tf.reshape(next_state, [1, next_state.shape[0]])
-            next_state = tf.concat([next_state, goal], axis=1)
-            intr_reward = self._compute_intr_rew(goal, state_stack[i], state_stack[i+1])  
-            #low_action = sub_agent.actor(state)
-            #low_action = low_action + tf.random.normal(shape=low_action.shape, mean=0, stddev=1.4)
-            error = self._compute_td_error_copy(sub_agent, state, low_action, intr_reward, next_state)
-            sum_of_td_errors += error
-        return sum_of_td_errors
-
-    def _compute_intr_rew(self, goal, state, next_state):
-        state = tf.reshape(state, [1, state.shape[0]])
-        next_state = tf.reshape(next_state, [1, next_state.shape[0]])
-        dim = goal.shape[1]
-        rew = -euclid(state[:, :dim] + goal - next_state[:, :dim], axis=1)
-        #rew = -euclid(goal - next_state[:, :dim], axis=1)
-        return rew
-
-    @tf.function
-    def _compute_td_error_copy(self, sub_agent, state, action, reward, next_state):
-        # ATTENTION HAVE REMOVED TERMINAL STATE CONDITION FOR THIS CASE
-        state_action = tf.concat([state, action], 1) # necessary because keras needs there to be 1 input arg to be able to build the model from shapes
-        reward = tf.reshape(reward, [1, 1])
-        noise = tf.random.normal(action.shape, stddev=self._policy_noise)
-        # this clip keeps the noisy action close to the original action
-        noise = tf.clip_by_value(noise, -sub_agent.noise_clip, sub_agent.noise_clip)
-        next_action = sub_agent.actor_target(next_state) + noise
-        # this clip assures that we don't take impossible actions a > max_action
-        next_action = tf.clip_by_value(next_action, -sub_agent._max_action, sub_agent._max_action)
-        # Compute the target Q value
-        next_state_next_action = tf.concat([next_state, next_action], 1)
-        target_Q1, target_Q2 = sub_agent.critic_target(next_state_next_action)
-        target_Q = tf.math.minimum(target_Q1, target_Q2)
-        target_Q = reward + self._discount * target_Q
-        # Critic Update
-        current_Q1, current_Q2 = sub_agent.critic(state_action)
-        return tf.abs(target_Q - current_Q1)
 
     def _prioritized_experience_update(self, per, td_error, next_state, action, reward, replay_buffer):
         '''Updates the priorities in the PER buffer depending on the *per* int.
@@ -294,7 +199,6 @@ class TD3(object):
         kwargs = {f'_{key}': value for key, value in kwargs.items()}
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        self.iteration = 0
         self._subgoal_ranges = np.array(self._subgoal_ranges, dtype=np.float32)
 
     def _prepare_algo_objects(self):

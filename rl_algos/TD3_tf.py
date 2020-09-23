@@ -32,7 +32,7 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        reward_new = self._maybe_FM_reward(state, next_state, reward, FM, log)
+        reward_new = reward
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
         if self._per:

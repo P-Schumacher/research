@@ -1,6 +1,6 @@
 project: 'threelayer_withoutreward'
 main:
-  render: false
+  render: true
   flat_agent: false
   log: false
   minilog: true
@@ -79,17 +79,16 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
-    sparse_rew: true
     action_regularizer: 0.00
     time_limit: 600
-    double_buttons: true
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.5
+    touch_distance: 0.6
     minimum_dist: 0.
     record_touches: false
-    reset_on_wrong_sequence: true
+    reset_on_wrong_sequence: false
+    reward_type: 'sparse_two_button_sequential'
 
   subgoals:
     ej_goal: [3, 1.0]

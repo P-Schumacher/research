@@ -12,6 +12,7 @@ def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
     agent.meta_replay_buffer.load_data('./per_exp/buffer_data/')
+    set_trace()
 
     buff = agent.meta_replay_buffer
     buff.size = N 
@@ -55,7 +56,6 @@ def main(cnf):
                 print(f' counter {counter}')
                 m1.append(buff.batch_idxs[i])
                 m2.append(t)
-    #print(np.std(m1))
     np.save('m1.npy', m1)    
     np.save('m2.npy', m2)    
     np.save('errors.npy', errors)

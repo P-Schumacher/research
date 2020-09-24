@@ -3,5 +3,5 @@
 python3 constant_buffer.py
 mv -t per_exp/buffer_data m1.npy m2.npy errors.npy
 cd per_exp 
-python3 test.py
+python3 visualize_buffer.py
 cd ..

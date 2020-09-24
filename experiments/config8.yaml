@@ -1,4 +1,4 @@
-project: 'distancethreshplot_random_2buttons'
+project: 'summary_plot_flat_notrandom'
 main:
   render: false
   flat_agent: true
@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_flat_0.3'
+  descriptor: 'notrandom_small_noise'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -33,7 +33,7 @@ main:
 agent:
   zero_obs: 0
   center_meta_goal: false
-  nstep: 1
+  nstep: 5
   meta_rew_scale: 0.1
   meta_noise: 0.644
   sub_noise: 1.4
@@ -52,7 +52,7 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: true
+  decay_noise: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -83,10 +83,10 @@ coppeliagym:
     action_regularizer: 0.00
     time_limit: 600
     double_buttons: true
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 100000000000
-    touch_distance: 0.3
+    touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

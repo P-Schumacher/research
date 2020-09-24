@@ -32,7 +32,7 @@ class CoppeliaEnv(gym.Env):
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
         self._sim.step()
-        reward = self._get_rew(action)
+        reward = self._get_rew(action, 'wwewe')
         done = self._get_done()
         observation = self._get_observation()
         info = self._get_info()
@@ -239,63 +239,107 @@ class CoppeliaEnv(gym.Env):
         # Gripper is handled with underactuation
         self._robot.actuate(action[-1])
 
-    def _get_rew(self, action):
-        '''Computes the reward for the environment. This is at the moment a certain distance between the *target* and the end-effector.
-        If *sparse_rew* the agent only gets sparse binary rewards. This function also computes an action space regularization reward 
-        which incentivizes small (more stable) actions. In the HIRO application, this reward is internally computed for the sub-agent,
-        NOT the meta-agent. The prefactor should consequently be set to zero in this class via the cnf files.
-        This function cannot be called repeatedly in two button mode because it alters the state of the buttons.
-        :param action: The action proposed by the agent.
-        :return: The reward obtained for the proposed action given the next state.'''
-        if self._sparse_rew:
-            #self.distance_first_button.append(self._distance_query_switcher(1))
-            #self.distance_second_button.append(self._distance_query_switcher(2))
-            rew = -1.
-            if self._double_buttons:
-                # 2 button touch task
-                if self._stop_counter >= COUNTER:
-                    if self._distance_query_switcher(1) < self._touch_distance and not self._button1 == 1:
-                        self._button1 = 1
-                        print('button 1 pressed')
-                    if self._distance_query_switcher(0) < self._touch_distance and not self._button2 == 1:
-                        self._button2 = 1
-                        print('button 2 pressed')
-                    if self._button2 == 1 and not self._button1 == 1:
-                        self.mega_reward = False
-                    if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
-                        rew += 50
-                        print('MEGA reward')
-                        #if self._record_touches:
-                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                    if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
-                        print('FAILURE Punishment')
-                        rew -= 0
-                        if self._reset_on_wrong_sequence:
-                            self._button1 = 0
-                            self._button2 = 0
-                            self.mega_reward = True
-                            self._stop_counter = 0
-                        if self._render:
-                            self._reset_button_colors()
-                        #if self._record_touches:
-                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                self._stop_counter += 1
-                return rew
-            else:
-                # One button touch task
-                if self._get_distance(self._ep_target_pos) < self._touch_distance:
-                    rew += 1
-                    self._button1 = 1
-                return rew
-        # dense reaching task
+    def _get_rew(self, action, type_rew):
+        if type_rew == 'dense':
+            return self._get_rew_dense(action)
+
+        if type_rew == 'sparse_one_button':
+            return self._get_rew_sparse_one_button(action)
+
+        if type_rew == 'sparse_two_button':
+            return self._get_rew_sparse_two_button(action)
+
+        if type_rew == 'sparse_two_button_sequential':
+            return self._get_rew_sparse_two_button_sequential_reset_wrapper(action)
+
+        raise Exception('''Pick one of the valid reward types:
+                        1) dense 
+                        2) sparse_one_button
+                        3) sparse_two_button
+                        4) sparse_two_button_sequential''')
+
+    def _get_rew_dense(action):
+        '''A dense reward based on the distance between the end-effector
+        and the box is given. A success is recorded if 
+        d < *self._touch_distance*'''
         dist = - self._get_distance(self._ep_target_pos)
         if tf.abs(dist) < self._touch_distance:
             self._button1 = True
         return  dist - self._action_regularizer * tf.square(tf.norm(action))
 
+    def _get_rew_sparse_one_button(action):
+        '''A sparse reward is given if the distance between the end-effector
+        and the box is below *self._touch_distance*'''
+        rew = -1.
+        # One button touch task
+        if self._get_distance(self._ep_target_pos) < self._touch_distance:
+            rew += 1
+            self._button1 = True
+        return rew
+
+    def _get_rew_sparse_two_button(action):
+        '''Compute a sparse reward based on two boxes where you just have
+        to make contact with the right one. There is a negative reward
+        for the incorrect contact and the episode only ends after correct 
+        contact.'''
+        rew = -1.
+        if self._distance_query_switcher(1) < self._touch_distance and not self._button1 == 1:
+            self._button1 = 1
+            print('button 1 pressed')
+            rew += 1
+        if self._distance_query_switcher(0) < self._touch_distance and not self._button2 == 1:
+            self._button2 = 1
+            print('button 2 pressed')
+            rew -= -1
+        return rew
+
+    def _get_rew_sparse_two_button_sequential_reset_counter_wrapper(action):
+        '''If *self._stop_counter* is enabled, this wrapper blocks button
+        touches and resulting rewards for *COUNTER* steps after every failure.'''
+        if self._stop_counter >= COUNTER:
+            rew, punishment = self._get_rew_sparse_two_button_sequential(action)
+            if punishment and self._reset_on_wrong_sequence:
+                self._reset_counter_settings()
+        if self._reset_on_wrong_sequence:
+            self._stop_counter += 1
+        return rew
+
+    def _reset_counter_settings(self):
+        '''Resets the appropriate settings if *self._reset_on_wrong_sequence* is 
+        enabled and an incorrect touching was detected.'''
+        self._button1 = False
+        self._button2 = False
+        self.mega_reward = True
+        self._stop_counter = 0
+        if self._render:
+            self._reset_button_colors()
+
+    def _get_rew_sparse_two_button_sequential(action):
+        '''A sparse reward is given if box 1 is touched before box 2.
+        The success condition evaluates to *True* no matter what order the 
+        boxes were touched in. This ensures the validity of the MDP.'''
+        punishment = False
+        rew = -1.
+        if self._distance_query_switcher(1) < self._touch_distance and not self._button1 == 1:
+            self._button1 = 1
+            print('button 1 pressed')
+        if self._distance_query_switcher(0) < self._touch_distance and not self._button2 == 1:
+            self._button2 = 1
+            print('button 2 pressed')
+        if self._button2 == 1 and not self._button1 == 1:
+            self.mega_reward = False
+        if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
+            rew += 50
+            print('MEGA reward')
+        if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
+            print('FAILURE Punishment')
+            rew -= self._punishment
+            punishment = True
+        return rew, punishment
+
     def _distance_query_switcher(self, box):
+        '''Switches the boxes used for distance and reward computation
+        if the *self._reversal* signal is given.'''
         if not self._reversal:
             if box == 1:
                 return self._get_distance(self._ep_target_pos)

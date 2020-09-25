@@ -4,6 +4,9 @@ from agent_files.Agent import Agent
 from utils.transitbuffer import TransitBuffer
 import wandb
 from pudb import set_trace
+import horovod.tensorflow as hvd
+from mpi4py import MPI
+world = MPI.COMM_WORLD
 
 class HierarchicalAgent(Agent):
     def __init__(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
@@ -35,8 +38,9 @@ class HierarchicalAgent(Agent):
         sub_avg = np.zeros([6,], dtype=np.float32) 
         meta_avg = np.zeros([6,], dtype=np.float32) 
         for train_index in range(episode_steps):
+            world.barrier()
             sub_avg = sub_avg + [self._train_sub_agent(timestep, train_index, forward_model) if self._train_sub else [0 for x in sub_avg]][0]
-            if (not train_index % self._c_step) and train_index:
+            if not timestep % 10:
                 meta_avg = meta_avg + [self._train_meta_agent(timestep, train_index, forward_model) if self._train_meta else [0 for x in meta_avg]][0]
         self._maybe_log_training_metrics(sub_avg / episode_steps, meta_avg / episode_steps, timestep)
 

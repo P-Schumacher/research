@@ -1,4 +1,4 @@
-project: 'distancethreshplot_random_2buttons_n5_horovod'
+project: 'horovod'
 main:
   render: false
   flat_agent: false
@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'random_hiro_0.3_n5_p6_onlysub'
+  descriptor: 'random_hiro_0.3_n5_p4_corrected'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -33,7 +33,7 @@ main:
 agent:
   zero_obs: 0
   center_meta_goal: false
-  nstep: 5
+  nstep: 1
   meta_rew_scale: 0.1
   meta_noise: 0.644
   sub_noise: 1.4

@@ -4,7 +4,9 @@ import wandb
 import sys
 import os
 from pudb import set_trace
-import horovod.tensorflow as hvd
+import horovod.tensorflow as hvd 
+import mpi4py
+mpi4py.rc.initialize = False
 try:
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
@@ -43,8 +45,8 @@ if ant_env:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)
 cnf.merge_with_cli()
-if hvd.rank() != 0:
-    cnf.main.log = False
+#if hvd.rank() != 0:
+#    cnf.main.log = False
 if seed and not mpi:
     cnf.main.seed = int(seed)
 if mpi:

@@ -75,6 +75,8 @@ def main(cnf):
     # Training loop
     state, done = env.reset(), False
     for t in range(int(cnf.max_timesteps)):
+        if t > cnf.start_timesteps:
+            agent.train(t, 1, FM)
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True)
@@ -91,8 +93,6 @@ def main(cnf):
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
-            if t > cnf.start_timesteps:
-                agent.train(t, logger.episode_timesteps, FM)
             if hvd.rank() == 0:
                 print(f"Total T: {t+1} Episode Num: {logger.episode_num+1} Episode T: {logger.episode_timesteps} Reward: {logger.episode_reward}")
             logger.log(t, intr_rew, c_step)

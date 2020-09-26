@@ -51,9 +51,9 @@ def update_buffer(replay_buffer, agent):
     replay_buffer.update_priorities(td_error)
 
 
-N = 1000000
+N = 1000
 N_TRAIN_CRITIC = 5
-N_TRAIN_TRUE_CRITIC = 100
+N_TRAIN_TRUE_CRITIC = 10
 SAMPLES = 5
 def main(cnf):
     env, agent = create_world(cnf)
@@ -88,7 +88,7 @@ def main(cnf):
     gradients_true = accum.get_grad() 
 
     # TODO AVERAGE OVER BATCHES
-    batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 6000, 1000)], axis=0)
+    batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 1000, 1000)], axis=0)
     simil_list = []
     for batch_size in batch_range:
         print(f'Batch {batch_size}')

@@ -12,10 +12,10 @@ def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
     agent.meta_replay_buffer.load_data('./per_exp/buffer_data/')
-    set_trace()
 
     buff = agent.meta_replay_buffer
     buff.size = N 
+    print(buff.alpha)
     new_rew = []
     if True:
         co = 0
@@ -41,7 +41,7 @@ def main(cnf):
     errors = np.zeros([N, N])
     for t in range(N):
         #print(f'train {t} of 10000')
-        agent._meta_agent.train(buff, 10, t, False, None)
+        agent._meta_agent.train(buff, 5, t, False, None)
         #print(buff.batch_idxs)
         state, action, reward, next_state, done = buff.get_buffer() 
         error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)

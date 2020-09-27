@@ -41,7 +41,7 @@ def main(cnf):
     errors = np.zeros([N, N])
     for t in range(N):
         #print(f'train {t} of 10000')
-        agent._meta_agent.train(buff, 5, t, False, None)
+        agent._meta_agent.train(buff, 100, t, False, None)
         #print(buff.batch_idxs)
         state, action, reward, next_state, done = buff.get_buffer() 
         error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)

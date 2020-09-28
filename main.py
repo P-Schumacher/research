@@ -4,7 +4,9 @@ import wandb
 import sys
 import os
 from pudb import set_trace
+tf.config.threading.set_intra_op_parallelism_threads(4)
 try:
+    print(a)
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()

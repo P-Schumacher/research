@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_small_noise'
+  descriptor: 'notrandom_large_noise_annealing'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -36,7 +36,7 @@ agent:
   nstep: 5
   meta_rew_scale: 0.1
   meta_noise: 0.644
-  sub_noise: 1.4
+  sub_noise: 25.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -52,7 +52,7 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: false
+  decay_noise: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]

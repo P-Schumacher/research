@@ -84,7 +84,6 @@ def main(cnf):
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
         action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)
         next_state, reward, done, _ = env.step(action, reward_fn)
-        print(next_state)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)

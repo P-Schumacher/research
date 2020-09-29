@@ -1,13 +1,13 @@
-project: 'threelayer_withoutreward'
+project: 'threelayer_withoutreward_dense'
 main:
   render: true
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'first_try_nextstate_transit_still_wrong_0.5_reset_on_wrong'
+  descriptor: 'first_try_nextstate_transit_still_wrong_0.3_dense'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -81,14 +81,14 @@ coppeliagym:
   params:
     action_regularizer: 0.00
     time_limit: 600
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 100000000000
-    touch_distance: 0.6
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    reward_type: 'sparse_two_button_sequential'
+    reward_type: 'dense'
 
   subgoals:
     ej_goal: [3, 1.0]

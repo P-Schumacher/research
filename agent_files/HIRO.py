@@ -189,12 +189,13 @@ class HierarchicalAgent(Agent):
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         if self._smooth_goal:
             meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim 
-        meta_env_spec['state_dim'] += 2
+        #meta_env_spec['state_dim'] += 2
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        self._add_third_goal(state, reward_fn)
+        #self._add_third_goal(state, reward_fn)
+        self._meta_state = state
         self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)

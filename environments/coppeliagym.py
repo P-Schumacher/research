@@ -242,6 +242,16 @@ class CoppeliaEnv(gym.Env):
         if type_rew == 'sparse_one_button':
             return self._get_rew_sparse_one_button(action)
 
+        if type_rew == 'dense_two_button':
+            if not self._reversal:
+                self._state_b1 = False
+                self._state_b2 = True
+            else:
+                self._state_b1 = True
+                self._state_b2 = False
+
+            return self._get_rew_dense_two_button(action)
+
         if type_rew == 'sparse_two_button':
             if not self._reversal:
                 self._state_b1 = False
@@ -258,8 +268,9 @@ class CoppeliaEnv(gym.Env):
         raise Exception('''Pick one of the valid reward types:
                         1) dense 
                         2) sparse_one_button
-                        3) sparse_two_button
-                        4) sparse_two_button_sequential''')
+                        3) dense_one_button
+                        4) sparse_two_button
+                        5) sparse_two_button_sequential''')
 
     def _get_rew_dense(self, action):
         '''A dense reward based on the distance between the end-effector
@@ -280,6 +291,23 @@ class CoppeliaEnv(gym.Env):
             self._state_b1 = True
         return rew
 
+    def _get_rew_dense_two_button(self, action):
+        '''Compute a sparse reward based on two boxes where you just have
+        to make contact with the right one. There is a negative reward
+        for the incorrect contact and the episode only ends after correct 
+        contact.'''
+        if not self._reversal:
+            rew = - self._get_distance(self._pos_b1)
+        else:
+            rew = - self._get_distance(self._pos_b2)
+        if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
+            self._state_b1 = 1
+            #print('button 1 pressed')
+        if self._get_distance(self._pos_b2)  < self._touch_distance:
+            pass
+            #print('button 2 pressed')
+        return rew
+
     def _get_rew_sparse_two_button(self, action):
         '''Compute a sparse reward based on two boxes where you just have
         to make contact with the right one. There is a negative reward
@@ -287,7 +315,6 @@ class CoppeliaEnv(gym.Env):
         contact.'''
         rew = -1.
         if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
-            set_trace()
             self._state_b1 = 1
             print('button 1 pressed')
             rew += 1

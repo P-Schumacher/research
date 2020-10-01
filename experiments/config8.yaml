@@ -1,18 +1,18 @@
-project: 'summary_plot_hiro_notrandom'
+project: 'summary_plot_flat_notrandom'
 main:
   render: false
-  flat_agent: false
-  log: true
+  flat_agent: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
   load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_decay_noise'
+  descriptor: 'notrandom_small_noise_non_nstep'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
-  max_timesteps: 5000000
+  start_timesteps: 128
+  max_timesteps: 3000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -48,11 +48,11 @@ agent:
   smooth_factor: 0.001
   add_multiple_dones: false
   per: 1
-  sub_per: 0
+  sub_per: 1
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: true
+  decay_noise: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]

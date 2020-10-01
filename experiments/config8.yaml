@@ -1,18 +1,18 @@
-project: 'summary_plot_flat_notrandom'
+project: 'threelayer_withoutreward_dense'
 main:
   render: false
-  flat_agent: true
+  flat_agent: false
   log: true
   minilog: true
-  save_model: false
+  save_model: true
   load_model: false
-  load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'notrandom_small_noise'
+  load_string: 'switching_all_1000'
+  descriptor: 'first_try_nextstate_transit_still_wrong_0.3_dense'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 5000000
+  max_timesteps: 3000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -33,7 +33,7 @@ main:
 agent:
   zero_obs: 0
   center_meta_goal: false
-  nstep: 5
+  nstep: 1
   meta_rew_scale: 0.1
   meta_noise: 0.644
   sub_noise: 1.4
@@ -48,7 +48,7 @@ agent:
   smooth_factor: 0.001
   add_multiple_dones: false
   per: 1
-  sub_per: 1
+  sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
@@ -79,10 +79,7 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
-    sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 600
-    double_buttons: true
     random_target: false
     random_eval_target: false
     reversal_time: 100000000000
@@ -90,6 +87,7 @@ coppeliagym:
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
+    task: 'dense_two_button'
 
   subgoals:
     ej_goal: [3, 1.0]

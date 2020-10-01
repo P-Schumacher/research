@@ -11,21 +11,21 @@ class HierarchicalAgent(Agent):
         self._self_prepare_algo_objects(agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
         self._prepare_control_variables()
         
-    def select_action(self, state, noise_bool=False):
+    def select_action(self, state, reward_fn, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
         saved(!) for the add-fct. Depending on input, gaussian noise is added to the goal and the action. Goal smoothing 
         means taking the Polyak Average of the old and the new goal. 
         :param state: State of the MDP.
         :param noise_bool: Boolean indicating if noise should be added to the action and the goal.
         :return action: The action that the sub-agent takes.'''
-        self._get_meta_goal(state)
+        self._get_meta_goal(state, reward_fn)
         if self.meta_time:
             self._maybe_apply_goal_clipnoise(noise_bool)
             # Need to correct goal after applying noise
             self._maybe_goal_smoothing()
         action = self._get_sub_action(state) 
         if self._decay_noise:
-            self._meta_noise *= 0.9999999
+            self._meta_noise *= 0.999999
             if self._log:
                 wandb.log({'metanoise':self._meta_noise}, commit=False)
         return self._maybe_apply_action_clipnoise(action, noise_bool)
@@ -67,8 +67,7 @@ class HierarchicalAgent(Agent):
         self._transitbuffer.reset()
 
     def _self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.load_string)
-        
+        self._load_string = main_cnf.load_string
         meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
         self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
                                            buffer_cnf)
@@ -189,18 +188,27 @@ class HierarchicalAgent(Agent):
         meta_env_spec['max_action'] = self._subgoal_ranges
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         if self._smooth_goal:
-            meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim
+            meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim 
+        meta_env_spec['state_dim'] += 2
         return meta_env_spec, sub_env_spec
 
-    def _get_meta_goal(self, state):
+    def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        self._maybe_modify_smoothed_state(state)
+        self._add_third_goal(state, reward_fn)
+        #self._meta_state = state
+        self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
         if self.meta_time:
             self._maybe_mock()
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
+
+    def _add_third_goal(self, state, reward_fn):
+        if reward_fn == 0:
+            self._meta_state = np.concatenate([state, np.array([1,0])], -1)
+        else:
+            self._meta_state = np.concatenate([state, np.array([0,1])], -1)
 
     def _maybe_modify_smoothed_state(self, state):
         '''Concatenates the previous given goal to the state vector for the
@@ -280,15 +288,20 @@ class HierarchicalAgent(Agent):
         rate_correct_solves = 0
         success_rate = 0
         untouchable_steps = 0
-        visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
+        visitation = np.zeros((env.time_limit, env.observation_space.shape[0]))
         for episode_nbr in range(self._num_eval_episodes):
             print(f'eval number: {episode_nbr} of {self._num_eval_episodes}')
             step = 0
             state, done = env.reset(evalmode=True), False
             self.reset()
+            if episode_nbr < (self._num_eval_episodes / 2.0):
+                reward_fn = 0
+            else:
+                reward_fn = 1
             while not done:
-                action = self.select_action(state)
-                next_state, reward, done, _ = env.step(action)
+                
+                action = self.select_action(state, reward_fn)
+                next_state, reward, done, _ = env.step(action, reward_fn)
                 avg_ep_reward.append(reward)
                 avg_intr_reward.append(self._transitbuffer.compute_intr_reward(self.goal, state, next_state, action))
                 state = next_state
@@ -297,13 +310,13 @@ class HierarchicalAgent(Agent):
                 if visit:
                     visitation[step, :] = state
                 step += 1
-                if done and step < env.max_episode_steps:
+                if done and step < env.time_limit:
                     success_rate += 1
                     if env._double_buttons:
                         if env.mega_reward:
                             rate_correct_solves += 1
             if visit:
-                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
+                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._load_string}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes

@@ -114,7 +114,7 @@ class TD3(object):
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self._discount ** self._nstep * target_Q
         # Critic Update
-        with tf.GradientTape() as tape:
+        with tf.GradientTape() as tape2:
             current_Q1, current_Q2 = self.critic(state_action)
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
@@ -122,8 +122,7 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-
-        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
+        gradients = tape2.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)

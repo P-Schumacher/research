@@ -19,7 +19,7 @@ class Agent:
             self._replay_buffer = ReplayBuffer(specs['state_dim'], specs['action_dim'], buffer_cnf)
         if self._nstep != 1:
             self._replay_buffer = nstepbuffer(self._replay_buffer, nstep=self._nstep)
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.load_string)
+        self._load_string = main_cnf.load_string
         self._policy = model(**specs, **agent_cnf.sub_model) 
         self._ounoise = OUNoise(ou_mu=np.zeros(shape=specs['action_dim']), sigma=self._sub_noise)
         
@@ -34,7 +34,7 @@ class Agent:
         self.reset()
         return avg_reward, avg_intr_reward, success_rate, rate_correct_solves, untouchable_steps
 
-    def select_action(self, state, noise_bool=False):
+    def select_action(self, state, noise_bool=False, reward_fn=False):
         state = np.array(state)
         action = self._policy.select_action(state) 
         if noise_bool:
@@ -99,14 +99,6 @@ class Agent:
     def _gaussian_noise(self, expl_noise, dimension=1):
         return np.array(np.random.normal(0, expl_noise, dimension), dtype=np.float32) 
 
-    def _create_file_name(self, policy, env, descriptor):
-        '''Create file_name from experiment information to save model weights.'''
-        file_name = f'{policy}_{env}_{descriptor}'
-        print("---------------------------------------")
-        print(f"Policy: {policy}, Env: {env}")
-        print("---------------------------------------")
-        return file_name
-
     # Runs policy for X episodes and returns average reward
     # A fixed seed is used for the eval environment
     def _eval_policy(self, env, seed, visit):
@@ -124,14 +116,14 @@ class Agent:
             state, done = env.reset(evalmode=True), False
             self.reset()
             while not done:
-                action = self.select_action(state)
-                next_state, reward, done, _ = env.step(action)
+                action = self.select_action(state, reward_fn=0)
+                next_state, reward, done, _ = env.step(action, reward_fn=0)
                 avg_ep_reward.append(reward)
                 state = next_state
                 if env._stop_counter < 20:
                     untouchable_steps += 1
                 step += 1
-                if done and step < env.max_episode_steps:
+                if done and step < env.time_limit:
                     success_rate += 1
                     if env._double_buttons:
                         if env.mega_reward:

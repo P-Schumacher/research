@@ -27,7 +27,7 @@ def create_env(cnf):
         print(f'Force mode is {cnf.coppeliagym.params.force}')
         print(f'ee pos is: {cnf.coppeliagym.params.ee_pos}')
         env = CoppeliaEnv(cnf.coppeliagym)
-        print(f'Target is: {env._ep_target_pos}')
+        print(f'Target is: {env._pos_b1}')
         if cnf.main.render:
             env.render()
         return env

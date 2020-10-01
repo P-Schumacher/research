@@ -67,7 +67,7 @@ class HierarchicalAgent(Agent):
         self._transitbuffer.reset()
 
     def _self_prepare_algo_objects(self, agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim):
-        self._file_name = self._create_file_name(main_cnf.model, main_cnf.env, main_cnf.load_string)
+        self._load_string = main_cnf.load_string
         meta_env_spec, sub_env_spec = self._build_modelspecs(env_spec)
         self._transitbuffer = TransitBuffer(self, sub_env_spec, meta_env_spec, subgoal_dim, self._target_dim, main_cnf, agent_cnf,
                                            buffer_cnf)
@@ -189,13 +189,13 @@ class HierarchicalAgent(Agent):
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         if self._smooth_goal:
             meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim 
-        #meta_env_spec['state_dim'] += 2
+        meta_env_spec['state_dim'] += 2
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        #self._add_third_goal(state, reward_fn)
-        self._meta_state = state
+        self._add_third_goal(state, reward_fn)
+        #self._meta_state = state
         self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
@@ -288,7 +288,7 @@ class HierarchicalAgent(Agent):
         rate_correct_solves = 0
         success_rate = 0
         untouchable_steps = 0
-        visitation = np.zeros((env.max_episode_steps, env.observation_space.shape[0]))
+        visitation = np.zeros((env.time_limit, env.observation_space.shape[0]))
         for episode_nbr in range(self._num_eval_episodes):
             print(f'eval number: {episode_nbr} of {self._num_eval_episodes}')
             step = 0
@@ -310,13 +310,13 @@ class HierarchicalAgent(Agent):
                 if visit:
                     visitation[step, :] = state
                 step += 1
-                if done and step < env.max_episode_steps:
+                if done and step < env.time_limit:
                     success_rate += 1
                     if env._double_buttons:
                         if env.mega_reward:
                             rate_correct_solves += 1
             if visit:
-                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._file_name}', visitation)
+                np.save('./results/visitation/visitation_{self._evals}_{episode_nbr}_{self._load_string}', visitation)
 
         avg_ep_reward = np.sum(avg_ep_reward) / self._num_eval_episodes
         avg_intr_reward = np.sum(avg_intr_reward) / self._num_eval_episodes

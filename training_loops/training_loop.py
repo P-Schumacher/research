@@ -10,7 +10,6 @@ from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 from rl_algos.FM import ForwardModel
-
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
@@ -67,18 +66,17 @@ def main(cnf):
     FM = ForwardModel(26, logging=cnf.main.log, oracle=False)
     cnf = cnf.main
     # create objects 
-    logger = Logger(cnf.log, cnf.minilog, cnf.time_limit)
+    logger = Logger(cnf.log, cnf.minilog, env.time_limit)
     stepper = exponential_decay(**cnf.step_decayer)
     # Load previously trained model.
-    if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
+    if cnf.load_model: agent.load_model(f'./experiments/models/{agent._load_string}')
     # Training loop
     state, done = env.reset(), False
     switch = 0
     reward_fn = tf.Variable(0)
     for t in range(int(cnf.max_timesteps)):
-        if not t % 60000:
+        if not t % 100:
             switch = (switch + 1) % 2
-        reward_fn.assign([0 if switch else 1][0])
         #reward_fn.assign(1)
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
@@ -95,6 +93,7 @@ def main(cnf):
         #logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         state = next_state
         if done:
+            reward_fn.assign([0 if switch else 1][0])
             # Train at the end of the episode for the appropriate times. makes collecting
             # norms stds and losses easier
             if t > cnf.start_timesteps:
@@ -111,5 +110,5 @@ def main(cnf):
             agent.reset()
             logger.reset(post_eval=True)
             logger.log_eval(t, avg_ep_rew, avg_intr_rew, success_rate, rate_correct_solves, untouchable_steps)
-            if cnf.save_model: agent.save_model(f'./experiments/models/{agent._file_name}')
+            if cnf.save_model: agent.save_model(f'./experiments/models/{agent._load_string}')
 

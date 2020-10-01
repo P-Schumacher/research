@@ -32,7 +32,7 @@ class CoppeliaEnv(gym.Env):
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
         self._sim.step()
-        reward = self._get_rew(action, self._reward_type)
+        reward = self._get_rew(action, self._task)
         done = self._get_done()
         observation = self._get_observation()
         info = self._get_info()
@@ -61,6 +61,8 @@ class CoppeliaEnv(gym.Env):
         # This resets the gripper to its initial state, even if it broke during table touches
         self._sim.set_configuration_tree(self._initial_arm_conftree)
         self._sim.set_configuration_tree(self._initial_gripper_conftree)
+        if self._render and self._double_buttons:
+            self._reset_button_colors()
         state = self._reset(evalmode)
         # Control flow for task success
         self.success = False
@@ -68,11 +70,6 @@ class CoppeliaEnv(gym.Env):
         self._state_b1 = 0
         self._state_b2 = 0
         self._stop_counter = COUNTER
-        if not self._double_buttons:
-            # this ignores the second button in the *get_done()* fct.
-            self._state_b2 = 1
-        if self._render and self._double_buttons:
-            self._reset_button_colors()
         return state
 
     def render(self, mode='human'):
@@ -173,20 +170,20 @@ class CoppeliaEnv(gym.Env):
     def _prepare_parameters(self, **kwargs):
         # Config settings
         kwargs = {f'_{key}': value for key, value in kwargs.items()}
-        kwargs['max_episode_steps'] = kwargs.pop('_time_limit')
         kwargs['force_mode'] = kwargs.pop('_force')
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
         self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(self._max_torque, np.float64)
         self._distance_fn = self._get_distance_fn(self._distance_function)
+        self.time_limit = [600 if 'two' in self._task else 300][0]
         # Control flow
         self._timestep = 0
         self._needs_reset = True
         self._init = False
         self._total_it = 0
         self._reversal = False
-        self._double_buttons = bool('two' in self._reward_type)
+        self._double_buttons = bool('two' in self._task)
         # Need these before reset to get observation.shape
         self._state_b1 = 0
         self._state_b2 = 0
@@ -235,14 +232,14 @@ class CoppeliaEnv(gym.Env):
         # Gripper is handled with underactuation
         self._robot.actuate(action[-1])
 
-    def _get_rew(self, action, type_rew):
-        if type_rew == 'dense':
+    def _get_rew(self, action, task):
+        if task == 'dense':
             return self._get_rew_dense(action)
 
-        if type_rew == 'sparse_one_button':
+        if task == 'sparse_one_button':
             return self._get_rew_sparse_one_button(action)
 
-        if type_rew == 'dense_two_button':
+        if task == 'dense_two_button':
             if not self._reversal:
                 self._state_b1 = False
                 self._state_b2 = True
@@ -252,7 +249,7 @@ class CoppeliaEnv(gym.Env):
 
             return self._get_rew_dense_two_button(action)
 
-        if type_rew == 'sparse_two_button':
+        if task == 'sparse_two_button':
             if not self._reversal:
                 self._state_b1 = False
                 self._state_b2 = True
@@ -262,7 +259,7 @@ class CoppeliaEnv(gym.Env):
 
             return self._get_rew_sparse_two_button(action)
 
-        if type_rew == 'sparse_two_button_sequential':
+        if task == 'sparse_two_button_sequential':
             return self._get_rew_sparse_two_button_sequential_reset_counter_wrapper(action)
 
         raise Exception('''Pick one of the valid reward types:
@@ -298,10 +295,17 @@ class CoppeliaEnv(gym.Env):
         contact.'''
         if not self._reversal:
             rew = - self._get_distance(self._pos_b1)
+            if self._get_distance(self._pos_b2) < self._touch_distance:
+                rew -= 1000
         else:
             rew = - self._get_distance(self._pos_b2)
-        if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
-            self._state_b1 = 1
+            if self._get_distance(self._pos_b1) < self._touch_distance:
+                rew -= 1000
+        if self._distance_query_switcher(0) < self._touch_distance:
+            if not self._reversal:
+                self._state_b1 = 1
+            else:
+                self._state_b2 = 1
             #print('button 1 pressed')
         if self._get_distance(self._pos_b2)  < self._touch_distance:
             pass
@@ -392,7 +396,7 @@ class CoppeliaEnv(gym.Env):
         if self._state_b1 == 1 and self._state_b2 == 1:
             print("Success")
             self.success = True
-        elif self._timestep >= self.max_episode_steps - 1:
+        elif self._timestep >= self.time_limit - 1:
             pass
         else:
             self._needs_reset = False
@@ -439,8 +443,9 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             target = self._pos_b1[:-1]
         else:
-            target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
-                                     [self._state_b2]], axis=0)
+            #target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
+            #                         [self._state_b2]], axis=0)
+            target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
         return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):

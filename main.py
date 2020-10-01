@@ -4,6 +4,9 @@ import wandb
 import sys
 import os
 from pudb import set_trace
+import tensorflow as tf
+tf.config.threading.set_inter_op_parallelism_threads(0)
+tf.config.threading.set_intra_op_parallelism_threads(0)
 try:
     from mpi4py import MPI
     comm = MPI.COMM_WORLD

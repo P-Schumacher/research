@@ -7,12 +7,12 @@ main:
   save_model: true
   load_model: false
   load_string: 'switching_all_1000'
-  descriptor: 'first_try_nextstate_transit_still_wrong_0.3_dense'
+  descriptor: 'switch10000'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 3000000
+  max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000
   simple_env: false

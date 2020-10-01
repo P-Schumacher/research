@@ -6,7 +6,7 @@ import os
 from pudb import set_trace
 import tensorflow as tf
 tf.config.experimental.enable_mlir_graph_optimization()
-tf.config.threading.set_inter_op_parallelism_threads(4)
+tf.config.threading.set_inter_op_parallelism_threads(1)
 tf.config.threading.set_intra_op_parallelism_threads(4)
 
 try:

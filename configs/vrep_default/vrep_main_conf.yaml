@@ -14,7 +14,6 @@ main:
   load_string: 'None'
   start_timesteps: 5000
   max_timesteps: 1500000
-  time_limit: ${coppeliagym.params.time_limit}
   offpolicy: false
   flat_agent: false 
   batch_size: 128

@@ -2,7 +2,7 @@ project: 'threelayer_withoutreward_dense'
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
   save_model: true
   load_model: false
@@ -11,7 +11,7 @@ main:
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 5000
   max_timesteps: 3000000
   no_seed: false
   eval_freq: 20000
@@ -80,7 +80,6 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    time_limit: 600
     random_target: false
     random_eval_target: false
     reversal_time: 100000000000
@@ -88,7 +87,7 @@ coppeliagym:
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    reward_type: 'dense'
+    task: 'dense_two_button'
 
   subgoals:
     ej_goal: [3, 1.0]

@@ -48,7 +48,7 @@ class ReplayBuffer(object):
             setattr(self, field, np.load(f'{directory}{field}.npy'))
 
     def reset(self):
-        if self.state_dim == 28:
+        if self.state_dim == 26:
             x = 2
         else:
             x = 0 

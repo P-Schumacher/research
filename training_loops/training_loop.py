@@ -11,7 +11,6 @@ from utils.logger import Logger
 from utils.utils import create_world, exponential_decay
 from rl_algos.FM import ForwardModel
 
-
 def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
     if cnf.render:
         if not cnf.flat_agent:
@@ -74,19 +73,25 @@ def main(cnf):
     if cnf.load_model: agent.load_model(f'./experiments/models/{agent._file_name}')
     # Training loop
     state, done = env.reset(), False
+    switch = 0
+    reward_fn = tf.Variable(0)
     for t in range(int(cnf.max_timesteps)):
+        if not t % 1000:
+            switch = (switch + 1) % 2
+        reward_fn.assign([0 if switch else 1][0])
         reverser.maybe_reset_things_for_reversal(t)
         c_step = decay_step(cnf.decay, stepper, agent, cnf.flat_agent, cnf.c_step)
-        action = agent.select_action(state, noise_bool=True)
-        next_state, reward, done, _ = env.step(action)
+        action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)
+        next_state, reward, done, _ = env.step(action, reward_fn)
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM)
         if not cnf.flat_agent and agent._meta_agent._use_FM:
             FM.train(state, next_state, reward, success_cd, done)
+            print("TRAIN FM")
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
-        logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
+        #logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         state = next_state
         if done:
             # Train at the end of the episode for the appropriate times. makes collecting

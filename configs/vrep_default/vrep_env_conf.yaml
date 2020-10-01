@@ -26,12 +26,13 @@ coppeliagym:
     distance_function: euclid
     spherical_coord: ${agent.spherical_coord}
     flat_agent: ${main.flat_agent}
-    double_buttons: false
     reversal_time: 100000000
     touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
+    punishment: 0
+    reward_type: 'dense'
 
   subgoals:
     ee_goal: 5.

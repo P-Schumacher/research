@@ -27,24 +27,28 @@ class CoppeliaEnv(gym.Env):
         if cnf.params.ee_pos and cnf.params.ee_j_pos:
             raise Exception(f'Decide on your state space! ee_pos:{cnf.params.ee_pos} ee_j_pos:{cnf.params.ee_j_pos}')
 
-    def step(self, action):
+    def step(self, action, reward_fn):
         if self._needs_reset:
             raise Exception('You should reset the environment before you step further.')
         self._apply_action(action)
         self._sim.step()
-        reward = self._get_rew(action)
+        reward = self._get_rew(action, self._reward_type)
         done = self._get_done()
         observation = self._get_observation()
         info = self._get_info()
         self._timestep += 1
         self._total_it +=1 
+        if reward_fn:
+            self._reversal = True
+        else:
+            self._reversal = False
         if not self._reversal and (self._total_it >= self._reversal_time):
             self._reversal = True
             print('REVERSAL')
         if self._render and self._double_buttons:
-            if self._button1 == 1:
+            if self._state_b1 == 1:
                 self._target.set_color([1, 0, 1])
-            if self._button2 == 1:
+            if self._state_b2 == 1:
                 self._target2.set_color([1, 0, 1])
         return observation, reward, done, info
 
@@ -61,12 +65,12 @@ class CoppeliaEnv(gym.Env):
         # Control flow for task success
         self.success = False
         self.mega_reward = True
-        self._button1 = 0
-        self._button2 = 0
+        self._state_b1 = 0
+        self._state_b2 = 0
         self._stop_counter = COUNTER
         if not self._double_buttons:
             # this ignores the second button in the *get_done()* fct.
-            self._button2 = 1
+            self._state_b2 = 1
         if self._render and self._double_buttons:
             self._reset_button_colors()
         return state
@@ -81,8 +85,10 @@ class CoppeliaEnv(gym.Env):
             self._gym_cam = VisionSensor.create([640, 360])
             self._gym_cam2 = VisionSensor('Vision_sensor')
             self._gym_cam.set_pose(cam_placeholder.get_pose())
-            self._gym_cam.set_render_mode(RenderMode.OPENGL3_WINDOWED)
-            self._gym_cam2.set_render_mode(RenderMode.OPENGL3_WINDOWED)
+            #self._gym_cam.set_render_mode(RenderMode.OPENGL3_WINDOWED)
+            #self._gym_cam2.set_render_mode(RenderMode.OPENGL3_WINDOWED)
+            self._gym_cam.set_render_mode(RenderMode.EXTERNAL_WINDOWED)
+            self._gym_cam2.set_render_mode(RenderMode.EXTERNAL_WINDOWED)
             if mode == "rgb_array":
                 self._gym_cam.set_render_mode(RenderMode.OPENGL3)
         if mode == "rgb_array":
@@ -126,11 +132,11 @@ class CoppeliaEnv(gym.Env):
         '''Create python handles for the objects in the scene.'''
         self._table = Shape('customizableTable')
         self._target = Shape('target')
-        self._ep_target_pos = self._target.get_position()
+        self._pos_b1 = self._target.get_position()
         self._target_init_pose = self._target.get_pose()
         if self._double_buttons:
             self._target2 = Shape('target1')
-            self._ep_target_pos2 = self._target2.get_position()
+            self._pos_b2 = self._target2.get_position()
             self._target_init_pose2 = self._target2.get_pose()
         self._gym_cam = None
         self._target.set_renderable(True)
@@ -173,7 +179,7 @@ class CoppeliaEnv(gym.Env):
         kwargs['force_mode'] = kwargs.pop('_force')
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
-        self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses ra    d / s
+        self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(self._max_torque, np.float64)
         self._distance_fn = self._get_distance_fn(self._distance_function)
         # Control flow
@@ -182,15 +188,11 @@ class CoppeliaEnv(gym.Env):
         self._init = False
         self._total_it = 0
         self._reversal = False
+        self._double_buttons = bool('two' in self._reward_type)
         # Need these before reset to get observation.shape
-        self._button1 = 0
-        self._button2 = 0
-        self._pos_reward = 50
-        self._neg_reward = 0
+        self._state_b1 = 0
+        self._state_b2 = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
-        if self._record_touches:
-            self.distance_first_button = []
-            self.distance_second_button = []
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Generate subgoal ranges that the HIRO uses to determine its subgoal dimensions.  Not useful
@@ -204,10 +206,10 @@ class CoppeliaEnv(gym.Env):
         else:
             self.subgoal_ranges = [j_goal for x in range(7)]
         if not self._double_buttons:
-            self.target_dim = self._ep_target_pos.shape[0] - 1
+            self.target_dim = self._pos_b1.shape[0] - 1
         else:
             #self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 + 1
-            self.target_dim = (self._ep_target_pos.shape[0] - 1) * 2 + 2 
+            self.target_dim = (self._pos_b1.shape[0] - 1) * 2 + 2 
         self.subgoal_dim = len(self.subgoal_ranges)
 
     def _apply_action(self, action):
@@ -235,73 +237,151 @@ class CoppeliaEnv(gym.Env):
         # Gripper is handled with underactuation
         self._robot.actuate(action[-1])
 
-    def _get_rew(self, action):
-        '''Computes the reward for the environment. This is at the moment a certain distance between the *target* and the end-effector.
-        If *sparse_rew* the agent only gets sparse binary rewards. This function also computes an action space regularization reward 
-        which incentivizes small (more stable) actions. In the HIRO application, this reward is internally computed for the sub-agent,
-        NOT the meta-agent. The prefactor should consequently be set to zero in this class via the cnf files.
-        This function cannot be called repeatedly in two button mode because it alters the state of the buttons.
-        :param action: The action proposed by the agent.
-        :return: The reward obtained for the proposed action given the next state.'''
-        if self._sparse_rew:
-            #self.distance_first_button.append(self._distance_query_switcher(1))
-            #self.distance_second_button.append(self._distance_query_switcher(2))
-            rew = -1.
-            if self._double_buttons:
-                # 2 button touch task
-                if self._stop_counter >= COUNTER:
-                    if self._distance_query_switcher(1) < self._touch_distance and not self._button1 == 1:
-                        self._button1 = 1
-                        print('button 1 pressed')
-                    if self._distance_query_switcher(0) < self._touch_distance and not self._button2 == 1:
-                        self._button2 = 1
-                        print('button 2 pressed')
-                    if self._button2 == 1 and not self._button1 == 1:
-                        self.mega_reward = False
-                    if (self._button1 == 1 and self._button2 == 1) and self.mega_reward:
-                        rew += 50
-                        print('MEGA reward')
-                        #if self._record_touches:
-                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                    if (self._button1 == 1 and self._button2 == 1) and not self.mega_reward:
-                        print('FAILURE Punishment')
-                        rew -= 0
-                        if self._reset_on_wrong_sequence:
-                            self._button1 = 0
-                            self._button2 = 0
-                            self.mega_reward = True
-                            self._stop_counter = 0
-                        if self._render:
-                            self._reset_button_colors()
-                        #if self._record_touches:
-                        #    self.distance_first_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos2))
-                        #    self.distance_second_button.append(self._distance_fn(self._init_gripper, self._ep_target_pos))
-                self._stop_counter += 1
-                return rew
+    def _get_rew(self, action, type_rew):
+        if type_rew == 'dense':
+            return self._get_rew_dense(action)
+
+        if type_rew == 'sparse_one_button':
+            return self._get_rew_sparse_one_button(action)
+
+        if type_rew == 'dense_two_button':
+            if not self._reversal:
+                self._state_b1 = False
+                self._state_b2 = True
             else:
-                # One button touch task
-                if self._get_distance(self._ep_target_pos) < self._touch_distance:
-                    rew += 1
-                    self._button1 = 1
-                return rew
-        # dense reaching task
-        dist = - self._get_distance(self._ep_target_pos)
+                self._state_b1 = True
+                self._state_b2 = False
+
+            return self._get_rew_dense_two_button(action)
+
+        if type_rew == 'sparse_two_button':
+            if not self._reversal:
+                self._state_b1 = False
+                self._state_b2 = True
+            else:
+                self._state_b1 = True
+                self._state_b2 = False
+
+            return self._get_rew_sparse_two_button(action)
+
+        if type_rew == 'sparse_two_button_sequential':
+            return self._get_rew_sparse_two_button_sequential_reset_counter_wrapper(action)
+
+        raise Exception('''Pick one of the valid reward types:
+                        1) dense 
+                        2) sparse_one_button
+                        3) dense_one_button
+                        4) sparse_two_button
+                        5) sparse_two_button_sequential''')
+
+    def _get_rew_dense(self, action):
+        '''A dense reward based on the distance between the end-effector
+        and the box is given. A success is recorded if 
+        d < *self._touch_distance*'''
+        dist = - self._get_distance(self._pos_b1)
         if tf.abs(dist) < self._touch_distance:
-            self._button1 = True
+            self._state_b1 = True
         return  dist - self._action_regularizer * tf.square(tf.norm(action))
 
-    def _distance_query_switcher(self, box):
+    def _get_rew_sparse_one_button(self, action):
+        '''A sparse reward is given if the distance between the end-effector
+        and the box is below *self._touch_distance*'''
+        rew = -1.
+        # One button touch task
+        if self._get_distance(self._pos_b1) < self._touch_distance:
+            rew += 1
+            self._state_b1 = True
+        return rew
+
+    def _get_rew_dense_two_button(self, action):
+        '''Compute a sparse reward based on two boxes where you just have
+        to make contact with the right one. There is a negative reward
+        for the incorrect contact and the episode only ends after correct 
+        contact.'''
         if not self._reversal:
-            if box == 1:
-                return self._get_distance(self._ep_target_pos)
-            else:
-                return self._get_distance(self._ep_target_pos2)
+            rew = - self._get_distance(self._pos_b1)
         else:
-            if box == 1:
-                return self._get_distance(self._ep_target_pos2)
+            rew = - self._get_distance(self._pos_b2)
+        if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
+            self._state_b1 = 1
+            #print('button 1 pressed')
+        if self._get_distance(self._pos_b2)  < self._touch_distance:
+            pass
+            #print('button 2 pressed')
+        return rew
+
+    def _get_rew_sparse_two_button(self, action):
+        '''Compute a sparse reward based on two boxes where you just have
+        to make contact with the right one. There is a negative reward
+        for the incorrect contact and the episode only ends after correct 
+        contact.'''
+        rew = -1.
+        if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
+            self._state_b1 = 1
+            print('button 1 pressed')
+            rew += 1
+        if self._get_distance(self._pos_b2)  < self._touch_distance:
+            print('button 2 pressed')
+            rew -= -1
+        return rew
+
+    def _get_rew_sparse_two_button_sequential_reset_counter_wrapper(self, action):
+        '''If *self._stop_counter* is enabled, this wrapper blocks button
+        touches and resulting rewards for *COUNTER* steps after every failure.'''
+        if self._stop_counter >= COUNTER:
+            rew, punishment = self._get_rew_sparse_two_button_sequential(action)
+            if punishment and self._reset_on_wrong_sequence:
+                self._reset_counter_settings()
+        if self._reset_on_wrong_sequence:
+            self._stop_counter += 1
+        return rew
+
+    def _reset_counter_settings(self):
+        '''Resets the appropriate settings if *self._reset_on_wrong_sequence* is 
+        enabled and an incorrect touching was detected.'''
+        self._state_b1 = False
+        self._state_b2 = False
+        self.mega_reward = True
+        self._stop_counter = 0
+        if self._render:
+            self._reset_button_colors()
+
+    def _get_rew_sparse_two_button_sequential(self, action):
+        '''A sparse reward is given if box 1 is touched before box 2.
+        The success condition evaluates to *True* no matter what order the 
+        boxes were touched in. This ensures the validity of the MDP.'''
+        punishment = False
+        rew = -1.
+        if self._distance_query_switcher(0) < self._touch_distance and not self._state_b1 == 1:
+            self._state_b1 = 1
+            print('button 1 pressed')
+        if self._distance_query_switcher(1) < self._touch_distance and not self._state_b2 == 1:
+            self._state_b2 = 1
+            print('button 2 pressed')
+        if self._state_b2 == 1 and not self._state_b1 == 1:
+            self.mega_reward = False
+        if (self._state_b1 == 1 and self._state_b2 == 1) and self.mega_reward:
+            rew += 50
+            print('MEGA reward')
+        if (self._state_b1 == 1 and self._state_b2 == 1) and not self.mega_reward:
+            print('FAILURE Punishment')
+            rew -= self._punishment
+            punishment = True
+        return rew, punishment
+
+    def _distance_query_switcher(self, box):
+        '''Switches the boxes used for distance and reward computation
+        if the *self._reversal* signal is given.'''
+        if not self._reversal:
+            if box == 0:
+                return self._get_distance(self._pos_b1)
             else:
-                return self._get_distance(self._ep_target_pos)
+                return self._get_distance(self._pos_b2)
+        else:
+            if box == 0:
+                return self._get_distance(self._pos_b2)
+            else:
+                return self._get_distance(self._pos_b1)
     
     def _get_done(self):
         '''Compute a *done* which is returned and a *success* variable, which is internally saved.
@@ -311,7 +391,7 @@ class CoppeliaEnv(gym.Env):
         the value of a terminal state should be set to zero. Alternatively, one could
         add the timestep to the state. cf. Time Limits in Reinforcement Learning, Pardo et al.'''
         self._needs_reset = True
-        if self._button1 == 1 and self._button2 == 1:
+        if self._state_b1 == 1 and self._state_b2 == 1:
             print("Success")
             self.success = True
         elif self._timestep >= self.max_episode_steps - 1:
@@ -343,18 +423,13 @@ class CoppeliaEnv(gym.Env):
 
     def _get_observation(self):
         ''' Compute observation. 
-        *ee_pos* means only end-effector position and velocity is known.
         *ee_j_pos* means end-effector and joint positions and velocities are known.
         The *else* branch corresponds to the case that only the joint positions and 
         velocities are known.
         The returned observation is either [robot_state, box_position]
         or in the double button case
         [robot_state, box1_position, box1_active_status, box2_position, box1_active_status]'''
-        if self._ee_pos:
-            qpos = self._robot.get_ee_position()
-            qvel = self._robot.get_ee_velocity()
-            observation = np.concatenate([qpos, qvel[0]])
-        elif self._ee_j_pos:
+        if self._ee_j_pos:
             qpos = np.concatenate([self._robot.get_ee_position(), self._robot.get_joint_positions()])
             qvel = np.concatenate([self._robot.get_ee_velocity()[0], self._robot.get_joint_velocities()])
             #observation = np.array(np.concatenate([qpos, qvel, np.array([self._timestep])]), dtype=np.float32)
@@ -364,10 +439,10 @@ class CoppeliaEnv(gym.Env):
             qvel = self._robot.get_joint_velocities() 
             observation = np.concatenate([qpos, qvel])
         if not self._double_buttons:
-            target = self._ep_target_pos[:-1]
+            target = self._pos_b1[:-1]
         else:
-            target = np.concatenate([self._ep_target_pos[:-1], [self._button1], self._ep_target_pos2[:-1],
-                                     [self._button2]], axis=0)
+            target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
+                                     [self._state_b2]], axis=0)
         return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):
@@ -417,9 +492,7 @@ class CoppeliaEnv(gym.Env):
          explode and destabilize the simulation.'''
         self._robot.set_joint_target_velocities(np.zeros(shape=self._init_pos.shape))
         self._robot.set_position(self._init_pos)
-        target1, target2 = self._reset_target(evalmode)
-        self._ep_target_pos = target1
-        self._ep_target_pos2 = target2
+        self._pos_b1, self._pos_b2 = self._reset_target(evalmode)
         self._sim.step()
         self._needs_reset = False
         self._timestep = 0
@@ -434,4 +507,4 @@ class CoppeliaEnv(gym.Env):
         x = r * np.cos(theta)
         y = r * np.sin(theta)
         return x + 0.622, y - 0.605 
-
+    

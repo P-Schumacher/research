@@ -55,14 +55,14 @@ class TD3(object):
         self.transfer_weights(self.critic_reset_net, self.critic, tau=1)
         self.transfer_weights(self.critic_reset_net, self.critic_target, tau=1)
 
-    @tf.function(experimental_compile=True)
+    @tf.function
     def _compute_td_error(self, state, action, reward, next_state, done):
         '''Combines the current critic output and the learning target to yield
         the td_error which is differentiated to yield the gradients for the critic'''
         current_Q1, target_Q = self.get_current_estimate_and_learning_target(state, action, reward, next_state, done)
         return tf.abs(current_Q1 - target_Q)
 
-    @tf.function(experimental_compile=True)
+    @tf.function
     def get_current_estimate_and_learning_target(self, state, action, reward, next_state, done):
         '''Computes the critic estimate for the given transition tuple and then computes 
         the learning target using the deterministic TD3 recursion eqn.
@@ -91,7 +91,7 @@ class TD3(object):
         current_Q1, _ = self.critic(state_action)
         return current_Q1, target_Q
 
-    @tf.function(experimental_compile=True)
+    @tf.function
     def _train_critic(self, state, action, reward, next_state, done, log, is_weight):
         '''Training function. We assign actor and critic losses to state objects so that they can be easier recorded 
         without interfering with tf.function. I set Q terminal to 0 regardless if the episode ended because of a success cdt. or 
@@ -114,7 +114,7 @@ class TD3(object):
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self._discount ** self._nstep * target_Q
         # Critic Update
-        with tf.GradientTape() as tape:
+        with tf.GradientTape() as tape2:
             current_Q1, current_Q2 = self.critic(state_action)
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
@@ -122,14 +122,13 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-
-        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
+        gradients = tape2.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
         return tf.abs(target_Q - current_Q1)
     
-    @tf.function(experimental_compile=True)
+    @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
         if self.total_it % self._policy_freq == 0:

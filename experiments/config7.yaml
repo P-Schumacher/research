@@ -1,6 +1,6 @@
 project: 'threelayer_withoutreward_dense'
 main:
-  render: true
+  render: false
   flat_agent: false
   log: false
   minilog: true
@@ -11,7 +11,7 @@ main:
   c_step: 30
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 128
   max_timesteps: 3000000
   no_seed: false
   eval_freq: 20000

@@ -107,7 +107,7 @@ class HierarchicalAgent(Agent):
         '''Applies gaussian noise to the proposed action and then clips it to
         the allowed maximum and minimum ranges.'''
         if noise_bool:
-            action += self._gaussian_noise(self._sub_noise, self._action_dim)
+            action += self._gaussian_noise(self._sub_noise*self._noise_range, self._action_dim)
             return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
         return action
 
@@ -189,13 +189,13 @@ class HierarchicalAgent(Agent):
         sub_env_spec['state_dim'] = sub_env_spec['state_dim'] - self._target_dim + meta_env_spec['action_dim']
         if self._smooth_goal:
             meta_env_spec['state_dim'] = meta_env_spec['state_dim'] + self._subgoal_dim 
-        meta_env_spec['state_dim'] += 2
+        #meta_env_spec['state_dim'] += 2
         return meta_env_spec, sub_env_spec
 
     def _get_meta_goal(self, state, reward_fn):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
-        self._add_third_goal(state, reward_fn)
-        #self._meta_state = state
+        #self._add_third_goal(state, reward_fn)
+        self._meta_state = state
         self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
@@ -368,6 +368,7 @@ class HierarchicalAgent(Agent):
         self._smooth_factor = agent_cnf.smooth_factor
         self._goal_every_iteration = agent_cnf.goal_every_iteration
         self._decay_noise = agent_cnf.decay_noise
+        self._noise_range = np.concatenate([np.array(agent_cnf.action_range, dtype=np.float32), [1]], 0)
 
     @property
     def goal(self):

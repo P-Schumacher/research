@@ -443,9 +443,9 @@ class CoppeliaEnv(gym.Env):
         if not self._double_buttons:
             target = self._pos_b1[:-1]
         else:
-            #target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
-            #                         [self._state_b2]], axis=0)
-            target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
+            target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
+                                     [self._state_b2]], axis=0)
+            #target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
         return np.array(np.concatenate([observation, target]), dtype=np.float32)
    
     def _reset_target(self, evalmode):

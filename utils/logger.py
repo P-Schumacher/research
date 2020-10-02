@@ -35,7 +35,7 @@ class Logger:
         if not post_eval:
             self.episode_num += 1
     
-    def log(self, t, intr_rew, c_step):
+    def log(self, t, intr_rew, c_step=0):
         '''Call this function at the end of an episode. The function arguments are logged by argument passage, the
         episode_reward is tracked internally.
         :param intr_rew: The episode intrinsic reward of the sub-agent.

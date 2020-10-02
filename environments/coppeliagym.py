@@ -145,7 +145,7 @@ class CoppeliaEnv(gym.Env):
             self._init = True
             print("RENDER")
             from pyrep.const import PrimitiveShape
-            self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=False,
+            self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=True,
                                            respondable=False, color=[0,0.05,1])
             self._meta_goal.set_dynamic(False)
 

@@ -24,6 +24,7 @@ main:
   gradient_steps: 300 
   no_seed: false
   simple_env: false
+  switch_time: ${main.max_timesteps}
 
   
   c_step: 40

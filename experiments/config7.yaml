@@ -5,10 +5,10 @@ main:
   log: false
   minilog: true
   save_model: false
-  load_model: false
-  load_string: 'switching_all_1000'
+  load_model: true
+  load_string: 'switching_all_10000'
   descriptor: 'first_try_nextstate_transit_still_wrong_0.3_dense'
-  c_step: 10
+  c_step: 30
   seed: 25
   offpolicy: true
   start_timesteps: 5000
@@ -80,8 +80,8 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: false
-    random_eval_target: false
+    random_target: true
+    random_eval_target: true
     reversal_time: 100000000000
     touch_distance: 0.08
     minimum_dist: 0.

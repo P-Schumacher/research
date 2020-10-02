@@ -6,8 +6,8 @@ main:
   minilog: true
   save_model: true
   load_model: false
-  load_string: 'switching_all_1000'
-  descriptor: 'switch10000'
+  descriptor: 'switch10000_switched_torquevels'
+  load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
   offpolicy: true

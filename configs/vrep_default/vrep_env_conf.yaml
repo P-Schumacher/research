@@ -13,8 +13,8 @@ coppeliagym:
     sub_mock: ${agent.sub_mock}
     render: ${main.render}
     # Taken from Kuka14 Tech Sheet
-    max_vel: [320, 320, 176, 176, 110, 40, 40] # In deg/s. In the sim, they convert to rad/s
-    max_torque: [85, 85, 100, 75, 130, 135, 135]
+    max_torque: [320, 320, 176, 176, 110, 40, 40] # In deg/s. In the sim, they convert to rad/s
+    max_vel: [85, 85, 100, 75, 130, 135, 135]
     ee_pos: false
     ee_j_pos: true
     force: false 

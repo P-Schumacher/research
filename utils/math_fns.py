@@ -39,7 +39,7 @@ def clip_by_global_norm_single(t, clip_norm):
     :param clip_norm: Norm over which the tensors should be clipped.
     :return t_list: List of clipped tensors. 
     :return norm: New norm after clipping.'''
-    norm = tf.reduce_norm(t)
+    norm = tf.norm(t)
     if norm > clip_norm:
         t = tf.scalar_mul(clip_norm / norm, t)
         norm = clip_norm

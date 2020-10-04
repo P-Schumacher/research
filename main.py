@@ -4,7 +4,13 @@ import wandb
 import sys
 import os
 from pudb import set_trace
+import tensorflow as tf
+#tf.config.experimental.enable_mlir_graph_optimization()
+tf.config.threading.set_inter_op_parallelism_threads(1)
+tf.config.threading.set_intra_op_parallelism_threads(6)
+
 try:
+    print(a)
     from mpi4py import MPI
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
@@ -13,7 +19,6 @@ try:
 except:
     mpi = False 
     print('MPI NOT LOADED')
-
 #os.environ['CUDA_VISIBLE_DEVICES']='-1'
 ant_env = False
 vrep = True

@@ -43,11 +43,11 @@ agent:
   add_multiple_dones: false
   per: false
   sub_per: false
-  goal_regul: false
   seed: ${main.seed}
   c_step: ${main.c_step}
   goal_every_iteration: false
   decay_noise: false
+  action_range: ${coppeliagym.params.max_vel}
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -69,8 +69,6 @@ agent:
     c_step: ${main.c_step}
     no_candidates: 10
     per: ${agent.per}
-    goal_regul: ${agent.goal_regul}
-    distance_goal_regul: ${agent.distance_goal_regul}
     nstep: 1
     use_FM: false
 
@@ -94,8 +92,6 @@ agent:
     c_step: ${main.c_step}
     no_candidates: 10
     per: ${agent.sub_per}
-    goal_regul: false
-    distance_goal_regul: 0.0
     nstep: ${agent.nstep}
     use_FM: false
 

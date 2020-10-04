@@ -38,6 +38,7 @@ agent:
   smooth_factor: 0.9
   add_multiple_dones: false
   per: 1
+  sub_per: 1
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -70,6 +71,6 @@ coppeliagym:
   subgoals:
     ej_goal: [3, 1.0]
 buffer:
-  alpha: 0.9
+  alpha: 5.
   beta: 0.
-  max_size: 1000000
+  max_size: 1000

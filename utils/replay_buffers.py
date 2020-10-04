@@ -48,12 +48,16 @@ class ReplayBuffer(object):
             setattr(self, field, np.load(f'{directory}{field}.npy'))
 
     def reset(self):
+        if self.state_dim == 55:
+            x = 2
+        else:
+            x = 0 
         self.state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
         self.action = np.zeros((self.max_size, self.action_dim), dtype = np.float32)
         self.next_state = np.zeros((self.max_size, self.state_dim), dtype = np.float32)
         self.reward = np.zeros((self.max_size, 1), dtype = np.float32)
         self.done = np.zeros((self.max_size, 1), dtype = np.float32)
-        self.state_seq = np.zeros((self.max_size, self.c_step, self.state_dim - 3 * self.goal_smooth), dtype =
+        self.state_seq = np.zeros((self.max_size, self.c_step, self.state_dim - x - 3 * self.goal_smooth), dtype =
                                   np.float32)
         self.action_seq = np.zeros((self.max_size, self.c_step, 8), dtype = np.float32)  
         self.ptr = 0
@@ -70,10 +74,10 @@ class ReplayBuffer(object):
         else:
             self.c_step = buffer_cnf.c_step
         self.max_size = buffer_cnf.max_size
-        self.state_dim = state_dim
         self.action_dim = action_dim
         self.goal_smooth = buffer_cnf.goal_smooth
         self.alpha = buffer_cnf.alpha
+        self.state_dim = state_dim
         self.epsilon = buffer_cnf.epsilon
         self.beta = buffer_cnf.beta
         self.beta_increment = buffer_cnf.beta_increment

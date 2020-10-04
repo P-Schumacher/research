@@ -27,7 +27,7 @@ def create_env(cnf):
         print(f'Force mode is {cnf.coppeliagym.params.force}')
         print(f'ee pos is: {cnf.coppeliagym.params.ee_pos}')
         env = CoppeliaEnv(cnf.coppeliagym)
-        print(f'Target is: {env._ep_target_pos}')
+        print(f'Target is: {env._pos_b1}')
         if cnf.main.render:
             env.render()
         return env
@@ -130,14 +130,23 @@ def exponential_decay(total_steps, init_step=100, min_step=10):
         while True:
             yield (min_step)
 
-@contextmanager
-def suppress_stdout():
-    '''Doesnt work with CoppeliaSim as of now.'''
-    with open(os.devnull, "w") as devnull:
-        old_stdout = sys.stdout
-        sys.stdout = devnull
-        try:  
-            yield
-        finally:
-            sys.stdout = old_stdout
+def maybe_verbose_output(t, agent, env, action, cnf, state, reward):
+    if cnf.render:
+        if not cnf.flat_agent:
+            if cnf.render:
+                if agent._smooth_goal:
+                    goal = agent._prev_goal
+                else:
+                    goal = agent.goal
+                if agent.goal_type == 'Direction' or agent.goal_type == 'Sparse':
+                    env.set_goal(state[:3] + goal[:3])
+                else:
+                    env.set_goal(goal[:3])
 
+def decay_step(decay, stepper, agent, flat_agent, init_c):
+    c_step = [1 if flat_agent else init_c][0]
+    if decay:
+        c_step = int(next(stepper))
+        agent._c_step = c_step
+        agent._meta_agent.c_step = c_step
+    return c_step

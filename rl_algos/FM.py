@@ -110,7 +110,7 @@ class ForwardModel:
         wandb.log({'FM/high_prederror': high_prederr, 'FM/low_prederror': low_prederr, 'FM/loss': loss}, commit=False)
         wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
-    @tf.function
+    #@tf.function
     def _train(self, state, next_state, reward, reversal=False):
         with tf.GradientTape() as tape:
             ret_pred = self.forward_pass(state, next_state, reshape=False, reversal=reversal)

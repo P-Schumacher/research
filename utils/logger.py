@@ -23,7 +23,7 @@ class Logger:
         :return: None'''
         self.episode_timesteps += 1
         self.episode_reward += reward
-        if self.logging:
+        if self.logging and not self.minilog:
             wandb.log({'step_rew': reward}, step = t)
 
     def reset(self, post_eval=False):
@@ -35,14 +35,16 @@ class Logger:
         if not post_eval:
             self.episode_num += 1
     
-    def log(self, t, intr_rew, c_step):
+    def log(self, t, intr_rew, c_step=0):
         '''Call this function at the end of an episode. The function arguments are logged by argument passage, the
         episode_reward is tracked internally.
         :param intr_rew: The episode intrinsic reward of the sub-agent.
         :param c_step: The current number of timesteps between subgoals.
         :return: None'''
         if self.logging:
-            wandb.log({'ep_rew': self.episode_reward, 'intr_reward': intr_rew, 'c_step': c_step}, step = t)
+            wandb.log({'ep_rew': self.episode_reward}, step=t)
+            if not self.minilog:
+                wandb.log({'intr_reward': intr_rew, 'c_step': c_step}, step = t)
 
     def log_eval(self, t, eval_rew, eval_intr_rew, eval_success, rate_correct_solves, untouchable_steps):
         '''Log the evaluation metrics.
@@ -65,4 +67,5 @@ class Logger:
             reward *= 0.1
             current_estimate_meta, learning_target_meta = agent._meta_agent.get_current_estimate_and_learning_target(state, goal, reward, next_state, done)
             #wandb.logging({'sub/current_estimate': current_estimate_sub, 'sub/learning_target': learning_target_sub}, commit=False)
-            wandb.log({'meta/current_estimate': current_estimate_meta, 'meta/learning_target': learning_target_meta}, commit=False)
+            if not self.minilog:
+                wandb.log({'meta/current_estimate': current_estimate_meta, 'meta/learning_target': learning_target_meta}, commit=False)

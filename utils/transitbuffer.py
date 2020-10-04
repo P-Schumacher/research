@@ -111,7 +111,7 @@ class TransitBuffer(ReplayBuffer):
         if done:
             self._sum_of_rewards += reward
             # This implicitly computes the next goal in the transitbuffer.
-            self._agent.select_action(next_state) 
+            self._agent.select_action(next_state, 0) 
             self._finish_sub_transition(self.goal, reward)
             self._finish_meta_transition(self._meta_state, success_cd, FM)
             self._needs_reset = True
@@ -149,7 +149,7 @@ class TransitBuffer(ReplayBuffer):
         meta_state = self._meta_state 
         orig_goal = self._orig_goal
         goal = self.goal 
-        self._agent.select_action(next_state)
+        self._agent.select_action(next_state, 0)
         intr_reward = self.compute_intr_reward(goal, state, next_state, action)
         self._add_to_sub(state, goal, action, intr_reward, next_state, self.goal, done)
         self._add_to_meta(meta_state, orig_goal, reward * self._meta_rew_scale, self._meta_state, done)

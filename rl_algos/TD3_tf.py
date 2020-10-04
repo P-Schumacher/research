@@ -2,7 +2,7 @@ import tensorflow as tf
 import numpy as np
 import wandb
 from pudb import set_trace
-from utils.math_fns import euclid, get_norm, clip_by_global_norm
+from utils.math_fns import euclid, get_norm, clip_by_global_norm, clip_by_global_norm_single
 from rl_algos.networks import Actor, Critic
 from rl_algos.offpol_correction import off_policy_correction
 from utils.math_fns import euclid
@@ -12,6 +12,7 @@ class TD3(object):
         self._prepare_parameters(kwargs)
         self._prepare_algo_objects()
         self._create_persistent_tf_variables()
+        self._grads = []
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state.reshape(1, -1))
@@ -31,7 +32,15 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
+        if not self.total_it % 1000 and self._name == 'sub':
+            np.save(f'grad_save_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads), axis=0))
+        if not self.total_it % 1000 and self._name == 'meta':
+            np.save(f'grad_save_{self._name}_{self.total_it.numpy()}.npy', np.mean(np.array(self._grads), axis=0))
+            self._grads = []
+
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        grad = self._get_attention_gradients(state, action, reward, next_state)
+        self._grads.append(grad.numpy())
         reward_new = reward
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -114,7 +123,7 @@ class TD3(object):
         target_Q = tf.math.minimum(target_Q1, target_Q2)
         target_Q = reward + (1. - done) * self._discount ** self._nstep * target_Q
         # Critic Update
-        with tf.GradientTape() as tape:
+        with tf.GradientTape() as tape2:
             current_Q1, current_Q2 = self.critic(state_action)
             critic_loss = (self.critic_loss_fn(current_Q1, target_Q) 
                         + self.critic_loss_fn(current_Q2, target_Q))
@@ -122,12 +131,22 @@ class TD3(object):
             assert len(self.critic.losses) == 6
             # critic.losses gives us the regularization losses from the layers
             critic_loss += sum(self.critic.losses)
-
-        gradients = tape.gradient(critic_loss, self.critic.trainable_variables)
+        gradients = tape2.gradient(critic_loss, self.critic.trainable_variables)
         gradients, norm = clip_by_global_norm(gradients, self._clip_cr)
         self.critic_optimizer.apply_gradients(zip(gradients, self.critic.trainable_variables))
         self._maybe_log_critic(gradients, norm, critic_loss, log)
         return tf.abs(target_Q - current_Q1)
+
+    @tf.function
+    def _get_attention_gradients(self, state, action, reward, next_state):
+        state_action = tf.concat([state, action], 1)
+        with tf.GradientTape() as tape:
+            tape.watch(state_action)
+            qval, _ = self.critic(state_action)
+        grads = tape.gradient(qval, state_action)
+        #grads, norm = clip_by_global_norm(grads, self._clip_cr)
+        grads = tf.reduce_mean(grads, axis=0)
+        return grads
     
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):

@@ -15,6 +15,7 @@ def main(cnf):
 
     buff = agent.meta_replay_buffer
     buff.size = N 
+    print(buff.alpha)
     new_rew = []
     if True:
         co = 0
@@ -40,7 +41,7 @@ def main(cnf):
     errors = np.zeros([N, N])
     for t in range(N):
         #print(f'train {t} of 10000')
-        agent._meta_agent.train(buff, 10, t, False, None)
+        agent._meta_agent.train(buff, 100, t, False, None)
         #print(buff.batch_idxs)
         state, action, reward, next_state, done = buff.get_buffer() 
         error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)
@@ -55,7 +56,6 @@ def main(cnf):
                 print(f' counter {counter}')
                 m1.append(buff.batch_idxs[i])
                 m2.append(t)
-    #print(np.std(m1))
     np.save('m1.npy', m1)    
     np.save('m2.npy', m2)    
     np.save('errors.npy', errors)

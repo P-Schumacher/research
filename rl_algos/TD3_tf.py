@@ -66,8 +66,8 @@ class TD3(object):
     def _get_attention_gradients(self, state, action, reward, next_state):
         grad_cr = self._get_attention_gradients_cr(state, action, reward, next_state)
         grad_ac = self._get_attention_gradients_ac(state, action, reward, next_state)
-        self._grads_critic.append(grad_cr.numpy())
-        self._grads_actor.append(grad_ac.numpy())
+        self._grads_cr.append(grad_cr.numpy())
+        self._grads_ac.append(grad_ac.numpy())
 
     def full_reset(self):
         '''Completely resets actor and critic network to the predefined 

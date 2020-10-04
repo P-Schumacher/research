@@ -12,7 +12,8 @@ class TD3(object):
         self._prepare_parameters(kwargs)
         self._prepare_algo_objects()
         self._create_persistent_tf_variables()
-        self._grads = []
+        self._grads_cr = []
+        self._grads_ac = []
 
     def select_action(self, state):
         state = tf.convert_to_tensor(state.reshape(1, -1))
@@ -33,14 +34,20 @@ class TD3(object):
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
         if not self.total_it % 1000 and self._name == 'sub':
-            np.save(f'grad_save_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads), axis=0))
+            np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_cr), axis=0))
         if not self.total_it % 1000 and self._name == 'meta':
-            np.save(f'grad_save_{self._name}_{self.total_it.numpy()}.npy', np.mean(np.array(self._grads), axis=0))
-            self._grads = []
+            np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',
+                    np.mean(np.array(self._grads_cr), axis=0))
+            self._grads_cr = []
+        if not self.total_it % 1000 and self._name == 'sub':
+            np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_ac), axis=0))
+        if not self.total_it % 1000 and self._name == 'meta':
+            np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',
+                    np.mean(np.array(self._grads_ac), axis=0))
+            self._grads_cr = []
 
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        grad = self._get_attention_gradients(state, action, reward, next_state)
-        self._grads.append(grad.numpy())
+        self._get_attention_gradients(state, action, reward, next_state)
         reward_new = reward
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
         td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
@@ -55,6 +62,12 @@ class TD3(object):
             wandb.log({f'{self._name}/mean_weights_actor': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.actor.weights])}, commit=False)
             wandb.log({f'{self._name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
+
+    def _get_attention_gradients(self, state, action, reward, next_state):
+        grad_cr = self._get_attention_gradients_cr(state, action, reward, next_state)
+        grad_ac = self._get_attention_gradients_ac(state, action, reward, next_state)
+        self._grads_critic.append(grad_cr.numpy())
+        self._grads_actor.append(grad_ac.numpy())
 
     def full_reset(self):
         '''Completely resets actor and critic network to the predefined 
@@ -138,16 +151,26 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
 
     @tf.function
-    def _get_attention_gradients(self, state, action, reward, next_state):
+    def _get_attention_gradients_cr(self, state, action, reward, next_state):
         state_action = tf.concat([state, action], 1)
         with tf.GradientTape() as tape:
             tape.watch(state_action)
             qval, _ = self.critic(state_action)
         grads = tape.gradient(qval, state_action)
-        #grads, norm = clip_by_global_norm(grads, self._clip_cr)
+        grads, norm = clip_by_global_norm_single(grads, self._clip_cr)
         grads = tf.reduce_mean(grads, axis=0)
         return grads
     
+    @tf.function
+    def _get_attention_gradients_ac(self, state, action, reward, next_state):
+        with tf.GradientTape() as tape:
+            tape.watch(state)
+            action = self.actor(state)
+        grads = tape.gradient(action, state)
+        grads, norm = clip_by_global_norm_single(grads, self._clip_ac)
+        grads = tf.reduce_mean(grads, axis=0)
+        return grads
+
     @tf.function
     def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph

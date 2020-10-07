@@ -1,18 +1,18 @@
-project: 'threelayer_withoutreward_dense'
+project: 'attention_recording_random'
 main:
   render: false
   flat_agent: false
   log: false
   minilog: true
   save_model: false
-  load_model: true
-  load_string: 'switching_all_10000'
-  descriptor: 'first_try_nextstate_transit_still_wrong_0.3_dense'
-  c_step: 30
+  load_model: false
+  descriptor: 'sequential_touch0.3_switchedtorque_c5'
+  load_string: ${main.descriptor} #'switching_all_10000'
+  c_step: 5
   seed: 25
   offpolicy: true
-  start_timesteps: 128
-  max_timesteps: 3000000
+  start_timesteps: 5000
+  max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -36,7 +36,7 @@ agent:
   nstep: 1
   meta_rew_scale: 0.1
   meta_noise: 0.644
-  sub_noise: 1.4
+  sub_noise: 1.
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -47,12 +47,12 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: false
+  decay_noise: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -83,11 +83,11 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.08
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    task: 'dense_two_button'
+    task: 'sparse_two_button_sequential'
 
   subgoals:
     ej_goal: [3, 1.0]

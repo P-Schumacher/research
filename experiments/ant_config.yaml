@@ -5,6 +5,7 @@ main:
   descriptor: 'hiro_ant_zero_obs'
   save_model: false
   render: false
+  c_step: 10
 
 agent:
  goal_type: Direction

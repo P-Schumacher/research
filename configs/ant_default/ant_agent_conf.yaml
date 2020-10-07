@@ -31,6 +31,9 @@ agent:
   seed: ${main.seed}
   c_step: ${main.c_step}
   goal_every_iteration: false
+  action_range: [30, 30, 30, 30, 30, 30, 30, 30]
+  relative_noise: false
+  nstep: 1
 
   meta_model:
     ac_hidden_layers: [300, 300]
@@ -54,6 +57,7 @@ agent:
     per: ${agent.per}
     goal_regul: false
     distance_goal_regul: 0.0
+    nstep: 1
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -77,4 +81,5 @@ agent:
     per: ${agent.sub_per}
     goal_regul: false
     distance_goal_regul: 0.0
+    nstep: ${agent.nstep}
 

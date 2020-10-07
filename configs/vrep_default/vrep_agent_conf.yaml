@@ -48,6 +48,7 @@ agent:
   goal_every_iteration: false
   decay_noise: false
   action_range: ${coppeliagym.params.max_vel}
+  relative_noise: true
 
   meta_model:
     ac_hidden_layers: [300, 300]

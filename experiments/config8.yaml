@@ -2,13 +2,13 @@ project: 'attention_recording_random'
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'sequential_touch0.3_switchedtorque_c10'
+  descriptor: 'sequential_touch0.3_switchedtorque_c5'
   load_string: ${main.descriptor} #'switching_all_10000'
-  c_step: 10
+  c_step: 5
   seed: 25
   offpolicy: true
   start_timesteps: 5000
@@ -52,7 +52,7 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: false
+  decay_noise: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]

@@ -4,6 +4,7 @@ from pudb import set_trace
 import matplotlib as mpl
 plt.style.use(['seaborn','thesis_small'])
 mpl.rcParams['axes.grid'] = 0
+
 class Accum:
     def __init__(self):
         self.reset()
@@ -55,7 +56,7 @@ for idx, folder in enumerate(files):
             print(a.shape)
             acc.collect(a)
     im = acc.grad_collect
-    c_im = ax[idx, 0].imshow(im, cmap=cmap, vmin=meta_critic_min, vmax=meta_critic_max)
+    c_im = ax[idx, 0].imshow(im, vmin=meta_critic_min, vmax=meta_critic_max)
     labels = ['EEx', 'EEy', 'EEz', 'J0', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6']
     labels = labels + [f'vel_{x}' for x in labels]
     labels = labels + ['b1x', 'b1y', 'b1F', 'b2x', 'b2y', 'b2F', 'A0','A1', 'A2']
@@ -73,7 +74,7 @@ for idx, folder in enumerate(files):
             print(a.shape)
             acc.collect(a)
     im= acc.grad_collect
-    ax[idx, 1].imshow(im, cmap=cmap, vmin=sub_critic_min, vmax=sub_critic_max)
+    ax[idx, 1].imshow(im, vmin=sub_critic_min, vmax=sub_critic_max)
     labels = ['EEx', 'EEy', 'EEz', 'J0', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6']
     labels = labels + [f'vel_{x}' for x in labels]
     labels = labels + ['G0', 'G1', 'G2', 'A0', 'A1', 'A2', 'A3','A4', 'A5', 'A6', 'A7']
@@ -90,7 +91,7 @@ for idx, folder in enumerate(files):
             print(a.shape)
             acc.collect(a)
     im= acc.grad_collect
-    ax[idx, 3].imshow(im, cmap=cmap, vmin=sub_critic_min, vmax=sub_critic_max)
+    ax[idx, 3].imshow(im, vmin=sub_critic_min, vmax=sub_critic_max)
     labels = ['EEx', 'EEy', 'EEz', 'J0', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6']
     labels = labels + [f'vel_{x}' for x in labels]
     labels = labels + ['G0', 'G1', 'G2']
@@ -107,7 +108,7 @@ for idx, folder in enumerate(files):
             print(a.shape)
             acc.collect(a)
     im = acc.grad_collect
-    c_im = ax[idx, 2].imshow(im, cmap=cmap, vmin=meta_actor_min, vmax=meta_actor_max)
+    c_im = ax[idx, 2].imshow(im, vmin=meta_actor_min, vmax=meta_actor_max)
     labels = ['EEx', 'EEy', 'EEz', 'J0', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6']
     labels = labels + [f'vel_{x}' for x in labels]
     labels = labels + ['b1x', 'b1y', 'b1F', 'b2x', 'b2y', 'b2F']

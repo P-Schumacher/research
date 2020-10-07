@@ -107,7 +107,10 @@ class HierarchicalAgent(Agent):
         '''Applies gaussian noise to the proposed action and then clips it to
         the allowed maximum and minimum ranges.'''
         if noise_bool:
-            action += self._gaussian_noise(self._sub_noise*self._noise_range, self._action_dim)
+            if self._relative_noise:
+                action += self._gaussian_noise(self._sub_noise*self._noise_range, self._action_dim)
+            else:
+                action += self._gaussian_noise(self._sub_noise, self._action_dim)
             return  tf.clip_by_value(action, -self._sub_agent._max_action, self._sub_agent._max_action)
         return action
 
@@ -369,6 +372,7 @@ class HierarchicalAgent(Agent):
         self._goal_every_iteration = agent_cnf.goal_every_iteration
         self._decay_noise = agent_cnf.decay_noise
         self._noise_range = np.concatenate([np.array(agent_cnf.action_range, dtype=np.float32), [1]], 0)
+        self._relative_noise = agent_cnf.relative_noise
 
     @property
     def goal(self):

@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: true
   load_model: false
-  descriptor: 'sub_save_attention'
+  descriptor: 'sub_save_attention_notnormal'
   load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
@@ -52,8 +52,8 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: true
-  normalize: true
+  decay_noise: false
+  normalize: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -86,7 +86,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.3
+    touch_distance: 0.5
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
@@ -94,7 +94,7 @@ coppeliagym:
     normalize: false
 
   subgoals:
-    ej_goal: [3, 0.001]
+    ej_goal: [3, 1.]
 
 buffer:
   alpha: 0.9

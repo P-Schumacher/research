@@ -33,28 +33,15 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        if not self.total_it % 1000 and self._name == 'sub':
-            np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_cr), axis=0))
-        if not self.total_it % 1000 and self._name == 'meta':
-            np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',
-                    np.mean(np.array(self._grads_cr), axis=0))
-            self._grads_cr = []
-        if not self.total_it % 1000 and self._name == 'sub':
-            np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_ac), axis=0))
-        if not self.total_it % 1000 and self._name == 'meta':
-            np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',
-                    np.mean(np.array(self._grads_ac), axis=0))
-            self._grads_cr = []
-
         state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
-        self._get_attention_gradients(state, action, reward, next_state)
-        reward_new = reward
+        self._maybe_save_attention()
+        self._maybe_get_attention_gradients(state, action, reward, next_state)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
-        td_error = self._train_critic(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        td_error = self._train_critic(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         if self._per:
-            self._prioritized_experience_update(self._per, td_error, next_state, action, reward_new, replay_buffer)
+            self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        self._train_actor(state, action, reward_new, next_state, done, log, replay_buffer.is_weight)
+        self._train_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -63,11 +50,25 @@ class TD3(object):
             wandb.log({f'{self._name}/mean_weights_critic': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.critic.weights])}, commit=False)
         return self.actor_loss.numpy(), self.critic_loss.numpy(), self.ac_gr_norm.numpy(), self.cr_gr_norm.numpy(), self.ac_gr_std.numpy(), self.cr_gr_std.numpy()
 
-    def _get_attention_gradients(self, state, action, reward, next_state):
-        grad_cr = self._get_attention_gradients_cr(state, action, reward, next_state)
-        grad_ac = self._get_attention_gradients_ac(state, action, reward, next_state)
-        self._grads_cr.append(grad_cr.numpy())
-        self._grads_ac.append(grad_ac.numpy())
+    def _maybe_get_attention_gradients(self, state, action, reward, next_state):
+        if self._save_attention:
+            grad_cr = self._get_attention_gradients_cr(state, action, reward, next_state)
+            grad_ac = self._get_attention_gradients_ac(state, action, reward, next_state)
+            self._grads_cr.append(grad_cr.numpy())
+            self._grads_ac.append(grad_ac.numpy())
+
+    def _maybe_save_attention(self):
+        if self._save_attention:
+            if not self.total_it % 1000 and self._name == 'sub':
+                np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_cr), axis=0))
+                np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_ac), axis=0))
+            if not self.total_it % 1000 and self._name == 'meta':
+                np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',
+                        np.mean(np.array(self._grads_cr), axis=0))
+                np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',
+                        np.mean(np.array(self._grads_ac), axis=0))
+                self._grads_cr = []
+                self._grads_ac = []
 
     def full_reset(self):
         '''Completely resets actor and critic network to the predefined 
@@ -172,7 +173,7 @@ class TD3(object):
         return grads
 
     @tf.function
-    def _train_actor(self, state, action, reward_new, next_state, done, log, is_weight):
+    def _train_actor(self, state, action, reward, next_state, done, log, is_weight):
         # Can't use *if not* in tf.function graph
         if self.total_it % self._policy_freq == 0:
             # Actor update

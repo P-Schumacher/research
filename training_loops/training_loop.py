@@ -50,11 +50,16 @@ def main(cnf):
     state, done = env.reset(), False
     switch = 0
     reward_fn = tf.Variable(0)
+    #states = []
     for t in range(int(cnf.max_timesteps)):
         if not t % cnf.switch_time:
             switch = (switch + 1) % 2
         action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)
         next_state, reward, done, _ = env.step(action, reward_fn)
+        #states.append(next_state)
+        #if not t % 1000:
+        #    np.save(f'state_normalisations/state_norm_{t}.npy', np.array(states))
+        #    states = []
         # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         # get intrinsic reward from agent.transitbuffer computation

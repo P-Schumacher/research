@@ -168,15 +168,18 @@ class CoppeliaEnv(gym.Env):
         self._initial_gripper_conftree = self._robot.bot[1].get_configuration_tree()
 
     def _prepare_parameters(self, **kwargs):
-        # Config settings
+        # Float or integer params
         kwargs = {f'_{key}': value for key, value in kwargs.items()}
         kwargs['force_mode'] = kwargs.pop('_force')
         for key in kwargs.keys():
             setattr(self, key, kwargs[key])
+        # Params that need special types
         self._max_vel = np.array(self._max_vel, np.float64) * (np.pi / 180)  # API uses rad / s
         self._max_torque = np.array(self._max_torque, np.float64)
         self._distance_fn = self._get_distance_fn(self._distance_function)
         self.time_limit = [600 if 'two' in self._task else 300][0]
+        self._state_max = np.array(self._state_max, np.float32)
+        self._state_min = np.array(self._state_min, np.float32)
         # Control flow
         self._timestep = 0
         self._needs_reset = True
@@ -188,6 +191,8 @@ class CoppeliaEnv(gym.Env):
         self._state_b1 = 0
         self._state_b2 = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
+        # assertions
+        assert not (self._normalize and self._task != 'sparse_two_button_sequential')
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Generate subgoal ranges that the HIRO uses to determine its subgoal dimensions.  Not useful
@@ -446,7 +451,12 @@ class CoppeliaEnv(gym.Env):
             target = np.concatenate([self._pos_b1[:-1], [self._state_b1], self._pos_b2[:-1],
                                      [self._state_b2]], axis=0)
             #target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
-        return np.array(np.concatenate([observation, target]), dtype=np.float32)
+        ret = np.array(np.concatenate([observation, target]), dtype=np.float32)
+        ret = self._maybe_normalize(ret)
+        return ret
+    def _maybe_normalize(self, ret):
+        if self._normalize: 
+            return (ret - self._state_min) / (self._state_max - self._state_min)
    
     def _reset_target(self, evalmode):
         pose = self._target_init_pose.copy()

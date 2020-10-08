@@ -2,13 +2,13 @@ project: 'attention_recording_random'
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: true
-  save_model: false
+  save_model: true
   load_model: false
-  descriptor: 'sequential_touch0.3_switchedtorque_c5'
+  descriptor: 'sub_save_attention'
   load_string: ${main.descriptor} #'switching_all_10000'
-  c_step: 5
+  c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
@@ -36,7 +36,7 @@ agent:
   nstep: 1
   meta_rew_scale: 0.1
   meta_noise: 0.644
-  sub_noise: 1.
+  sub_noise: 0.02
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -47,7 +47,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 0
+  per: 1
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
@@ -70,6 +70,8 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     use_FM: false
+    save_attention: false
+
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -83,11 +85,12 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.2
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
     task: 'sparse_two_button_sequential'
+    normalize: true
 
   subgoals:
     ej_goal: [3, 1.0]

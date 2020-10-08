@@ -10,6 +10,11 @@ class HierarchicalAgent(Agent):
         self._prepare_parameters(agent_cnf, main_cnf, env_spec, subgoal_dim)
         self._self_prepare_algo_objects(agent_cnf, buffer_cnf, main_cnf, env_spec, model_cls, subgoal_dim)
         self._prepare_control_variables()
+        self._state_min = np.array([-0.3,-1.6,0.52, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14, -3.14,
+                                    -2.05,-2.35,-2.22,-1.84,-2.18,-2.74,-2.09,-2.68,-4.71,2.76,-0.21,-1.48,0,-0.2,-1.4,0])
+        self._state_max =  np.array([1.5, 0.34, 1.83, 3.14, 3.14, 3.14, 3.14, 3.14, 3.14,
+                                              3.14,1.93,1.92,1.64,2.05,2.15,2.4,2.4,2.7,2.9,2.85,1.44,0.2,1,1.43,0.16,1])
+
         
     def select_action(self, state, reward_fn, noise_bool=False):
         '''Selects an action from the sub agent to output. For this a goal is queried from the meta agent and
@@ -55,8 +60,8 @@ class HierarchicalAgent(Agent):
         '''Loads the weights of sub and meta agent from a file.'''
         self._sub_agent.actor.load_weights(string + "_sub_actor")
         self._sub_agent.critic.load_weights(string + "_sub_critic")
-        self._meta_agent.actor.load_weights(string + "_meta_actor")
-        self._meta_agent.critic.load_weights(string + "_meta_critic")
+        #self._meta_agent.actor.load_weights(string + "_meta_actor")
+        #self._meta_agent.critic.load_weights(string + "_meta_critic")
 
     def reset(self):
         '''Want this reset such that the meta agent proposes the first goal every
@@ -199,6 +204,7 @@ class HierarchicalAgent(Agent):
         '''Queries a goal from the meta_agent and applies several transformations if enabled.'''
         #self._add_third_goal(state, reward_fn)
         self._meta_state = state
+        self._maybe_normalize_state()
         self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
@@ -206,6 +212,10 @@ class HierarchicalAgent(Agent):
             self._maybe_mock()
             self._maybe_spherical_coord_trafo()
             self._maybe_center_goal()
+
+    def _maybe_normalize_state(self):
+        if self._normalize:
+            self._meta_state = (self._meta_state - self._state_min)/(self._state_max - self._state_min)
 
     def _add_third_goal(self, state, reward_fn):
         if reward_fn == 0:
@@ -373,6 +383,7 @@ class HierarchicalAgent(Agent):
         self._decay_noise = agent_cnf.decay_noise
         self._noise_range = np.concatenate([np.array(agent_cnf.action_range, dtype=np.float32), [1]], 0)
         self._relative_noise = agent_cnf.relative_noise
+        self._normalize = agent_cnf.normalize
 
     @property
     def goal(self):

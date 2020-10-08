@@ -35,7 +35,7 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.644
+  meta_noise: 0.64
   sub_noise: 0.02
   goal_type: Direction
   ri_re: false
@@ -53,6 +53,7 @@ agent:
   distance_goal_regul: 0.000
   goal_every_iteration: false
   decay_noise: true
+  normalize: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -90,10 +91,10 @@ coppeliagym:
     record_touches: false
     reset_on_wrong_sequence: false
     task: 'sparse_two_button_sequential'
-    normalize: true
+    normalize: false
 
   subgoals:
-    ej_goal: [3, 1.0]
+    ej_goal: [3, 0.001]
 
 buffer:
   alpha: 0.9

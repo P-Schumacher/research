@@ -192,7 +192,6 @@ class CoppeliaEnv(gym.Env):
         self._state_b2 = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
         # assertions
-        assert not (self._normalize and self._task != 'sparse_two_button_sequential')
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Generate subgoal ranges that the HIRO uses to determine its subgoal dimensions.  Not useful
@@ -452,11 +451,7 @@ class CoppeliaEnv(gym.Env):
                                      [self._state_b2]], axis=0)
             #target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
         ret = np.array(np.concatenate([observation, target]), dtype=np.float32)
-        ret = self._maybe_normalize(ret)
         return ret
-    def _maybe_normalize(self, ret):
-        if self._normalize: 
-            return (ret - self._state_min) / (self._state_max - self._state_min)
    
     def _reset_target(self, evalmode):
         pose = self._target_init_pose.copy()

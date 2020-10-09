@@ -2,11 +2,11 @@ project: 'attention_recording_random'
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: true
-  save_model: true
-  load_model: false
-  descriptor: 'sub_save_attention'
+  save_model: false
+  load_model: true
+  descriptor: 'sub_save_attention_corrected'
   load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
@@ -35,14 +35,14 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.64
-  sub_noise: 0.02
+  meta_noise: 0.2 #0.64
+  sub_noise: 0.0 #0.02
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: true
+  train_sub: false
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
@@ -71,7 +71,7 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     use_FM: false
-    save_attention: false
+    save_attention: true
 
   sub_model:
     policy_freq: 1
@@ -94,7 +94,7 @@ coppeliagym:
     normalize: false
 
   subgoals:
-    ej_goal: [3, 0.001]
+    ej_goal: [3, 1.]
 
 buffer:
   alpha: 0.9

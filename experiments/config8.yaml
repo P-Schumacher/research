@@ -85,8 +85,8 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: false
-    random_eval_target: false
+    random_target: true 
+    random_eval_target: true
     reversal_time: 100000000000
     touch_distance: 0.3
     minimum_dist: 0.

@@ -9,35 +9,34 @@ from pudb import set_trace
 from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay, decay_step, maybe_verbose_output
+def concat(a,b):
+    assert a.shape[0] == 1 and b.shape[0] == 1
+    c = np.zeros([a.shape[0], a.shape[-1]+b.shape[-1]], dtype=np.float32)
+    c[:, :a.shape[-1]] = a
+    c[:, :b.shape[-1]] = b
+    return c 
 
-class Reset_Reversal:
-    def __init__(self, agent, N, active=True):
-        self.tmp = False
-        self.N = N
-        self.agent = agent
-        self.active = active
-        self.its = 0
+def attention_grad_meta(state, agent, t, flat):
+    c_step = 1
+    state = tf.reshape(state, shape=[1, state.shape[0]])
+    if not flat:
+        goal = tf.reshape(agent.goal, shape=[1, agent.goal.shape[0]])
+        grads = agent._meta_agent._get_attention_gradients_cr(state, goal)
+        sub_state = concat(state[:, :-6], goal)
+        action = agent._sub_agent.actor(sub_state)
+        grads_sub = agent._sub_agent._get_attention_gradients_cr(sub_state, action)
+        grads_sub = grads_sub[:grads.shape[0]]
+    else:
+        action = agent._policy.actor(state)
+        grads = agent._policy._get_attention_gradients_cr(state, action)
+    np.save(f'./grad_attention/c{c_step}/grad_critic_meta_{t}.npy',np.array(grads))
+    state_padded = np.zeros_like(grads)
+    state_padded[:state.shape[1]] = state
+    np.save(f'./grad_attention/c5/grad_critic_meta_{t}.npy',state_padded)
+    if not flat:
+        np.save(f'./grad_attention/c1/grad_critic_meta_{t}.npy', grads_sub)
 
-    def maybe_reset_things_for_reversal(self, t):
-        if t == self.N and self.active:
-            #self.agent.meta_replay_buffer.reset()
-            #self.agent._meta_agent.beta_1.assign(0)
-            #self.agent._meta_agent.beta_2.assign(0)
-            #self.agent._meta_agent.critic_optimizer.iterations.assign(0)
-            #self.agent._meta_agent.actor_optimizer.iterations.assign(0)
-            self.old = self.agent._meta_agent.actor_optimizer.learning_rate.numpy()
-            self.agent._meta_agent.actor_optimizer.learning_rate.assign(0.0008)
-            #self.agent._meta_agent.full_reset()
-            #self.agent._meta_noise = 3.5
-            #self.tmp = True
-            self.its += 1
-        if t > self.N and self.tmp == True:
-            if self.its >= 10000:
-                self.agent._meta_agent.actor_optimizer.learning_rate = self.old
-            #self.agent._meta_agent.beta_1.assign(0.9)
-            #self.agent._meta_agent.beta_2.assign(0.999)
 
-            #self.tmp = False
 
 def main(cnf):
     env, agent = create_world(cnf)
@@ -50,24 +49,21 @@ def main(cnf):
     state, done = env.reset(), False
     switch = 0
     reward_fn = tf.Variable(0)
-    #states = []
     for t in range(int(cnf.max_timesteps)):
+        state_old = state
         if not t % cnf.switch_time:
             switch = (switch + 1) % 2
         action = agent.select_action(state, noise_bool=True, reward_fn=reward_fn)
         next_state, reward, done, _ = env.step(action, reward_fn)
-        #states.append(next_state)
-        #if not t % 1000:
-        #    np.save(f'state_normalisations/state_norm_{t}.npy', np.array(states))
-        #    states = []
-        # future value fct only zero if terminal because of success, not time
         success_cd = [done if env.success else 0][0]
         # get intrinsic reward from agent.transitbuffer computation
-        intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd, FM=None)
+        intr_rew = agent.replay_add(state, action, reward, next_state, done, success_cd)
         maybe_verbose_output(t, agent, env, action, cnf, state, intr_rew)
         logger.inc(t, reward)
         if not cnf.flat_agent and not cnf.minilog:
             logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
+        if cnf.save_attention:
+            attention_grad_meta(state, agent, t, flat=cnf.flat_agent)
         state = next_state
         if done:
             reward_fn.assign([0 if switch else 1][0])

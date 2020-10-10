@@ -23,20 +23,19 @@ class Accum:
 
 
 
-max_N = 9000
-#max_N = 55000 
-files = ['c1', 'c10', 'c30']
-files = ['c10']
+max_N = 1000
+files = ['c5', 'c1','c10']
 cmap = plt.cm.viridis
 
-
+'''
 for level in ['meta']:
-    for component in ['actor', 'critic']:
+    for component in ['critic']:
         ims = []
         for idx, folder in enumerate(files):
             acc = Accum()
-            for i in range(0, max_N, 1000):
+            for i in range(0, max_N, 1):
                 a = np.load(f'{folder}/grad_{component}_{level}_{i}.npy')
+                print(a.shape)
                 if not np.any(np.isnan(a)):
                     a = np.reshape(a, [1,a.shape[0]])
                     acc.collect(a)
@@ -47,20 +46,21 @@ for level in ['meta']:
         _min, _max = np.amin(combined_data), np.amax(combined_data)
         globals()[f'{level}_{component}_min'] = _min
         globals()[f'{level}_{component}_max'] = _max
-
+'''
 
 gridspec = {'width_ratios': [1, 1, 1, 0.1]}
 fig, ax = plt.subplots(1, 4, figsize=(20, 20), gridspec_kw=gridspec)
 for idx, folder in enumerate(files):
     acc = Accum()
-    for i in range(0, max_N, 1000):
+    for i in range(0, max_N, 1):
         a = np.load(f'{folder}/grad_critic_meta_{i}.npy')
         if not np.any(np.isnan(a)):
             a = np.reshape(a, [1,a.shape[0]])
             acc.collect(a)
     im = acc.grad_collect
     print(im.shape)
-    c_im = ax[idx].imshow(im, cmap=cmap, vmin=meta_critic_min, vmax=meta_critic_max)
+    #c_im = ax[idx].imshow(im, cmap=cmap, vmin=meta_critic_min, vmax=meta_critic_max)
+    c_im = ax[idx].imshow(im, cmap=cmap)
     labels = ['EEx', 'EEy', 'EEz', 'J0', 'J1', 'J2', 'J3', 'J4', 'J5', 'J6']
     labels = labels + [f'vel_{x}' for x in labels]
     labels = labels + ['b1x', 'b1y', 'b1F', 'b2x', 'b2y', 'b2F', 'A0','A1', 'A2']
@@ -75,6 +75,6 @@ for idx, folder in enumerate(files):
         fig.colorbar(c_im, cax=ax[-1])
     ax[idx].set_aspect('auto')
 
-#plt.tight_layout()
-#plt.savefig('attebtion.pdf')
+plt.tight_layout()
+plt.savefig('attention_pretrained.pdf')
 plt.show()

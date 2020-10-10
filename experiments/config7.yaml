@@ -8,7 +8,7 @@ main:
   load_model: true
   descriptor: 'sub_save_attention_corrected'
   load_string: ${main.descriptor} #'switching_all_10000'
-  c_step: 10
+  c_step: 30
   seed: 25
   offpolicy: true
   start_timesteps: 5000
@@ -53,7 +53,7 @@ agent:
   distance_goal_regul: 0.000
   goal_every_iteration: false
   decay_noise: false
-  normalize: false
+  normalize: true
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -86,7 +86,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.5
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

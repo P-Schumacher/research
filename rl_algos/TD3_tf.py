@@ -33,9 +33,10 @@ class TD3(object):
             target_model.weights[idx].assign(target_W[idx])
      
     def train(self, replay_buffer, batch_size, t, log=False, sub_actor=None, sub_agent=None, FM=None):
-        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(1000)
         self._maybe_save_attention()
         self._maybe_get_attention_gradients(state, action, reward, next_state)
+        state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample(batch_size)
         action = self._maybe_offpol_correction(sub_actor, action, state, next_state, state_seq, action_seq)
         td_error = self._train_critic(state, action, reward, next_state, done, log, replay_buffer.is_weight)
         if self._per:
@@ -52,7 +53,7 @@ class TD3(object):
 
     def _maybe_get_attention_gradients(self, state, action, reward, next_state):
         if self._save_attention:
-            grad_cr = self._get_attention_gradients_cr(state, action, reward, next_state)
+            grad_cr = self._get_attention_gradients_cr(state, action)
             grad_ac = self._get_attention_gradients_ac(state, action, reward, next_state)
             self._grads_cr.append(grad_cr.numpy())
             self._grads_ac.append(grad_ac.numpy())
@@ -62,7 +63,7 @@ class TD3(object):
             if not self.total_it % 1000 and self._name == 'sub':
                 np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_cr), axis=0))
                 np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',np.mean(np.array(self._grads_ac), axis=0))
-            if not self.total_it % 1000 and self._name == 'meta':
+            if not self.total_it % 1 and self._name == 'meta':
                 np.save(f'./grad_attention/c{self._c_step}/grad_critic_{self._name}_{self.total_it.numpy()}.npy',
                         np.mean(np.array(self._grads_cr), axis=0))
                 np.save(f'./grad_attention/c{self._c_step}/grad_actor_{self._name}_{self.total_it.numpy()}.npy',
@@ -152,7 +153,7 @@ class TD3(object):
         return tf.abs(target_Q - current_Q1)
 
     @tf.function
-    def _get_attention_gradients_cr(self, state, action, reward, next_state):
+    def _get_attention_gradients_cr(self, state, action):
         state_action = tf.concat([state, action], 1)
         with tf.GradientTape() as tape:
             tape.watch(state_action)

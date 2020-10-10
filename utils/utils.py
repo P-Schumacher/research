@@ -111,7 +111,7 @@ def assert_sanity_check(cnf):
         if cnf.coppeliagym.params.double_buttons:
             assert cnf.coppeliagym.sim.scene_file == 'coppelia_scenes/kuka_double.ttt' 
 
-
+# RANDOM STUFF -------------------------------------------------------------------
 def exponential_decay(total_steps, init_step=100, min_step=10):
         '''Gives out an exponentially decayed step size for the 
         meta-agent. step = init_step * exp(- tau * iteration)
@@ -150,3 +150,32 @@ def decay_step(decay, stepper, agent, flat_agent, init_c):
         agent._c_step = c_step
         agent._meta_agent.c_step = c_step
     return c_step
+
+class Reset_Reversal:
+    def __init__(self, agent, N, active=True):
+        self.tmp = False
+        self.N = N
+        self.agent = agent
+        self.active = active
+        self.its = 0
+
+    def maybe_reset_things_for_reversal(self, t):
+        if t == self.N and self.active:
+            #self.agent.meta_replay_buffer.reset()
+            #self.agent._meta_agent.beta_1.assign(0)
+            #self.agent._meta_agent.beta_2.assign(0)
+            #self.agent._meta_agent.critic_optimizer.iterations.assign(0)
+            #self.agent._meta_agent.actor_optimizer.iterations.assign(0)
+            self.old = self.agent._meta_agent.actor_optimizer.learning_rate.numpy()
+            self.agent._meta_agent.actor_optimizer.learning_rate.assign(0.0008)
+            #self.agent._meta_agent.full_reset()
+            #self.agent._meta_noise = 3.5
+            #self.tmp = True
+            self.its += 1
+        if t > self.N and self.tmp == True:
+            if self.its >= 10000:
+                self.agent._meta_agent.actor_optimizer.learning_rate = self.old
+            #self.agent._meta_agent.beta_1.assign(0.9)
+            #self.agent._meta_agent.beta_2.assign(0.999)
+
+            #self.tmp = False

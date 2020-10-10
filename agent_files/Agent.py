@@ -38,20 +38,22 @@ class Agent:
         state = np.array(state)
         action = self._policy.select_action(state) 
         if noise_bool:
-            noise = [self._ounoise.ornstein_uhlenbeck_level() if self._OU else self._gaussian_noise(self._sub_noise,
-                                                                                                    self._action_dim)][0]
+            if self._relative_noise:
+                noise = self._gaussian_noise(self._sub_noise*self._noise_range, self._action_dim)
+            else:
+                noise = self._gaussian_noise(self._sub_noise, self._action_dim)
             action += noise
             action = tf.clip_by_value(action, -self._policy._max_action, self._policy._max_action)
         if self._decay_noise:
             self._sub_noise *= 0.99999
         return action
     
-    def train(self, timestep, episode_timesteps, FM):
+    def train(self, timestep, episode_timesteps):
         if self._train_sub:
             m_avg = np.zeros([6, ], dtype=np.float32)
             for i in range(episode_timesteps):
                 *metrics, = self._policy.train(self._replay_buffer, self._batch_size, timestep, (self._log and not
-                                                                                                 self._minilog), FM=FM)
+                                                                                                 self._minilog))
                 m_avg += metrics 
             m_avg /= self._gradient_steps
             if self._log and not self._minilog:
@@ -62,7 +64,7 @@ class Agent:
                            f'sub/actor_gradstd': m_avg[4],
                            f'sub/critic_gradstd': m_avg[5]}, step = timestep)
 
-    def replay_add(self, state, action, next_state, reward, done, success_cd, FM):
+    def replay_add(self, state, action, next_state, reward, done, success_cd):
         self._replay_buffer.add(state, action, next_state, self._sub_rew_scale * reward, success_cd, 0, 0)
 
     def save_model(self, string):
@@ -86,6 +88,9 @@ class Agent:
         self._nstep = agent_cnf.nstep
         self._OU = agent_cnf.ornstein
         self._decay_noise = agent_cnf.decay_noise
+        self._relative_noise = agent_cnf.relative_noise
+        self._noise_range = np.concatenate([np.array(agent_cnf.action_range, dtype=np.float32), [1]], 0)
+
         # Main cnf
         self._minilog = main_cnf.minilog
         self._seed = main_cnf.seed

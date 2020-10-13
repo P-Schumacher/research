@@ -28,8 +28,6 @@ agent:
   per: false
   sub_per: false
   goal_regul: false
-  seed: ${main.seed}
-  c_step: ${main.c_step}
   goal_every_iteration: false
   action_range: [30, 30, 30, 30, 30, 30, 30, 30]
   relative_noise: false

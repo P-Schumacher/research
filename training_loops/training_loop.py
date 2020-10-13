@@ -17,7 +17,7 @@ def concat(a,b):
     return c 
 
 def attention_grad_meta(state, agent, t, flat):
-    c_step = 1
+    c_step = [1 if flat else 10][0]
     state = tf.reshape(state, shape=[1, state.shape[0]])
     if not flat:
         goal = tf.reshape(agent.goal, shape=[1, agent.goal.shape[0]])
@@ -29,12 +29,13 @@ def attention_grad_meta(state, agent, t, flat):
     else:
         action = agent._policy.actor(state)
         grads = agent._policy._get_attention_gradients_cr(state, action)
+    print(f'c{c_step}')
     np.save(f'./grad_attention/c{c_step}/grad_critic_meta_{t}.npy',np.array(grads))
     state_padded = np.zeros_like(grads)
     state_padded[:state.shape[1]] = state
     np.save(f'./grad_attention/c5/grad_critic_meta_{t}.npy',state_padded)
     if not flat:
-        np.save(f'./grad_attention/c1/grad_critic_meta_{t}.npy', grads_sub)
+        np.save(f'./grad_attention/c33/grad_critic_meta_{t}.npy', grads_sub)
 
 
 

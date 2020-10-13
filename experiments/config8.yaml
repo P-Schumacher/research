@@ -2,10 +2,10 @@ project: 'attention_recording_random'
 main:
   render: false
   flat_agent: true
-  log: true
+  log: false
   minilog: true
-  save_model: true
-  load_model: false
+  save_model: false
+  load_model: true
   descriptor: 'attention_sub_save'
   #load_string: ${main.descriptor} #'switching_all_10000'
   #load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
@@ -13,13 +13,13 @@ main:
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 50000
   max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
   batch_size: 128
-  save_attention: false
+  save_attention: true
   
   decay: false
   step_decayer:
@@ -38,8 +38,8 @@ agent:
   center_meta_goal: false
   nstep: 5
   meta_rew_scale: 0.1
-  meta_noise: 0.3
-  sub_noise: 0.01
+  meta_noise: 0.0 #0.3
+  sub_noise: 0.0 #0.01
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -85,8 +85,8 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: true 
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     reversal_time: 100000000000
     touch_distance: 0.3
     minimum_dist: 0.

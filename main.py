@@ -7,7 +7,7 @@ from pudb import set_trace
 import tensorflow as tf
 #tf.config.experimental.enable_mlir_graph_optimization()
 tf.config.threading.set_inter_op_parallelism_threads(2)
-tf.config.threading.set_intra_op_parallelism_threads(4)
+tf.config.threading.set_intra_op_parallelism_threads(6)
 
 try:
     print(a)
@@ -20,8 +20,8 @@ except:
     mpi = False 
     print('MPI NOT LOADED')
 #os.environ['CUDA_VISIBLE_DEVICES']='-1'
-ant_env = False
-vrep = True
+ant_env = True
+vrep = False
 
 
 name = [sys.argv[1] if len(sys.argv) >= 2 else None][0]
@@ -39,6 +39,7 @@ if vrep:
         cnf = OmegaConf.merge(cnf, exp_cnf)
 
 if ant_env:
+    set_trace()
     main_cnf = OmegaConf.load('configs/ant_default/ant_main_conf.yaml')
     agent_cnf = OmegaConf.load('configs/ant_default/ant_agent_conf.yaml')
     # Parameters of second cnf file overwrite those of first

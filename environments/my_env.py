@@ -8,6 +8,7 @@ def get_goal_sample_fn(env_name, evalmode):
     # NOTE: When evaluating (i.e. the metrics shown in the paper,
     # we use the commented out goal sampling function.  The uncommented
     # one is only used for training.
+    return lambda: np.array([10.,0])
     if evalmode:
       return lambda: np.array([0., 16.]) # evaluation goal
     return lambda: np.random.uniform((-4, -4), (20, 20))

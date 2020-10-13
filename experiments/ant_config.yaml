@@ -2,8 +2,9 @@ project: ant_maze_new
 main:
   log: false
   minilog: true
+  load_string: 'hiro_save_sub'
   descriptor: 'hiro_ant_zero_obs'
-  save_model: false
+  save_model: true
   render: false
   c_step: 10
 
@@ -14,3 +15,4 @@ agent:
  meta_model:
    no_candidates: 10
    zero_obs: 2
+   save_attention: false

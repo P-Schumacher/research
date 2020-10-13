@@ -2,7 +2,12 @@ main:
   log: false
   descriptor: hiro_ant
   load_model: true
-  render: true
+  render: false
+  load_string: 'TD3_AntMaze_relative_goal_zero_obs'
+
+agent:
+  meta_model:
+    save_attention: false
 
 env_w_goal:
   evalmode: true

@@ -58,6 +58,7 @@ agent:
     goal_regul: false
     distance_goal_regul: 0.0
     nstep: 1
+    save_attention: false
 
   sub_model:
     ac_hidden_layers: [300, 300]
@@ -82,4 +83,6 @@ agent:
     goal_regul: false
     distance_goal_regul: 0.0
     nstep: ${agent.nstep}
+    normalize: false
+    save_attention: false
 

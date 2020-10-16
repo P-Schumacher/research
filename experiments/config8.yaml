@@ -1,19 +1,19 @@
-project: 'idea_common_rire'
+project: "test_adabelief"
 main:
   render: false
   flat_agent: false
-  log: false
+  log: true
   minilog: false
   save_model: false
   load_model: false
-  descriptor: 'norire'
+  descriptor: 'baseline'
   #load_string: ${main.descriptor} #'switching_all_10000'
   #load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   load_string: 'flat_save'
   c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 128
+  start_timesteps: 5000
   max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000

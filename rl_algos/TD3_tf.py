@@ -175,41 +175,20 @@ class TD3(object):
 
     @tf.function
     def _train_actor(self, state, action, reward, next_state, done, log, is_weight, sub=None):
-        if False: #self._name == 'meta':
-            # Can't use *if not* in tf.function graph
-            if self.total_it % self._policy_freq == 0:
-                # Actor update
-                with tf.GradientTape(persistent=False) as tape:
-                    goal = self.actor(state)
-                    state_goal = tf.concat([state, goal], 1)
-                    low_state_goal = tf.concat([state[:,:-6], goal], 1)
-                    action = sub.actor(low_state_goal)
-                    state_action = tf.concat([low_state_goal, action], 1)
-                    q = sub.critic.Q1(state_action)
-                    actor_loss = self.critic.Q1(state_goal) + 0.1 * q
-                    mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-                gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-                gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
-                self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
-                self.transfer_weights(self.actor, self.actor_target, self._tau)
-                self.transfer_weights(self.critic, self.critic_target, self._tau)
-                self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
-        else:
-
-            # Can't use *if not* in tf.function graph
-            if self.total_it % self._policy_freq == 0:
-                # Actor update
-                with tf.GradientTape(persistent=False) as tape:
-                    action = self.actor(state)
-                    state_action = tf.concat([state, action], 1)
-                    actor_loss = self.critic.Q1(state_action)
-                    mean_actor_loss = -tf.math.reduce_mean(actor_loss)
-                gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
-                gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
-                self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
-                self.transfer_weights(self.actor, self.actor_target, self._tau)
-                self.transfer_weights(self.critic, self.critic_target, self._tau)
-                self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
+        # Can't use *if not* in tf.function graph
+        if self.total_it % self._policy_freq == 0:
+            # Actor update
+            with tf.GradientTape(persistent=False) as tape:
+                action = self.actor(state)
+                state_action = tf.concat([state, action], 1)
+                actor_loss = self.critic.Q1(state_action)
+                mean_actor_loss = -tf.math.reduce_mean(actor_loss)
+            gradients = tape.gradient(mean_actor_loss, self.actor.trainable_variables)
+            gradients, norm  = clip_by_global_norm(gradients, self._clip_ac)
+            self.actor_optimizer.apply_gradients(zip(gradients, self.actor.trainable_variables))
+            self.transfer_weights(self.actor, self.actor_target, self._tau)
+            self.transfer_weights(self.critic, self.critic_target, self._tau)
+            self._maybe_log_actor(gradients, norm, mean_actor_loss, log) 
 
     def _maybe_offpol_correction(self, sub_actor, action, state, next_state, state_seq, action_seq):
         if self._name == 'meta' and self._offpolicy:

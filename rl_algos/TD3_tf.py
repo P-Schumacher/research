@@ -175,7 +175,7 @@ class TD3(object):
 
     @tf.function
     def _train_actor(self, state, action, reward, next_state, done, log, is_weight, sub=None):
-        if False: #self._name == 'meta':
+        if self._name == 'meta':
             # Can't use *if not* in tf.function graph
             if self.total_it % self._policy_freq == 0:
                 # Actor update

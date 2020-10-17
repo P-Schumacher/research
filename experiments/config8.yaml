@@ -2,7 +2,7 @@ project: "test_adabelief"
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: false
   save_model: false
   load_model: false

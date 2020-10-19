@@ -1,12 +1,12 @@
-project: "test_adabelief"
+project: "per_testing"
 main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  descriptor: 'baseline'
+  descriptor: 'no_per'
   #load_string: ${main.descriptor} #'switching_all_10000'
   #load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   load_string: 'flat_save'
@@ -14,7 +14,7 @@ main:
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 30000000
+  max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -50,12 +50,12 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: true
+  decay_noise: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -88,11 +88,11 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.3
+    touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    task: 'sparse_two_button_sequential'
+    task: 'sparse_one_button'
 
   subgoals:
     ej_goal: [3, 1.0]

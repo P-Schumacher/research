@@ -6,10 +6,10 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'no_per'
+  descriptor: 'md_per_corrected'
   #load_string: ${main.descriptor} #'switching_all_10000'
-  #load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
-  load_string: 'flat_save'
+  load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
+  #load_string: 'flat_save'
   c_step: 10
   seed: 25
   offpolicy: true
@@ -38,8 +38,8 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.3
-  sub_noise: 0.01
+  meta_noise: 0.64
+  sub_noise: 1.4
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -49,13 +49,14 @@ agent:
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
-  add_multiple_dones: false
+  add_multiple_dones: true
   per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
   decay_noise: false
+  relative_noise: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -93,6 +94,7 @@ coppeliagym:
     record_touches: false
     reset_on_wrong_sequence: false
     task: 'sparse_one_button'
+    normalize: false
 
   subgoals:
     ej_goal: [3, 1.0]

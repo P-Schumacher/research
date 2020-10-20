@@ -42,9 +42,6 @@ class CoppeliaEnv(gym.Env):
             self._reversal = True
         else:
             self._reversal = False
-        if not self._reversal and (self._total_it >= self._reversal_time):
-            self._reversal = True
-            print('REVERSAL')
         if self._render and self._double_buttons:
             if self._state_b1 == 1:
                 self._target.set_color([1, 0, 1])

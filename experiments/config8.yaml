@@ -1,4 +1,4 @@
-project: "per_testing"
+project: "reversed_testing"
 main:
   render: false
   flat_agent: false
@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'md_per_corrected'
+  descriptor: 'switch_task'
   #load_string: ${main.descriptor} #'switching_all_10000'
   load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   #load_string: 'flat_save'
@@ -20,6 +20,7 @@ main:
   simple_env: false
   batch_size: 128
   save_attention: false
+  switch_time: 10000
   
   decay: false
   step_decayer:
@@ -50,7 +51,7 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: true
-  per: 0
+  per: 1
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
@@ -86,14 +87,13 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: true
-    random_eval_target: true
-    reversal_time: 100000000000
-    touch_distance: 0.08
+    random_target: false
+    random_eval_target: false
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    task: 'sparse_one_button'
+    task: 'dense_two_button'
     normalize: false
 
   subgoals:

@@ -298,11 +298,11 @@ class CoppeliaEnv(gym.Env):
         if not self._reversal:
             rew = - self._get_distance(self._pos_b1)
             if self._get_distance(self._pos_b2) < self._touch_distance:
-                rew -= 1000
+                rew -= 100
         else:
             rew = - self._get_distance(self._pos_b2)
             if self._get_distance(self._pos_b1) < self._touch_distance:
-                rew -= 1000
+                rew -= 100
         if self._distance_query_switcher(0) < self._touch_distance:
             if not self._reversal:
                 self._state_b1 = 1

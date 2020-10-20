@@ -6,7 +6,7 @@ import os
 from pudb import set_trace
 import tensorflow as tf
 tf.config.threading.set_inter_op_parallelism_threads(2)
-tf.config.threading.set_intra_op_parallelism_threads(6)
+tf.config.threading.set_intra_op_parallelism_threads(4)
 
 try:
     print(a)

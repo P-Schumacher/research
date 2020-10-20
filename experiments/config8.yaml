@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'switch_task'
+  descriptor: 'switch_task_FM_model'
   #load_string: ${main.descriptor} #'switching_all_10000'
   load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   #load_string: 'flat_save'
@@ -20,7 +20,7 @@ main:
   simple_env: false
   batch_size: 128
   save_attention: false
-  switch_time: 10000
+  switch_time: 50000
   
   decay: false
   step_decayer:

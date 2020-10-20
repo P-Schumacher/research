@@ -9,6 +9,8 @@ from pudb import set_trace
 from agent_files.HIRO import HierarchicalAgent
 from utils.logger import Logger
 from utils.utils import create_world, exponential_decay, decay_step, maybe_verbose_output
+from rl_algos.FM import ForwardModel
+
 def concat(a,b):
     assert a.shape[0] == 1 and b.shape[0] == 1
     c = np.zeros([a.shape[0], a.shape[-1]+b.shape[-1]], dtype=np.float32)
@@ -41,6 +43,7 @@ def attention_grad_meta(state, agent, t, flat):
 def main(cnf):
     env, agent = create_world(cnf)
     cnf = cnf.main
+    FM = ForwardModel(26, cnf.log, oracle=False)
     # create objects 
     logger = Logger(cnf.log, cnf.minilog, env.time_limit)
     # Load previously trained model.
@@ -64,6 +67,7 @@ def main(cnf):
             logger.most_important_plot(agent, state, action, reward, next_state, success_cd)
         if cnf.save_attention:
             attention_grad_meta(state, agent, t, flat=cnf.flat_agent)
+        FM.train(state, next_state, reward, success_cd, done)
         state = next_state
         if done:
             reward_fn.assign([0 if switch else 1][0])

@@ -260,13 +260,13 @@ class TD3(object):
         self.actor_reset_net = Actor(self._state_dim, self._action_dim, self._max_action, self._ac_hidden_layers,
                                      self._reg_coeff_ac)
         self.actor_target = Actor(self._state_dim, self._action_dim, self._max_action, self._ac_hidden_layers, self._reg_coeff_ac)
-        #self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=self._ac_lr, beta_1=self._beta_1, beta_2=self._beta_2)
-        self.actor_optimizer = AdaBeliefOptimizer(learning_rate=self._ac_lr, epsilon=1e-12)
+        self.actor_optimizer = tf.keras.optimizers.Adam(learning_rate=self._ac_lr, beta_1=self._beta_1, beta_2=self._beta_2)
+        #self.actor_optimizer = AdaBeliefOptimizer(learning_rate=self._ac_lr, epsilon=1e-12)
         self.critic = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_reset_net = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
         self.critic_target = Critic(self._state_dim, self._action_dim, self._cr_hidden_layers, self._reg_coeff_cr)
-        #self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr, beta_1=self._beta_1, beta_2=self._beta_2)
-        self.critic_optimizer = AdaBeliefOptimizer(learning_rate=self._cr_lr, epsilon=1e-12)
+        self.critic_optimizer = tf.keras.optimizers.Adam(learning_rate=self._cr_lr, beta_1=self._beta_1, beta_2=self._beta_2)
+        #self.critic_optimizer = AdaBeliefOptimizer(learning_rate=self._cr_lr, epsilon=1e-12)
         # Huber loss does not punish a noisy large gradient.
         self.critic_loss_fn = tf.keras.losses.Huber(delta=1.)  
         # Equal initial network and target network weights

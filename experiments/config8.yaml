@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'md_per_corrected_0.5'
+  descriptor: 'md_per_corrected'
   #load_string: ${main.descriptor} #'switching_all_10000'
   load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   #load_string: 'flat_save'
@@ -89,7 +89,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.5
+    touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

@@ -68,7 +68,7 @@ class CoppeliaEnv(gym.Env):
         self.success = False
         self.mega_reward = True
         self._state_b1 = 0
-        self._state_b2 = 0
+        self._state_b2 = [0 if self._double_buttons else 1][0]
         self._stop_counter = COUNTER
         return state
 
@@ -288,6 +288,7 @@ class CoppeliaEnv(gym.Env):
         rew = -1.
         # One button touch task
         if self._get_distance(self._pos_b1) < self._touch_distance:
+            set_trace()
             rew += 1
             self._state_b1 = True
         return rew

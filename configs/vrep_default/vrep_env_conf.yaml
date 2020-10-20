@@ -13,8 +13,8 @@ coppeliagym:
     sub_mock: ${agent.sub_mock}
     render: ${main.render}
     # Taken from Kuka14 Tech Sheet
-    max_torque: [320, 320, 176, 176, 110, 40, 40] 
-    max_vel: [85, 85, 100, 75, 130, 135, 135] # In deg/s. In the sim, they convert to rad/s
+    max_vel: [320, 320, 176, 176, 110, 40, 40] #FALSCH RUM
+    max_torque : [85, 85, 100, 75, 130, 135, 135] # In deg/s. In the sim, they convert to rad/s
     ee_pos: false
     ee_j_pos: true
     force: false 
@@ -25,7 +25,6 @@ coppeliagym:
     distance_function: euclid
     spherical_coord: ${agent.spherical_coord}
     flat_agent: ${main.flat_agent}
-    reversal_time: 100000000
     touch_distance: 0.08
     minimum_dist: 0.
     record_touches: false

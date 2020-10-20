@@ -29,7 +29,6 @@ def attention_grad_meta(state, agent, t, flat):
     else:
         action = agent._policy.actor(state)
         grads = agent._policy._get_attention_gradients_cr(state, action)
-    print(f'c{c_step}')
     np.save(f'./grad_attention/c{c_step}/grad_critic_meta_{t}.npy',np.array(grads))
     state_padded = np.zeros_like(grads)
     state_padded[:state.shape[1]] = state

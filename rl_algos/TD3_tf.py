@@ -42,7 +42,7 @@ class TD3(object):
         if self._per:
             self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         #state, action, reward, next_state, done, state_seq, action_seq = replay_buffer.sample_low(batch_size)
-        self._train_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight)
+        self._train_actor(state, action, reward, next_state, done, log, replay_buffer.is_weight, sub_agent)
         #td_error = self._compute_td_error(state, action, reward, next_state, done)
         #self._prioritized_experience_update(self._per, td_error, next_state, action, reward, replay_buffer)
         self.total_it.assign_add(1)
@@ -174,7 +174,7 @@ class TD3(object):
         return grads
 
     @tf.function
-    def _train_actor(self, state, action, reward, next_state, done, log, is_weight):
+    def _train_actor(self, state, action, reward, next_state, done, log, is_weight, sub=None):
         # Can't use *if not* in tf.function graph
         if self.total_it % self._policy_freq == 0:
             # Actor update
@@ -230,7 +230,9 @@ class TD3(object):
             self.actor_loss.assign(mean_actor_loss)
 
     def _create_persistent_tf_variables(self):
-        # Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
+        '''Create tf.Variables here. They persist the graph and can be used inside and outside as they hold their values.
+        This is important if you want logger variables that can be written inside a tf.function decorated function
+        and are readable outside.'''
         self.total_it = tf.Variable(0, dtype=tf.int32)         
         self.actor_loss = tf.Variable(0, dtype=tf.float32)
         self.critic_loss = tf.Variable(0, dtype=tf.float32)

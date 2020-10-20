@@ -42,9 +42,6 @@ class CoppeliaEnv(gym.Env):
             self._reversal = True
         else:
             self._reversal = False
-        if not self._reversal and (self._total_it >= self._reversal_time):
-            self._reversal = True
-            print('REVERSAL')
         if self._render and self._double_buttons:
             if self._state_b1 == 1:
                 self._target.set_color([1, 0, 1])
@@ -68,7 +65,7 @@ class CoppeliaEnv(gym.Env):
         self.success = False
         self.mega_reward = True
         self._state_b1 = 0
-        self._state_b2 = 0
+        self._state_b2 = [0 if self._double_buttons else 1][0]
         self._stop_counter = COUNTER
         return state
 
@@ -288,6 +285,7 @@ class CoppeliaEnv(gym.Env):
         rew = -1.
         # One button touch task
         if self._get_distance(self._pos_b1) < self._touch_distance:
+            set_trace()
             rew += 1
             self._state_b1 = True
         return rew

@@ -9,7 +9,7 @@ import wandb
 
 class ForwardModel:
     '''Model that learns the reward in tandem with the RL agent learning.'''
-    def __init__(self, state_dim, logging, oracle=False, nstep=10):
+    def __init__(self, state_dim, logging, oracle=False, nstep=1):
         self.net = ForwardModelNet(2*state_dim, [100], 0.)
         self.opt = tf.keras.optimizers.Adam()
         self.loss_fn = tf.keras.losses.MeanSquaredError()
@@ -110,7 +110,7 @@ class ForwardModel:
         wandb.log({'FM/high_prederror': high_prederr, 'FM/low_prederror': low_prederr, 'FM/loss': loss}, commit=False)
         wandb.log({f'FM/mean_weights': wandb.Histogram([tf.reduce_mean(x).numpy() for x in self.net.weights])}, commit=False)
 
-    #@tf.function
+    @tf.function
     def _train(self, state, next_state, reward, reversal=False):
         with tf.GradientTape() as tape:
             ret_pred = self.forward_pass(state, next_state, reshape=False, reversal=reversal)
@@ -118,8 +118,8 @@ class ForwardModel:
         gradients = tape.gradient(loss, self.net.trainable_variables)
         if not self.oracle:
             self.opt.apply_gradients(zip(gradients, self.net.trainable_variables))
-        high_rews = tf.where(reward != -10.)[:,0]
-        low_rews = tf.where(reward == -10.)[:,0]
+        high_rews = tf.where(reward != -1.)[:,0]
+        low_rews = tf.where(reward == -1.)[:,0]
         high_preds = tf.gather(ret_pred, high_rews)
         low_preds = tf.gather(ret_pred, low_rews)
         high_rews = tf.gather(reward, high_rews)

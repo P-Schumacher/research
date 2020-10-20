@@ -6,7 +6,7 @@ main:
   minilog: true
   save_model: false
   load_model: false
-  descriptor: 'switch_task_FM_model'
+  descriptor: 'switch_task_FM_model_no_n_step'
   #load_string: ${main.descriptor} #'switching_all_10000'
   load_string: 'TD3_Vrep_random_hiro_decaynoise_verylong'
   #load_string: 'flat_save'

@@ -73,7 +73,7 @@ agent:
     per: ${agent.per}
     nstep: 1
     use_FM: false
-    save_attention: false
+    save_attention: false # batch averaged training attention
 
   sub_model:
     ac_hidden_layers: [300, 300]

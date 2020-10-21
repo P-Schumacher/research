@@ -35,7 +35,7 @@ for key_idx, key in enumerate(keys):
                 print('*_step* key failed! Maybe one run is very very short (few seconds) and *_step* has \
                                 not been generated?')
         else:
-            columns.append(np.array([data[x][0][key] for x in data], dtype=np.float64))
+            columns.append(np.array([x for x in data[key]], dtype=np.float64))
     concat_df = pd.DataFrame.from_records({key: columns})
     df = pd.concat([df, concat_df], axis=1)    
 

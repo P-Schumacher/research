@@ -25,6 +25,7 @@ main:
   no_seed: false
   simple_env: false
   switch_time: ${main.max_timesteps}
+  save_attention: false # per iteration attention
 
   
   c_step: 40

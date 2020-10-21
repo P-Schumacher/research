@@ -8,15 +8,17 @@ main:
   load_model: true
   descriptor: 'sub_save_attention_corrected'
   load_string: ${main.descriptor} #'switching_all_10000'
-  c_step: 30
+  c_step: 10
   seed: 25
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 128
   max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
   batch_size: 128
+  # per iteration attention
+  save_attention: true
   
   decay: false
   step_decayer:
@@ -35,7 +37,7 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.2 #0.64
+  meta_noise: 0.3 #0.64
   sub_noise: 0.0 #0.02
   goal_type: Direction
   ri_re: false
@@ -71,7 +73,8 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     use_FM: false
-    save_attention: true
+    # batch averaged training attention
+    save_attention: false
 
   sub_model:
     policy_freq: 1
@@ -86,7 +89,7 @@ coppeliagym:
     random_target: true
     random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.3
+    touch_distance: 0.01
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false

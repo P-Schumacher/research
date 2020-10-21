@@ -1,19 +1,18 @@
-project: 'mixture_q_onlt_re'
+project: 'shared_q'
 main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
-  #descriptor: 'sub_save_attention_corrected'
-  descriptor: 'mixtureq_onlyre'
-  load_string: ${main.descriptor} #'switching_all_10000'
+  load_string: 'random_hiro_decaynoise_verylong'
+  descriptor: 'shared_q_function_maximization0.3_offpol'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 30000000
+  max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
@@ -32,14 +31,13 @@ main:
 # 3 - proportional reward based prio
 # 4 - binary reward based prio 
 agent:
-  zero_obs: 0
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.64
-  sub_noise:  0.02
+  meta_noise: 0.644
+  sub_noise: 1.4
   goal_type: Direction
-  ri_re: true
+  ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
@@ -48,15 +46,12 @@ agent:
   smooth_goal: false
   smooth_factor: 0.001
   add_multiple_dones: false
-  per: 1
+  per: 0
   sub_per: 0
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
   decay_noise: false
-  normalize: false
-  relative_noise: false
-
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -74,8 +69,6 @@ agent:
     cr_lr: 0.0007
     no_candidates: 20
     use_FM: false
-    save_attention: true
-
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -85,18 +78,20 @@ coppeliagym:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
+    sparse_rew: true
     action_regularizer: 0.00
+    time_limit: 600
+    double_buttons: true
     random_target: true
     random_eval_target: true
-    reversal_time: 100000000000
-    touch_distance: 0.3
+    reversal_time: 100000000
+    touch_distance: 0.2
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
-    task: 'sparse_two_button_sequential'
 
   subgoals:
-    ej_goal: [3, 1.]
+    ej_goal: [3, 1.0]
 
 buffer:
   alpha: 0.9

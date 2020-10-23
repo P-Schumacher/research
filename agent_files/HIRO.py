@@ -60,8 +60,8 @@ class HierarchicalAgent(Agent):
         '''Loads the weights of sub and meta agent from a file.'''
         self._sub_agent.actor.load_weights(string + "_sub_actor")
         self._sub_agent.critic.load_weights(string + "_sub_critic")
-        #self._meta_agent.actor.load_weights(string + "_meta_actor")
-        #self._meta_agent.critic.load_weights(string + "_meta_critic")
+        self._meta_agent.actor.load_weights(string + "_meta_actor")
+        self._meta_agent.critic.load_weights(string + "_meta_critic")
 
     def reset(self):
         '''Want this reset such that the meta agent proposes the first goal every

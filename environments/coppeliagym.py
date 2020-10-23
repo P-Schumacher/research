@@ -188,7 +188,9 @@ class CoppeliaEnv(gym.Env):
         self._state_b1 = 0
         self._state_b2 = 0
         self._init_gripper = [6.499e-1, -6.276e-1, 1.782]
-        # assertions
+        # For state normalization
+        self._state_mean = np.load('./environments/state_mean_two_button.npy')
+        self._state_std = np.load('./environments/state_sigma_two_button.npy')
 
     def _prepare_subgoal_ranges(self, ee_goal, j_goal, ej_goal):
         '''Generate subgoal ranges that the HIRO uses to determine its subgoal dimensions.  Not useful
@@ -449,7 +451,18 @@ class CoppeliaEnv(gym.Env):
                                      [self._state_b2]], axis=0)
             #target = np.concatenate([self._pos_b1[:-1], self._pos_b2[:-1]], axis=0)
         ret = np.array(np.concatenate([observation, target]), dtype=np.float32)
+        if self._normalize:
+            #ret = self._normalizer(ret)
+            ret = self._linear_scaler(ret)
         return ret
+
+    def _normalizer(self, x):
+        return (x - self._state_mean) / (self._state_std)
+
+    def _linear_scaler(self, x):
+        return (x - self._state_min) / (0.5*(self._state_max - self._state_min))
+
+
    
     def _reset_target(self, evalmode):
         pose = self._target_init_pose.copy()

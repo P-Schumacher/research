@@ -1,22 +1,26 @@
-project: 'FM_MODEL_NEW'
+project: 'state_sparsity_hypothesis'
 main:
   render: false
   flat_agent: false
   log: true
   minilog: false
   save_model: false
-  load_model: true
-  load_string: 'random_hiro_decaynoise_verylong'
-  descriptor: 'reset_goal_at_200000_fm'
+  load_model: false
+  #descriptor: 'save_hiro'
+  descriptor: 'full_state_linearscale_velszero'
+  load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 10000000
+  max_timesteps: 30000000
   no_seed: false
   eval_freq: 20000
   simple_env: false
   batch_size: 128
+  # per iteration attention
+  save_attention: false
+  zero_meta_index: 0
   
   decay: false
   step_decayer:
@@ -31,17 +35,18 @@ main:
 # 3 - proportional reward based prio
 # 4 - binary reward based prio 
 agent:
+  zero_obs: 0
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.64
-  sub_noise: 1.4
+  meta_noise: 0.3 #0.64
+  sub_noise: 0.01 #0.02
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
   meta_mock: false
   train_meta: true
-  train_sub: false
+  train_sub: true
   num_eval_episodes: 10
   smooth_goal: false
   smooth_factor: 0.001
@@ -51,7 +56,8 @@ agent:
   goal_regul: 0.0
   distance_goal_regul: 0.000
   goal_every_iteration: false
-  decay_noise: true
+  decay_noise: false
+  normalize: false
   meta_model:
     ac_hidden_layers: [300, 300]
     cr_hidden_layers: [300, 300]
@@ -68,7 +74,10 @@ agent:
     ac_lr: 0.0005
     cr_lr: 0.0007
     no_candidates: 20
-    use_FM: true
+    use_FM: false
+    # batch averaged training attention
+    save_attention: false
+
   sub_model:
     policy_freq: 1
     use_FM: false
@@ -76,22 +85,21 @@ agent:
 coppeliagym:
   sim:
     scene_file: 'coppelia_scenes/kuka_double.ttt'
-    render_scene_file: 'coppelia_scenes/kuka_render.ttt'
+    render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
-    sparse_rew: true
     action_regularizer: 0.00
-    time_limit: 600
-    double_buttons: true
-    random_target: false
-    random_eval_target: false
-    reversal_time: 200000
-    touch_distance: 0.12
+    random_target: true
+    random_eval_target: true
+    reversal_time: 100000000000
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
+    task: 'sparse_two_button_sequential'
+    normalize: true
 
   subgoals:
-    ej_goal: [3, 1.0]
+    ej_goal: [3, 1.]
 
 buffer:
   alpha: 0.9

@@ -208,6 +208,8 @@ class HierarchicalAgent(Agent):
         self._maybe_modify_smoothed_state(self._meta_state)
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
+        if self._zero_meta_index != 55:
+            self._meta_state[self._zero_meta_index] = 0.
         if self.meta_time:
             self._maybe_mock()
             self._maybe_spherical_coord_trafo()
@@ -355,9 +357,9 @@ class HierarchicalAgent(Agent):
         self._action_dim = env_spec['action_dim']
         self._subgoal_dim = subgoal_dim
         # Main cnf
-        #set_trace()
         #for key in main_cnf.keys():
         #    main_cnf[f'_{key}'] = main_cnf.pop(key)
+        self._zero_meta_index = (main_cnf.zero_meta_index)
         self._minilog = main_cnf.minilog
         self._batch_size = main_cnf.batch_size
         self._c_step = main_cnf.c_step

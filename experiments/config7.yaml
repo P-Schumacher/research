@@ -7,7 +7,7 @@ main:
   save_model: false
   load_model: false
   #descriptor: 'save_hiro'
-  descriptor: 'full_state_nonorm'
+  descriptor: 'full_state_linearscale'
   load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
@@ -20,6 +20,7 @@ main:
   batch_size: 128
   # per iteration attention
   save_attention: false
+  zero_meta_index: 55
   
   decay: false
   step_decayer:
@@ -87,15 +88,15 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: false
-    random_eval_target: false
+    random_target: true
+    random_eval_target: true
     reversal_time: 100000000000
-    touch_distance: 0.5
+    touch_distance: 0.3
     minimum_dist: 0.
     record_touches: false
     reset_on_wrong_sequence: false
     task: 'sparse_two_button_sequential'
-    normalize: false
+    normalize: true
 
   subgoals:
     ej_goal: [3, 1.]

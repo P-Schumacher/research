@@ -460,7 +460,7 @@ class CoppeliaEnv(gym.Env):
         return (x - self._state_mean) / (self._state_std)
 
     def _linear_scaler(self, x):
-        return (x - self._state_min) / (0.5*(self._state_max - self._state_min))
+        return (x - self._state_min) / (0.5*(self._state_max - self._state_min))-1
 
 
    

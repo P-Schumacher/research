@@ -206,10 +206,10 @@ class HierarchicalAgent(Agent):
         self._meta_state = state
         self._maybe_normalize_state()
         self._maybe_modify_smoothed_state(self._meta_state)
+        if self._zero_meta_index:
+            self._meta_state[10:19] = 0.
         self._sample_goal(self._meta_state)
         self._check_inner_done(self._meta_state)
-        if self._zero_meta_index != 55:
-            self._meta_state[self._zero_meta_index] = 0.
         if self.meta_time:
             self._maybe_mock()
             self._maybe_spherical_coord_trafo()

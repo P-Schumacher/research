@@ -3,24 +3,24 @@ main:
   render: false
   flat_agent: false
   log: true
-  minilog: false
+  minilog: true
   save_model: false
   load_model: false
   #descriptor: 'save_hiro'
-  descriptor: 'full_state_linearscale'
+  descriptor: 'full_state_linearscale_no_normalise_zero_vels'
   load_string: ${main.descriptor} #'switching_all_10000'
   c_step: 10
   seed: 25
   offpolicy: true
   start_timesteps: 5000
-  max_timesteps: 30000000
+  max_timesteps: 500000
   no_seed: false
   eval_freq: 20000
   simple_env: false
   batch_size: 128
   # per iteration attention
   save_attention: false
-  zero_meta_index: 55
+  zero_meta_index: 1
   
   decay: false
   step_decayer:
@@ -96,7 +96,7 @@ coppeliagym:
     record_touches: false
     reset_on_wrong_sequence: false
     task: 'sparse_two_button_sequential'
-    normalize: true
+    normalize: false
 
   subgoals:
     ej_goal: [3, 1.]

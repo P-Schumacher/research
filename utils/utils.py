@@ -78,14 +78,18 @@ def create_world(cnf):
         env.subgoal_ranges = [1,1]
         env.subgoal_dim = 2
         env.target_dim = 0
+    agent = create_agent(cnf, env)
+    set_seeds(env, cnf.main.seed, no_seed=cnf.main.no_seed)
+    return env, agent 
+
+def create_agent(cnf, env):
     model_cls = get_model_class(cnf.main.model)
     env_spec = get_env_specs(env)
     if not cnf.main.flat_agent:
         agent = HierarchicalAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim)
     else: 
         agent = Agent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls)
-    set_seeds(env, cnf.main.seed, no_seed=cnf.main.no_seed)
-    return env, agent 
+    return agent
 
 def assert_sanity_check(cnf):
     ''' Stops the program if unlogical settings were made. E.g. We want to center the ee goal around the robot but we only have a J subgoal.'''

@@ -287,7 +287,6 @@ class CoppeliaEnv(gym.Env):
         rew = -1.
         # One button touch task
         if self._get_distance(self._pos_b1) < self._touch_distance:
-            set_trace()
             rew += 1
             self._state_b1 = True
         return rew

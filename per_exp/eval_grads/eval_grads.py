@@ -5,7 +5,7 @@ import wandb
 from pudb import set_trace
 from scipy import stats
 import copy
-from utils.utils import create_world
+from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
@@ -39,7 +39,6 @@ def create_random_weight_list():
 
 def train_the_critic(untrained_agent, replay_buffer, iterations):
     for it in range(iterations):
-        print(f'Critic trained {it} of {iterations}')
         state, action, reward, next_state, done, *_ = replay_buffer.sample_uniformly(128)
         untrained_agent._policy._train_critic(state, action, reward, next_state, done, False, None)
 
@@ -51,12 +50,13 @@ def update_buffer(replay_buffer, agent):
     replay_buffer.update_priorities(td_error)
 
 
-N = 1000
-N_TRAIN_CRITIC = 5
-N_TRAIN_TRUE_CRITIC = 10
-SAMPLES = 5
+N = 1000000
+N_TRAIN_CRITIC = 1
+N_TRAIN_TRUE_CRITIC = 1000
+SAMPLES = 1000
 def main(cnf):
     env, agent = create_world(cnf)
+    cnf_old = cnf
     cnf = cnf.main
     agent._replay_buffer.load_data('./per_exp/eval_grads/buffer_data/')
     accum = Accumulator()
@@ -74,7 +74,8 @@ def main(cnf):
     print('Compute true gradient of true critic')
     # True gradient of true critic 
     for i in range(SAMPLES):
-        true_critic_sample = copy.deepcopy(untrained)
+        print(f'sample {i} of {SAMPLES}')
+        true_critic_sample = create_agent(cnf_old, env)
         train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC)
         true_critic_sample = true_critic_sample._policy.critic
         state, *_ = buff.get_buffer()
@@ -86,7 +87,11 @@ def main(cnf):
         gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
         accum.accumulate(gradients_true)
     gradients_true = accum.get_grad() 
-
+    for idx, x in enumerate(gradients_true):
+        np.save(f'gradient_{idx}.npy', x)
+        print(x)
+    env.close()
+'''
     # TODO AVERAGE OVER BATCHES
     batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 1000, 1000)], axis=0)
     simil_list = []
@@ -114,12 +119,11 @@ def main(cnf):
     print(simil_list)
     np.save('simil_list.npy', simil_list)
 
-
+'''
 
 
 
     #np.save('m1.npy', m1)    
     #np.save('m2.npy', m2)    
     #np.save('errors.npy', errors)
-    env.close()
 

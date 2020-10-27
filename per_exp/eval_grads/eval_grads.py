@@ -7,6 +7,7 @@ from scipy import stats
 import copy
 from utils.utils import create_world, create_agent
 from matplotlib import pyplot as plt
+import hydra
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 
@@ -97,7 +98,7 @@ def main(cnf):
     gradients_true = []
     for idx in range(6):
         gradients_true.append(np.load(f'per_exp/eval_grads/gradients_true_critic/gradient_{idx}.npy'))
-    batch_range = np.array([1, 64, 128, 256, 512])
+    batch_range = np.array([1, 128, 256, 512, 1024])
     #batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 1000, 1000)], axis=0)
     ret = []
     for batch_size in batch_range:
@@ -120,7 +121,7 @@ def main(cnf):
             sims = tf.reduce_mean(sims)
             simil_list.append(sims.numpy())
         ret.append(simil_list)
-    np.save('simil_list.npy', ret)
+    np.save(f'simil_list_per_{cnf_old.agent.sub_per}_train_critic_{N_TRAIN_CRITIC}.npy', ret)
 
 
 

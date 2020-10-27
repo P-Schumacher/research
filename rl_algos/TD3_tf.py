@@ -204,6 +204,7 @@ class TD3(object):
         If 2, sample based on the distance between goal and state.
         If 3, sample proportional to the reward of a transition.
         If 4, sample transitions with a reward with a higher probability.
+        If 5, sample inversely to the TD-error. (i.e. we want small TD-errors)
         N.B. Python doesn't have switch statements...'''
         if per: 
             if per == 1:
@@ -215,6 +216,8 @@ class TD3(object):
             elif per == 4:
                 # TODO replace -1 by c * -1 * meta_rew_scale
                 error = np.where(reward == -1., 0, 1)
+            elif per == 5:
+                error = 1/(td_error + 0.00001)
             replay_buffer.update_priorities(error)
 
     def _maybe_log_critic(self, gradients, norm, critic_loss, log):

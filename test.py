@@ -28,25 +28,22 @@ def plot_boot(x_range, data, color='r'):
        color=color, alpha=0.2)
 
 plt.figure(figsize=(8,10))
-matplotlib.use('GTK3Agg')
 plt.style.use('seaborn')
 
-batch_range = [1, 32, 64, 128, 256, 512, 1024, 2048]
-set_trace()
-per = np.load('simils_high.npy')
-per = np.reshape(per, [1, per.shape[0]])
+batch_range = [1, 5, 64, 128, 1024]
+per = np.load('simil_low.npy')
 plot_boot(batch_range, per, 'r')
-per = np.load('simils_unif.npy')
-per = np.reshape(per, [1, per.shape[0]])
+batch_range = [1, 5, 128, 1024]
+per = np.load('simil_high.npy')
 plot_boot(batch_range, per, 'b')
-per = np.load('simils_low.npy')
-per = np.reshape(per, [1, per.shape[0]])
+per = np.load('simil_uniform.npy')
 plot_boot(batch_range, per, 'k')
 
 plt.xlabel('Batch Size')
-plt.ylabel('Avg. Cos. Sim. with Hlgh-Quality Grad.')
+plt.ylabel('Avg. Cos. Sim. with High-Quality Grad.')
+batch_range = [1, 5, 64, 128, 1024]
 plt.xticks(batch_range, batch_range)
 #plt.xlim([0, 1000])
 plt.title('True critic: 1000 Critic: 5')
-plt.legend(['high td', 'unif', 'low'])
+plt.legend(['low td', 'high ', 'uniform'])
 plt.show()

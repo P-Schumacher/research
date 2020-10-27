@@ -14,7 +14,7 @@ simil_metric = tf.keras.losses.CosineSimilarity()
 N = 1000000
 N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 10
+SAMPLES = 50
 
 class Accumulator:
     def __init__(self):
@@ -98,7 +98,7 @@ def main(cnf):
     gradients_true = []
     for idx in range(6):
         gradients_true.append(np.load(f'per_exp/eval_grads/gradients_true_critic/gradient_{idx}.npy'))
-    batch_range = np.array([1, 128, 256, 512, 1024])
+    batch_range = np.array([128, 256, 512, 1024, 2048])
     #batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 1000, 1000)], axis=0)
     ret = []
     for batch_size in batch_range:

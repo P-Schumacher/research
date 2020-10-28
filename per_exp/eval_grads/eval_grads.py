@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 
-N = 1000000
+N = 1000
 N_TRAIN_CRITIC = 10
 N_TRAIN_TRUE_CRITIC = 100000
 SAMPLES = 10

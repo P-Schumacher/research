@@ -1,4 +1,5 @@
 import numpy as np
+import hydra
 import tensorflow as tf
 import argparse
 import os
@@ -9,6 +10,7 @@ from rl_algos import TD3_tf
 from environments.my_env import EnvWithGoal
 from agent_files.Agent import Agent
 from agent_files.HIRO import HierarchicalAgent
+from agent_files.tec_exploration import TecAgent
 
 def get_model_class(model_name):
     '''Retrieves an RL agent by name.'''
@@ -85,10 +87,12 @@ def create_world(cnf):
 def create_agent(cnf, env):
     model_cls = get_model_class(cnf.main.model)
     env_spec = get_env_specs(env)
-    if not cnf.main.flat_agent:
-        agent = HierarchicalAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim)
-    else: 
+    if cnf.main.flat_agent:
         agent = Agent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls)
+    elif cnf.main.tec_agent:
+        agent = TecAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim, cnf.tec.autoencoder)
+    else:
+        agent = HierarchicalAgent(cnf.agent, cnf.buffer, cnf.main, env_spec, model_cls, env.subgoal_dim)
     return agent
 
 def assert_sanity_check(cnf):

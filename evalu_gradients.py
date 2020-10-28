@@ -1,4 +1,5 @@
-from per_exp.eval_grads.eval_grads import main
+#from per_exp.eval_grads.eval_grads import main
+from per_exp.eval_grads.scatterplot import main
 #from per_exp.eval_grads.train_critic import main
 #from per_exp.eval_grads.train_actor import main
 from omegaconf import OmegaConf

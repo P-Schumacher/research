@@ -30,8 +30,9 @@ if vrep:
     main_cnf = OmegaConf.load('configs/vrep_default/vrep_main_conf.yaml')
     env_cnf = OmegaConf.load('configs/vrep_default/vrep_env_conf.yaml')
     agent_cnf = OmegaConf.load('configs/vrep_default/vrep_agent_conf.yaml')
+    tec_cnf = OmegaConf.load('configs/ae.yaml')
     # Parameters of second cnf file overwrite those of first
-    cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf)
+    cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf, tec_cnf)
     if name:
         exp_cnf = OmegaConf.load(f'experiments/{name}.yaml')
         cnf = OmegaConf.merge(cnf, exp_cnf)

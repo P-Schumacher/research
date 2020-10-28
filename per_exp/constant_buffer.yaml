@@ -68,4 +68,4 @@ coppeliagym:
 buffer:
   alpha: 0.9
   beta: 0.
-  max_size: 1000
+  max_size: 100

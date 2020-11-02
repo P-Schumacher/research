@@ -62,6 +62,7 @@ def create_directories(args):
         os.makedirs('./experiments/models')
 
 def set_seeds(env, seed, no_seed=False):
+    print(f'NO SEED {no_seed}')
     '''Set seeds to get different random numbers for every experiment. Interestingly, this also resets
     accumulated but unused tensorflow memory and frees the RAM'''
     if not no_seed:

@@ -10,10 +10,10 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 
-N = 1000000
+N = 1000 #1000000
 N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 1000
-SAMPLES = 1
+N_TRAIN_TRUE_CRITIC = 10 #1000
+SAMPLES = 10
 
 class Accumulator:
     def __init__(self):
@@ -69,51 +69,42 @@ def main(cnf):
     trained_actor = agent._policy.actor
     print('Successfully loaded')
     print('Compute true gradient of true critic')
-    # True gradient of true critic 
-    true_critic= create_agent(cnf_old, env)
-    train_the_critic(true_critic, buff, N_TRAIN_TRUE_CRITIC)
-    true_critic_sample = true_critic._policy.critic
-    state, *_ = buff.get_buffer()
-    with tf.GradientTape() as tape:
-        action = trained_actor(state)
-        q_value, _  = true_critic_sample(tf.concat([state, action], axis=1))
-        actor_loss = -tf.reduce_mean(q_value)
-    gradients_true = tape.gradient(actor_loss, trained_actor.trainable_variables)
-    gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
-    simil_list = []
-    #print('update _buffer')
-    #update_buffer(buff, approx_critic)
-    #print('done updating')
-    state, action, reward, next_state, done, *_ = buff.get_buffer()
-    state = state[::-1]
-    next_state = next_state[::-1]
-    done = done[::-1]
-    reward = reward[::-1]
-    print(f' state shape {state.shape}')
-    sim_avg = np.zeros([N,], dtype=np.float32) 
-    td_avg = np.zeros([N,], dtype=np.float32) 
-    for idx, s in enumerate(state):
-        print(f'{idx} of 1000000')
-        s = tf.reshape(s, [1, s.shape[0]])
-        ns = tf.reshape(next_state[idx], [1, next_state[idx].shape[0]])
-        d = tf.reshape(done[idx], [1, done[idx].shape[0]])
-        r = tf.reshape(reward[idx], [1, reward[idx].shape[0]])
-        approx_critic = true_critic
-        td_errors = approx_critic._policy._compute_td_error(s,  trained_actor(s), r, ns, d)
+    sim_avg = []
+    td_avg = []
+    for k in range(SAMPLES):
+        # True gradient of true critic 
+        true_critic= create_agent(cnf_old, env)
+        train_the_critic(true_critic, buff, N_TRAIN_TRUE_CRITIC)
+        true_critic_sample = true_critic._policy.critic
+        state, *_ = buff.get_buffer()
         with tf.GradientTape() as tape:
-            action = trained_actor(s)
-            q_value, _  = approx_critic._policy.critic(tf.concat([s, action], axis=1))
+            action = trained_actor(state)
+            q_value, _  = true_critic_sample(tf.concat([state, action], axis=1))
             actor_loss = -tf.reduce_mean(q_value)
-        gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
-        gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
-        sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
-        sims = tf.reduce_mean(sims)
-        sim_avg[idx] += sims
-        td_avg[idx] += td_errors
-    sim = sim_avg / SAMPLES
-    td = td_avg / SAMPLES
-    np.save(f'sim_avg.npy', sim)
-    np.save(f'td_avg.npy', td)
+        gradients_true = tape.gradient(actor_loss, trained_actor.trainable_variables)
+        gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
+        state, action, reward, next_state, done, *_ = buff.get_buffer()
+        print(f' state shape {state.shape}')
+        for idx, s in enumerate(state):
+            print(f'{idx} of 1000000')
+            s = tf.reshape(s, [1, s.shape[0]])
+            ns = tf.reshape(next_state[idx], [1, next_state[idx].shape[0]])
+            d = tf.reshape(done[idx], [1, done[idx].shape[0]])
+            r = tf.reshape(reward[idx], [1, reward[idx].shape[0]])
+            approx_critic = true_critic
+            td_errors = approx_critic._policy._compute_td_error(s,  trained_actor(s), r, ns, d)
+            with tf.GradientTape() as tape:
+                action = trained_actor(s)
+                q_value, _  = approx_critic._policy.critic(tf.concat([s, action], axis=1))
+                actor_loss = -tf.reduce_mean(q_value)
+            gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
+            gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
+            sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
+            sims = tf.reduce_mean(sims)
+            sim_avg.append(sims)
+            td_avg.append(td_errors)
+    np.save(f'sim_avg.npy', sim_avg)
+    np.save(f'td_avg.npy', td_avg)
 
 
 

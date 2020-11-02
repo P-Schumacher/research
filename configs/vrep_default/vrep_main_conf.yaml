@@ -27,7 +27,7 @@ main:
   switch_time: ${main.max_timesteps}
   save_attention: false # per iteration attention
   zero_meta_index: 55
-  tec_agent: true
+  tec_agent: false
 
   
   c_step: 40

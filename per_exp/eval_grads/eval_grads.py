@@ -10,10 +10,9 @@ from matplotlib import pyplot as plt
 simil_metric = tf.keras.losses.CosineSimilarity()
 
 
-N = 1000
-N_TRAIN_CRITIC = 10
-N_TRAIN_TRUE_CRITIC = 100000
-SAMPLES = 10
+N = 1000000
+N_TRAIN_TRUE_CRITIC = 100
+SAMPLES = 100
 
 class Accumulator:
     def __init__(self):
@@ -72,47 +71,30 @@ def main(cnf):
     trained_actor = agent._policy.actor
     print('Successfully loaded')
     print('Compute true gradient of true critic')
-    '''
-    # True gradient of true critic 
-    for i in range(SAMPLES):
-        print(f'sample {i} of {SAMPLES}')
-        true_critic_sample = create_agent(cnf_old, env)
-        train_the_critic(true_critic_sample, buff, N_TRAIN_TRUE_CRITIC)
-        true_critic_sample = true_critic_sample._policy.critic
-        state, *_ = buff.get_buffer()
-        with tf.GradientTape() as tape:
-            action = trained_actor(state)
-            q_value, _  = true_critic_sample(tf.concat([state, action], axis=1))
-            actor_loss = -tf.reduce_mean(q_value)
-        gradients_true = tape.gradient(actor_loss, trained_actor.trainable_variables)
-        gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
-        accum.accumulate(gradients_true)
-    gradients_true = accum.get_grad() 
-    for idx, x in enumerate(gradients_true):
-        np.save(f'gradient_{idx}.npy', x)
-        print(x)
-    env.close()
-    '''
-    # TODO AVERAGE OVER BATCHES
-    gradients_true = []
-    for idx in range(6):
-        gradients_true.append(np.load(f'per_exp/eval_grads/gradients_true_critic/gradient_{idx}.npy'))
-    batch_range = np.array([1, 64, 128, 256, 512])
-    #batch_range = np.concatenate([np.array([1, 5, 128, 256, 512]), np.arange(1000, 1000, 1000)], axis=0)
+    batch_range = np.array([1,128, 256])
     ret = []
+    print('Update Buffer')
     for batch_size in batch_range:
         simil_list = []
         print(f'Batch {batch_size}')
         for i in range(SAMPLES):
-            approx_critic = create_agent(cnf_old, env)
-            train_the_critic(approx_critic, buff, N_TRAIN_CRITIC)
-            print('Update Buffer')
+            # True gradient of true critic 
+            true_critic= create_agent(cnf_old, env)
+            train_the_critic(true_critic, buff, N_TRAIN_TRUE_CRITIC)
+            true_critic_sample = true_critic._policy.critic
+            approx_critic = true_critic
             update_buffer(buff, approx_critic)
-            approx_critic = approx_critic._policy.critic
+            state, *_ = buff.get_buffer()
+            with tf.GradientTape() as tape:
+                action = trained_actor(state)
+                q_value, _  = true_critic_sample(tf.concat([state, action], axis=1))
+                actor_loss = -tf.reduce_mean(q_value)
+            gradients_true = tape.gradient(actor_loss, trained_actor.trainable_variables)
+            gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
             state, *_ = buff.sample(batch_size)
             with tf.GradientTape() as tape:
                 action = trained_actor(state)
-                q_value, _  = approx_critic(tf.concat([state, action], axis=1))
+                q_value, _  = approx_critic._policy.critic(tf.concat([state, action], axis=1))
                 actor_loss = -tf.reduce_mean(q_value)
             gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
             gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]

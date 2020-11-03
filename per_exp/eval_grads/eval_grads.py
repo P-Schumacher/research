@@ -12,7 +12,7 @@ simil_metric = tf.keras.losses.CosineSimilarity()
 
 N = 1000000
 N_TRAIN_TRUE_CRITIC = 100
-SAMPLES = 100
+SAMPLES = 5
 
 class Accumulator:
     def __init__(self):
@@ -69,9 +69,8 @@ def main(cnf):
     agent._policy.actor.load_weights('./per_exp/eval_grads/model/converged_actor')
 
     trained_actor = agent._policy.actor
-    print('Successfully loaded')
     print('Compute true gradient of true critic')
-    batch_range = np.array([1,128, 256])
+    batch_range = np.array([2, 128, 256, 512, 1024, 2048])
     ret = []
     print('Update Buffer')
     for batch_size in batch_range:
@@ -91,18 +90,21 @@ def main(cnf):
                 actor_loss = -tf.reduce_mean(q_value)
             gradients_true = tape.gradient(actor_loss, trained_actor.trainable_variables)
             gradients_true  = [tf.reshape(x, [-1]) for x in gradients_true]
-            state, *_ = buff.sample(batch_size)
-            with tf.GradientTape() as tape:
-                action = trained_actor(state)
-                q_value, _  = approx_critic._policy.critic(tf.concat([state, action], axis=1))
-                actor_loss = -tf.reduce_mean(q_value)
-            gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
-            gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
-            sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
-            sims = tf.reduce_mean(sims)
-            simil_list.append(sims.numpy())
+            simil_avg = []
+            for i in range(10):
+                state, *_ = buff.sample(batch_size)
+                with tf.GradientTape() as tape:
+                    action = trained_actor(state)
+                    q_value, _  = approx_critic._policy.critic(tf.concat([state, action], axis=1))
+                    actor_loss = -tf.reduce_mean(q_value)
+                gradients_sample = tape.gradient(actor_loss, trained_actor.trainable_variables)
+                gradients_sample = [tf.reshape(x, [-1]) for x in gradients_sample]
+                sims = [-simil_metric(x, y) for x, y in zip(gradients_true, gradients_sample)]
+                sims = tf.reduce_mean(sims)
+                simil_avg.append(sims.numpy())
+            simil_list.append(np.mean(simil_avg))
         ret.append(simil_list)
-    np.save('simil_list.npy', ret)
+    np.save(f'simil_list_{cnf_old.agent.sub_per}_{cnf_old.buffer.alpha}.npy', ret)
 
 
 

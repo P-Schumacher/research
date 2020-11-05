@@ -5,7 +5,7 @@ entity: rlpractitioner
 main:
   env: Vrep
   vrep: true
-  log: true
+  log: false
   minilog: false
   visit: false
   render: false
@@ -26,6 +26,8 @@ main:
   simple_env: false
   switch_time: ${main.max_timesteps}
   save_attention: false # per iteration attention
+  zero_meta_index: 55
+  tec_agent: false
 
   
   c_step: 40

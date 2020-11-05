@@ -9,7 +9,9 @@ from matplotlib import pyplot as plt
 
 N = 1000
 def main(cnf):
+    tf.random.set_seed(0)
     env, agent = create_world(cnf)
+    agent.load_model('here')
     cnf = cnf.main
     agent.meta_replay_buffer.load_data('./per_exp/buffer_data/')
 
@@ -39,9 +41,9 @@ def main(cnf):
     idxs = np.zeros([N, N])
 
     errors = np.zeros([N, N])
-    for t in range(N):
+    for t in range(1000):
         #print(f'train {t} of 10000')
-        agent._meta_agent.train(buff, 100, t, False, None)
+        agent._meta_agent.train(buff, 10, t, False, None)
         #print(buff.batch_idxs)
         state, action, reward, next_state, done = buff.get_buffer() 
         error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)

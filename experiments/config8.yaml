@@ -2,7 +2,7 @@ project: "reversed_testing"
 main:
   render: false
   flat_agent: false
-  log: true
+  log: false
   minilog: true
   save_model: false
   load_model: false
@@ -21,6 +21,7 @@ main:
   batch_size: 128
   save_attention: false
   switch_time: 10000
+  tec_agent: true
   
   decay: false
   step_decayer:

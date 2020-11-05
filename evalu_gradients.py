@@ -1,4 +1,8 @@
 from per_exp.eval_grads.eval_grads import main
+#from per_exp.eval_grads.scatterplot_averagemanyforeverypoint import main
+#from per_exp.eval_grads.scatterplot_same_critic import main
+#from per_exp.eval_grads.scatterplot import main
+#from per_exp.eval_grads.scatterplot_singular_same_critic import main
 #from per_exp.eval_grads.train_critic import main
 #from per_exp.eval_grads.train_actor import main
 from omegaconf import OmegaConf
@@ -17,7 +21,7 @@ if vrep:
     # Parameters of second cnf file overwrite those of first
     cnf = OmegaConf.merge(main_cnf, env_cnf, agent_cnf)
     
-    exp_cnf = OmegaConf.load(f'per_exp/eval_grads/constant_buffer.yaml')
+    exp_cnf = OmegaConf.load('per_exp/eval_grads/constant_buffer.yaml')
     cnf = OmegaConf.merge(cnf, exp_cnf)
 
 
@@ -30,3 +34,4 @@ else:
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
 main(cnf)
+

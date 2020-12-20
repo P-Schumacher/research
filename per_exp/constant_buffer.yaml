@@ -12,7 +12,7 @@ main:
   offpolicy: false
   start_timesteps: 5000
   max_timesteps: 1000000
-  no_seed: false
+  no_seed: true
   batch_size: 1
   eval_freq: 20000
   simple_env: false

@@ -4,7 +4,6 @@ from pudb import set_trace
 from scipy import stats
 from matplotlib import pyplot as plt
 import matplotlib
-from sklearn import preprocessing
 def normalize(Z):
     ret = Z - np.amax(Z)
     return ret / (np.amax(Z) - np.amin(Z))

@@ -9,7 +9,9 @@ from matplotlib import pyplot as plt
 
 N = 1000
 def main(cnf, repetitions):
+def main(cnf):
     env, agent = create_world(cnf)
+    agent.load_model('here')
     cnf = cnf.main
     agent.meta_replay_buffer.load_data('./per_exp/buffer_data/')
 
@@ -39,7 +41,7 @@ def main(cnf, repetitions):
     idxs = np.zeros([N, N])
 
     errors = np.zeros([N, N])
-    for t in range(N):
+    for t in range(1000):
         #print(f'train {t} of 10000')
         agent._meta_agent.train(buff, 10, t, False, None)
         #print(buff.batch_idxs)

@@ -5,7 +5,6 @@ from matplotlib import pyplot as plt
 import matplotlib
 from matplotlib import rc
 plt.style.use(['seaborn', 'thesis'])
-plt.figure(figsize=(6, 5)),
 
 errors = np.load('./buffer_data/errors.npy')
 rew = np.load('./buffer_data/reward.npy')
@@ -21,5 +20,5 @@ plt.xlim([0,1000])
 plt.legend(['t = 0', 't = 1000'], loc='upper right', frameon=True)
 plt.tight_layout()
 
-plt.savefig('unif_td_error.pdf')
+    plt.savefig(f'{string}_td_error.pdf')
 plt.show()

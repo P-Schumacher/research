@@ -3,7 +3,6 @@ from pudb import set_trace
 from scipy import stats
 from matplotlib import pyplot as plt
 import matplotlib
-matplotlib.use('GTK3Agg')
 plt.style.use('seaborn')
 a = np.load('lowtd.npy')
 #b = np.reshape(b, [b.shape[-1],])

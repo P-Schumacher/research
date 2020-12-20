@@ -7,8 +7,8 @@ import numpy as np
 matplotlib.use('GTK3Agg')
 plt.style.use(['seaborn', 'thesis'])
 fig, ax = plt.subplots(1,1, figsize=(6, 5))
-m1 = np.load('./buffer_data/m1.npy')
-m2 = np.load('./buffer_data/m2.npy') 
+#m1 = np.load('./buffer_data/m1.npy')
+#m2 = np.load('./buffer_data/m2.npy') 
 rew = np.load('./buffer_data/reward.npy')
 ax.plot(np.arange(0,1000), rew[:1000])
 new_rew = []

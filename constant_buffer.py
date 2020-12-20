@@ -35,4 +35,5 @@ else:
 
 if cnf.main.log:
     wandb.init(project=cnf.project, entity=cnf.entity, config=config)
-main(cnf)
+for idx in range(10):
+    main(cnf, idx)

@@ -8,7 +8,7 @@ from utils.utils import create_world
 from matplotlib import pyplot as plt
 
 N = 1000
-def main(cnf):
+def main(cnf, repetitions):
     env, agent = create_world(cnf)
     cnf = cnf.main
     agent.meta_replay_buffer.load_data('./per_exp/buffer_data/')
@@ -41,7 +41,7 @@ def main(cnf):
     errors = np.zeros([N, N])
     for t in range(N):
         #print(f'train {t} of 10000')
-        agent._meta_agent.train(buff, 100, t, False, None)
+        agent._meta_agent.train(buff, 10, t, False, None)
         #print(buff.batch_idxs)
         state, action, reward, next_state, done = buff.get_buffer() 
         error = agent._meta_agent._compute_td_error(state, action, reward, next_state, done)
@@ -58,6 +58,6 @@ def main(cnf):
                 m2.append(t)
     np.save('m1.npy', m1)    
     np.save('m2.npy', m2)    
-    np.save('errors.npy', errors)
+    np.save(f'errors_small_{repetitions}.npy', errors)
     env.close()
 

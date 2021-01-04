@@ -1,19 +1,19 @@
 project: "vortrag"
 main:
-  render: false
+  render: true
   flat_agent: false
-  log: true
+  log: false
   minilog: true
-  save_model: true
-  load_model: false
+  save_model: false
+  load_model: true
   descriptor: 'dense_save_model'
   #load_string: ${main.descriptor} #'switching_all_10000'
   load_string: 'one_button_dense'
   #load_string: 'flat_save'
   c_step: 10
-  seed: 25
+  seed: 10
   offpolicy: true
-  start_timesteps: 5000
+  start_timesteps: 50000000
   max_timesteps: 1000000
   no_seed: false
   eval_freq: 20000
@@ -40,8 +40,8 @@ agent:
   center_meta_goal: false
   nstep: 1
   meta_rew_scale: 0.1
-  meta_noise: 0.64
-  sub_noise: 1.4
+  meta_noise: 0.0 #0.64
+  sub_noise: 0.0 #1.4
   goal_type: Direction
   ri_re: false
   agent_action_regularizer: 0.0
@@ -88,8 +88,8 @@ coppeliagym:
     render_scene_file: 'coppelia_scenes/kuka_special.ttt'
   params:
     action_regularizer: 0.00
-    random_target: true
-    random_eval_target: true
+    random_target: false
+    random_eval_target: false
     touch_distance: 0.1
     minimum_dist: 0.
     record_touches: false

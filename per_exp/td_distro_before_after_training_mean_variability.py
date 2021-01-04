@@ -8,8 +8,8 @@ plt.style.use(['seaborn', 'thesis'])
 
 N = 1000
 M = 10
-fig, ax = plt.subplots(1,1)
-for typ in ['unif', 'large', 'small']:
+fig, ax = plt.subplots(1,1, figsize=(5,5))
+for typ in ['unif', 'large']:
     ret = np.zeros([M, N])
     for rep in range(M):
         error = f'errors_{typ}_{rep}.npy'
@@ -28,8 +28,12 @@ for typ in ['unif', 'large', 'small']:
     #    r_mean.append(ret_mean[i])
     #    r_std.append(ret_std[i])
     x_rang = np.arange(N)
-    ax.plot(x_rang, ret_mean)
-    ax.fill_between(x_rang, np.maximum(0., ret_mean - ret_std), ret_mean + ret_std, alpha=0.6)
+    if typ == 'large':
+        ax.plot(x_rang, ret_mean, c='tab:red')
+        ax.fill_between(x_rang, np.maximum(0., ret_mean - ret_std), ret_mean + ret_std, alpha=0.6, color='tab:red')
+    else:
+        ax.plot(x_rang, ret_mean)
+        ax.fill_between(x_rang, np.maximum(0., ret_mean - ret_std), ret_mean + ret_std, alpha=0.6)
     ax.set_xlim([-0.5, 1000.5])
 
 ax.legend(['uniform sampling', 'PER'], frameon=True)

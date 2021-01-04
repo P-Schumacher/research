@@ -124,6 +124,7 @@ class CoppeliaEnv(gym.Env):
         '''Create python handles for the objects in the scene.'''
         self._table = Shape('customizableTable')
         self._target = Shape('target')
+        self._target.set_color([0.84,0.15,0.16])
         self._pos_b1 = self._target.get_position()
         self._target_init_pose = self._target.get_pose()
         if self._double_buttons:
@@ -143,7 +144,7 @@ class CoppeliaEnv(gym.Env):
             print("RENDER")
             from pyrep.const import PrimitiveShape
             self._meta_goal = Shape.create(PrimitiveShape.SPHERE, [0.1,0.1,0.1], renderable=True,
-                                           respondable=False, color=[0,0.05,1])
+                                           respondable=False, color=[0.22,0.34,0.14]) #color=[0,0.05,1])
             self._meta_goal.set_dynamic(False)
 
     def _prepare_observation_space(self):
@@ -268,7 +269,7 @@ class CoppeliaEnv(gym.Env):
         raise Exception('''Pick one of the valid reward types:
                         1) dense 
                         2) sparse_one_button
-                        3) dense_one_button
+                        3) dense_one_button NOPE
                         4) sparse_two_button
                         5) sparse_two_button_sequential''')
 
